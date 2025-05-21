@@ -13,8 +13,8 @@
   "main": "./extension.js",
   "contributes": {
     "commands": [{
-      "command": "cloudsmith-vscode-extension.helloWorld",
-      "title": "Hello World"
+      "command": "cloudsmith-vscode-extension.cloudsmithAuth",
+      "title": "Auth"
     }]
   },
   "scripts": {
