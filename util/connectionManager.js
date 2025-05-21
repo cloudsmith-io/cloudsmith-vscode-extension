@@ -1,0 +1,95 @@
+// This class handles the connection to Cloudsmith.
+// A connection session is not actually running since we are just making API calls adhoc when needed. 
+// This mostly just handles verification and if connection can be made. 
+
+const vscode = require("vscode");
+const { CredentialManager } = require("./credentialManager");
+
+class ConnectionManager {
+  constructor(context) {
+    this.context = context;
+  }
+
+  // Check response to API for authentication - basic workflow for now
+  async checkConnectivity(apiKey) {
+    const { CloudsmithAPI } = require("./cloudsmithAPI");
+    let checkPassed = "false";
+    const cloudsmithAPI = new CloudsmithAPI(this.context);
+    const userAuthenticated = await cloudsmithAPI.get("user/self", apiKey);
+
+    if (!userAuthenticated.authenticated) {
+      if (userAuthenticated.authenticated === undefined) {
+        checkPassed = "error";
+      } else {
+        checkPassed = "false";
+      }
+      await this.context.secrets.store("cloudsmith-vsc.isConnected", checkPassed);
+    } else {
+      checkPassed = "true";
+      await this.context.secrets.store("cloudsmith-vsc.isConnected", checkPassed);
+    }
+
+    return checkPassed;
+  }
+
+  // Check if currently connected 
+  async isConnected() {
+    const isConnected = await this.context.secrets.get("cloudsmith-vsc.isConnected");
+    return isConnected
+
+  }
+
+  // Connect to Cloudsmith
+  async connect() {
+    const context = this.context;
+    let showConnectMsg = true; // controls whether to show connected notification. Used for refresh.
+    let currentConnectionStatus = await this.isConnected();
+    let connectionStatus = "";
+
+    const credentialManager = new CredentialManager(context);
+    const apiKey = await credentialManager.getApiKey();
+
+    checkCreds: if (!apiKey) {
+      vscode.window
+        .showWarningMessage("No credentials configured!", "Configure", "Cancel")
+        .then((selection) => {
+          select: if (selection === "Configure") {
+            vscode.commands.executeCommand("cloudsmith-vsc.configureCredentials");
+            break select;
+          }
+        });
+      return "false";
+    } else {
+      connectionStatus = await this.checkConnectivity(apiKey);
+
+      if (currentConnectionStatus === connectionStatus) { //if current = new status, no need to show notification
+        showConnectMsg = false;
+      }
+
+      if (connectionStatus === "false" || connectionStatus === "error") {
+        vscode.window
+          .showErrorMessage(
+            "Unable to connect Cloudsmith! Ensure your credentials are correct.",
+            "Configure",
+            "Cancel"
+          )
+          .then((selection) => {
+            select: if (selection === "Configure") {
+              vscode.commands.executeCommand("cloudsmith-vsc.configureCredentials");
+              break select;
+            }
+          });
+        return connectionStatus;
+      } else { // connection status = true
+        if (showConnectMsg) {
+          vscode.window.showInformationMessage("Connected to Cloudsmith!");
+        }
+        context.secrets.store("isConnected", connectionStatus);
+      }
+      return connectionStatus;
+    }
+
+  }
+}
+
+module.exports = { ConnectionManager };

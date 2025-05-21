@@ -1,0 +1,301 @@
+{
+  "name": "cloudsmith-vsc",
+  "publisher": "Cloudsmith",
+  "displayName": "Cloudsmith",
+  "description": "Access your artifacts from Cloudsmith instance.",
+  "version": "1.0.0",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md",
+  "bugs": {
+    "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues",
+    "email": "support@cloudsmith.io"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension"
+  },
+  "icon": "media/logo.png",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cloudsmithSideBar",
+          "title": "Cloudsmith",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "cloudsmithSideBar": [
+        {
+          "id": "cloudsmithView",
+          "name": "Workspaces"
+        },
+        {
+          "id": "helpView",
+          "name": "Help and Feedback"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "cloudsmith-vsc.openLink",
+        "title": "Open Link"
+      },
+      {
+        "command": "cloudsmith-vsc.openSettings",
+        "title": "Open Cloudsmith Settings",
+        "category": "Cloudsmith",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "cloudsmith-vsc.configureCredentials",
+        "title": "Configure Cloudsmith Credentials",
+        "category": "Cloudsmith",
+        "icon": "$(key)"
+      },
+      {
+        "command": "cloudsmith-vsc.connectCloudsmith",
+        "title": "Connect to Cloudsmith",
+        "category": "Cloudsmith",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "cloudsmith-vsc.clearCredentials",
+        "title": "Clear stored credentials",
+        "icon": "$(notebook-delete-cell)"
+      },
+      {
+        "command": "cloudsmith-vsc.copySelected",
+        "title": "Copy to Clipboard"
+      },
+      {
+        "command": "cloudsmith-vsc.inspectPackage",
+        "title": "Inspect package"
+      },
+      {
+        "command": "cloudsmith-vsc.inspectPackageGroup",
+        "title": "Inspect package group"
+      },
+      {
+        "command": "cloudsmith-vsc.openPackage",
+        "title": "View package in Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.openPackageGroup",
+        "title": "View package group in Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.selectWorkspace",
+        "title": "Select Workspace from Workspaces view"
+      },
+      {
+        "command": "cloudsmith-vsc.selectRepo",
+        "title": "Select Repo from Repos view"
+      },
+      {
+        "command": "cloudsmith-vsc.openWorkspacesViewItem",
+        "title": "Open Workspace Item"
+      },
+      {
+        "command": "cloudsmith-vsc.openReposViewItem",
+        "title": "Open Repos Item"
+      },
+      {
+        "command": "cloudsmith-vsc.openPackagesViewItem",
+        "title": "Open Packages Item"
+      },
+      {
+        "command": "cloudsmith-vsc.workspacesContextAction",
+        "title": "Workspace Context Action"
+      },
+      {
+        "command": "cloudsmith-vsc.reposContextAction",
+        "title": "Repos Context Action"
+      },
+      {
+        "command": "cloudsmith-vsc.packagesContextAction",
+        "title": "Packages Context Action"
+      },
+      {
+        "command": "cloudsmith-vsc.refreshView",
+        "title": "Refresh Packages",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "cloudsmith-vsc.cloudsmithWorkspaces",
+        "title": "Workspaces: Load Workspaces"
+      },
+      {
+        "command": "cloudsmith-vsc.cloudsmithWorkspacesQP",
+        "title": "Workspaces: Get a list of all workspaces the user belongs to."
+      },
+      {
+        "command": "cloudsmith-vsc.cloudsmithReposList",
+        "title": "Repos: Load Repos"
+      },
+      {
+        "command": "cloudsmith-vsc.cloudsmithReposListQP",
+        "title": "Repos: Get all repositories associated with current user"
+      },
+      {
+        "command": "cloudsmith-vsc.cloudsmithReposListWorkspaceQP",
+        "title": "Repos: Get all repositories within a workspace"
+      },
+      {
+        "command": "cloudsmith-vsc.cloudsmithReposCreateTemplate",
+        "title": "Repos: Create a template file to configure your repository."
+      },
+      {
+        "command": "cloudsmith-vsc.cloudsmithReposCreateNew",
+        "title": "Repos: Create a new repository from the open template window"
+      }
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "cloudsmith-vsc.inspectPackage",
+          "when": "view == cloudsmithView && viewItem == package",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.inspectPackageGroup",
+          "when": "view == cloudsmithView && viewItem == packageGroup",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.copySelected",
+          "when": "view == cloudsmithView && viewItem == packageDetail",
+          "group": "9_cutcopypaste"
+        },
+        {
+          "command": "cloudsmith-vsc.openPackage",
+          "when": "view == cloudsmithView && viewItem == package",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.openPackageGroup",
+          "when": "view == cloudsmithView && viewItem == packageGroup",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "cloudsmith-vsc.refreshView",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith-vsc.openSettings",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith-vsc.configureCredentials",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith-vsc.clearCredentials",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith-vsc.connectCloudsmith",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Cloudsmith",
+      "properties": {
+        "cloudsmith-vsc.useLegacyWebApp": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, the extension will use the legacy webapp 'cloudsmith.io' for platform links."
+        },
+        "cloudsmith-vsc.inspectOutput": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, inspect will create a new text document with the results. By default it sends to Output tab."
+        },
+        "cloudsmith-vsc.showMaxPackages": {
+          "type": "integer",
+          "default": 30,
+          "maximum": 30,
+          "minimum": 1,
+          "description": "Set the maximum number of packages to be returned per repository. Current maximum is 30. "
+        },
+        "cloudsmith-vsc.groupByPackageGroups": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, packages are displayed via Package Group."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.100.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.25.1"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "dotenv": "^16.5.0",
+    "file": "^0.2.2",
+    "json": "^11.0.0",
+    "path": "^0.12.7"
+  },
+  "keywords": [
+        "cloudsmith",
+        "devops",
+        "artifact management",
+        "packages",  
+        "alpine",
+        "cargo",
+        "chocolatey",     
+        "composer",
+        "conan",
+        "conda",
+        "cran",
+        "dart",
+        "debian",
+        "docker",
+        "go",
+        "gradle",
+        "helm",
+        "hex",
+        "maven",
+        "npm",
+        "nuget",
+        "powershell",
+        "python",
+        "repositories",
+        "rpm",
+        "ruby",
+        "sbt",
+        "swift",
+        "terraform",
+        "unity",
+        "vagrant"
+    ]
+}
