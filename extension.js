@@ -24,7 +24,16 @@ function activate(context) {
 		vscode.window.showInformationMessage('Hello from Cloudsmith!');
 	});
 
-	context.subscriptions.push(disposable);
+	const docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs', function () {
+		// The code you place here will be executed every time your command is executed
+
+		vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
+
+		// Display a message box to the user
+		vscode.window.showInformationMessage('Opening the Cloudsmith Docs website in your browser!');
+	});
+
+	context.subscriptions.push(disposable, docs);
 }
 
 // This method is called when your extension is deactivated
