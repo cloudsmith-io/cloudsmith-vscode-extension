@@ -1,4 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
+
+
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
 const exec = require('child_process').exec;
@@ -10,48 +12,53 @@ const exec = require('child_process').exec;
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
+async function activate(context) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "Cloudsmith VSCli" is now active!');
-
-
-
-	const reposList = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposList', function() {
-
-		exec('cloudsmith repos list ', (err, stdout, stderr) => {
+	const repos = exec('cloudsmith repos list -F pretty_json ', (err, stdout) => {
 		if (err) {
-			vscode.window.showInformationMessage('Failed to run command!');
-			console.log(`stderr: ${stdout}`);
-			return;  
-		}
-		// the *entire* stdout and stderr (buffered)
-		console.log(`stdout: ${stdout}`);
-		
-		});
-	});
-
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	const auth = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithAuth', function () {
-		// The code you place here will be executed every time your command is executed
-		exec('cloudsmith auth -o cloudsmith', (err, stdout, stderr) => {
-		if (err) {
-			vscode.window.showInformationMessage('Failed to run command:', stderr);
+			vscode.window.showInformationMessage('Failed to query repositories.');
 			return;
 		}
-		// the *entire* stdout and stderr (buffered)
-		console.log(`stdout: ${stdout}`);
-		console.log(`stderr: ${stderr}`);
+		else {
+			const data = JSON.parse(stdout)
+			console.log(res)
+			const res = data.map(
+				repo => {
+					return {
+						label: repo.data.name,
+						detail: repo.data.cdn_url,
+					}
+				}
+			)
+			return data
+		}
+	})
+
+	let reposList = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposList',
+		async function () {
+			const repo = await vscode.window.showQuickPick(repos, {
+				matchOnDetail: true
+			})
+			console.log(repos)
+		});
+
+
+	let auth = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithAuth', function () {
+		// The code you place here will be executed every time your command is executed
+		exec('cloudsmith auth -o cloudsmith', (err, stdout, stderr) => {
+			if (err) {
+				vscode.window.showInformationMessage('Failed to run command:', stderr);
+				return;
+			}
+			// the *entire* stdout and stderr (buffered)
+			console.log(`stdout: ${stdout}`);
+			console.log(`stderr: ${stderr}`);
 		});
 		// Display a message box to the user
 		//vscode.window.showInformationMessage('Hello from Cloudsmith!');
 	});
 
-	const docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs', function () {
+	let docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs', function () {
 		// The code you place here will be executed every time your command is executed
 
 		vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
@@ -64,7 +71,7 @@ function activate(context) {
 }
 
 // This method is called when your extension is deactivated
-function deactivate() {}
+function deactivate() { }
 
 module.exports = {
 	activate,
