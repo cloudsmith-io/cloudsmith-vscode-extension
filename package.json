@@ -12,17 +12,23 @@
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "cloudsmith-vscode-extension.cloudsmithAuth",
-      "category": "Cloudsmith",
-      "title": "Auth"
-    },
-    {
-      "command": "cloudsmith-vscode-extension.cloudsmithDocs",
-      "category": "Cloudsmith",
-      "title": "Documentation"
-    }
-  ]
+    "commands": [
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithAuth",
+        "category": "Cloudsmith",
+        "title": "Auth"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithDocs",
+        "category": "Cloudsmith",
+        "title": "Documentation"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposList",
+        "category": "Cloudsmith",
+        "title": "Repos: List All"
+      }
+    ]
   },
   "scripts": {
     "lint": "eslint .",
@@ -30,11 +36,15 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.100.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "eslint": "^9.25.1",
+    "@types/vscode": "^1.100.0",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.25.1"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "json": "^11.0.0"
   }
 }
