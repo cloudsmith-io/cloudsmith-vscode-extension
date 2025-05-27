@@ -1,8 +1,8 @@
 {
   "name": "cloudsmith-vscode-extension",
   "displayName": "cloudsmith-vscode-extension",
-  "description": "Cloudsmith CLI capabilities for Visual Studio Code",
-  "version": "0.0.1",
+  "description": "Cloudsmith API capabilities in Visual Studio Code",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -27,6 +27,16 @@
         "command": "cloudsmith-vscode-extension.cloudsmithReposList",
         "category": "Cloudsmith",
         "title": "Repos: List All"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateTemplate",
+        "category": "Cloudsmith",
+        "title": "Repos: Create a template file to configure your repository."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateNew",
+        "category": "Cloudsmith",
+        "title": "Repos: Create a new repository from the open template window"
       }
     ]
   },
