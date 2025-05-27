@@ -1,4 +1,4 @@
-# Cloudsmith CLI Visual Studio Code Extension README
+# Cloudsmith Visual Studio Code Extension
 
 Bringing Cloudsmith to Visual Studio Code! You can now utilise Cloudsmith API capabilities directly within VS Code. 
 
