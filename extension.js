@@ -35,7 +35,7 @@ async function activate(context) {
 			return {
 				label: repo.name + '(' + repo.repository_type_str + ')',
 				detail: repo.namespace,	
-				link: repo.self_html_url	
+				link: "https://app.cloudsmith.com/" + repo.namespace + "/" + repo.name
 			}
 		})
 
@@ -51,7 +51,7 @@ async function activate(context) {
 			vscode.env.openExternal(repo.link)
 		});
 
-
+	// THIS IS NO REALLY NEEDED NOW IF WE USE API REQUESTS RATHER THAN A LOCAL CLI DEPLOYMENT. 
 	let auth = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithAuth', function () {
 		exec('cloudsmith auth -o cloudsmith', (err, stdout, stderr) => {
 			if (err) {
