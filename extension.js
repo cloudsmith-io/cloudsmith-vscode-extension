@@ -1,50 +1,28 @@
-// The module 'vscode' contains the VS Code extensibility API
 const vscode = require('vscode');
+const cloudsmithApi = require('./functions/cloudsmith_apis');
 const apiKey = '8759814c39d066a104f9b6c50074cc223b3d1e42';
-
-const path = require('path');
-const fs = require('fs');
+const apiURL = 'https://api.cloudsmith.io/v1/';
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
 
-
-
-	/**
-	 * REPO ENDPOINTS
-	 */
+	/*********************************************************************
+	 *********      ----- REPO ENDPOINTS -----   *************************
+	 *********************************************************************/
 
 	// Fetch Repos
 	let reposList = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposList',
 		async function () {
 
-			const apiReposURL = 'https://api.cloudsmith.io/v1/repos';	
-			var t = '';
-
-			const requestOptions = {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${apiKey}`,
-				},
-			};
-
-			try {
-				const response = await fetch(apiReposURL, requestOptions);
-				if (!response.ok) {
-				throw new Error(`Response status: ${response.status}`);
-				}
-				t = await response.json();
-			} catch (error) {
-				console.error(error.message);
-			}
+			var response = await cloudsmithApi.get('repos')
 			// Map the json objects to be used by extensions QuickPick
-			const items = t.map(
+			const items = response.map(
 				repo => {
 					return {
-						label: repo.name + '(' + repo.repository_type_str + ')',
-						detail: repo.namespace,	
+						label: repo.namespace + ' | ' + repo.name + ' | ' + '( ' + repo.repository_type_str + ')',
+						detail: repo.description,
 						link: "https://app.cloudsmith.com/" + repo.namespace + "/" + repo.name
 					}
 				})
@@ -56,33 +34,42 @@ async function activate(context) {
 			if (repo == null) return
 			console.log(repo.link)
 
-			vscode.env.openExternal(repo.link)
+			vscode.env.openExternal(repo.link) //if user selects a repo it will prompt to open link to it in browser
 		});
 
-	// Creates new template file with json template for user to submit. 
-	let reposCreateTemplate = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateTemplate', 
+	// Creates new json template tab with a json template for end user to configure. 
+	let reposCreateTemplate = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateTemplate',
 		async function () {
 
 			const jsonData = {
-			name: "REPO_NAME",
-			description: "REPO_DESCRIPTION",
-			repository_type_str: "Private",
-			slug: "REPO_SLUG"
+				name: '',
+				content_kind: 'Standard',
+				copy_packages: 'Read',
+				default_privilege: 'None',
+				delete_packages: 'Admin',
+				manage_entitlements_privilege: 'Admin',
+				move_packages: 'Admin',
+				replace_packages: 'Write',
+				repository_type_str: 'Public',
+				resync_packages: 'Admin',
+				scan_packages: 'Read',
+				storage_region: 'default',
+				use_entitlements_privilege: 'Read',
+				view_statistics: 'Read'
+
 			};
 
 			const jsonContent = JSON.stringify(jsonData, null, 2);
-
 			const doc = await vscode.workspace.openTextDocument({
 				language: 'json',
 				content: jsonContent
 			});
-
 			await vscode.window.showTextDocument(doc);
 
-	});
+		});
 
 	// Create new repo using the open json file
-	let reposCreateNew = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateNew', 
+	let reposCreateNew = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateNew',
 		async function () {
 
 			// get the json text from the active editor and add to API payload request
@@ -93,40 +80,49 @@ async function activate(context) {
 				return;
 			}
 
+			const namespaces = await cloudsmithApi.get('namespaces');
+			const items = namespaces.map(
+				namespace => {
+					return {
+						label: namespace.name,
+						detail: namespace.slug
+					}
+				})
+
+			const namespace = await vscode.window.showQuickPick(items, {
+				placeHolder: "Select a namespace to create the repository on",
+				matchOnDetail: true,
+			})
+			if (namespace == null) return
+
 			const document = editor.document;
-			const text = document.getText();
+			const payload = document.getText();
 
-			// You can log it, parse it, or use it however you need
-			console.log('Payload:', text);
+			const url = 'repos/' + namespace.detail + '/';
+			var response = await cloudsmithApi.post(url, payload);
+
+			const message = 'Successfully created the repository called ' + response.name;
+			const buttonText = 'Open in Cloudsmith';
+			const link = 'https://app.cloudsmith.com/' + response.namespace + '/' + response.name; // Replace with your link
+	
+			vscode.window.showInformationMessage(message, buttonText).then(selection => {
+				if (selection === buttonText) {
+					vscode.env.openExternal(vscode.Uri.parse(link));
+				}
+			});
 
 
-
-	});
-
-
-
-	// THIS IS NOT REALLY NEEDED NOW IF WE USE API REQUESTS RATHER THAN A LOCAL CLI DEPLOYMENT. 
-	let auth = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithAuth', function () {
-		exec('cloudsmith auth -o cloudsmith', (err, stdout, stderr) => {
-			if (err) {
-				vscode.window.showInformationMessage('Failed to run command:', stderr);
-				return;
-			}
-			// the *entire* stdout and stderr (buffered)
-			console.log(`stdout: ${stdout}`);
-			console.log(`stderr: ${stderr}`);
 		});
-	});
 
-	/**
-	 * MISC REQUESTS
-	 */
+	/*********************************************************************
+	 *********      ----- MISC REQUESTS -----   *************************
+	 *********************************************************************/
 
 	let docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs', function () {
 		vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
 	});
 
-	context.subscriptions.push(auth, docs, reposList, reposCreateTemplate, reposCreateNew);
+	context.subscriptions.push(docs, reposList, reposCreateTemplate, reposCreateNew);
 }
 
 // This method is called when your extension is deactivated
