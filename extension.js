@@ -1,3 +1,7 @@
+const path = require('path');
+const env = require('dotenv').config({ path: path.resolve(__dirname, '.env') }); // Load from .env
+const apiKey = env.parsed.CLOUDSMITH_API_KEY;
+
 const vscode = require('vscode');
 const cloudsmithApi = require('./functions/cloudsmith_apis');
 
@@ -16,7 +20,7 @@ async function activate(context) {
 		async function () {
 
 			// fetch namespaces to prompt user to select
-			const workspaces = await cloudsmithApi.get('namespaces');
+			const workspaces = await cloudsmithApi.get('namespaces', apiKey);
 			const items = workspaces.map(
 				workspace => {
 					return {
@@ -26,10 +30,10 @@ async function activate(context) {
 				})
 
 			const workspace = await vscode.window.showQuickPick(items, {
-				placeHolder: "Select a namespace to return repos",
+				placeHolder: "You have access to the following Workspaces",
 				matchOnDetail: true,
 			})
-			if (workspace == null) return 
+			if (workspace == null) return
 			return workspace
 		}
 	);
@@ -71,7 +75,7 @@ async function activate(context) {
 		async function () {
 
 			const workspace = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces');
-			const response = await cloudsmithApi.get('repos/' + workspace.detail);
+			const response = await cloudsmithApi.get('repos/' + workspace.detail, apiKey);
 
 			const items2 = response.map(
 				repo => {

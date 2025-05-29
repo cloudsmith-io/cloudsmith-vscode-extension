@@ -65,7 +65,9 @@
   },
   "dependencies": {
     "child_process": "^1.0.2",
+    "dotenv": "^16.5.0",
     "file": "^0.2.2",
-    "json": "^11.0.0"
+    "json": "^11.0.0",
+    "path": "^0.12.7"
   }
 }

@@ -1,6 +1,4 @@
-const apiKey = '8759814c39d066a104f9b6c50074cc223b3d1e42';
 const apiURL = 'https://api.cloudsmith.io/v1/';
-
 
 /**
  * GET request to Cloudsmith API.
@@ -8,8 +6,9 @@ const apiURL = 'https://api.cloudsmith.io/v1/';
  * @param   endpoint  for example 'repos' for v1/repos.
  * @returns json response.
  */
-export async function get(endpoint) {
+export async function get(endpoint, apiKey) {
 
+    console.log(apiKey);
     const requestOptions = {
         method: 'GET',
         headers: {
@@ -31,7 +30,7 @@ export async function get(endpoint) {
  * @param   payload  json string payload 
  * @returns json response.
  */
-export function post(endpoint, payload) {
+export function post(endpoint, payload, apiKey) {
 
     const requestOptions = {
         method: 'POST',
@@ -66,7 +65,8 @@ export async function makeRequest(endpoint, requestOptions) {
         const result = response.json();
         return result
     } catch (error) {
-        console.error(error.message);
+        return error.message
+
     }
 
 }
