@@ -1,8 +1,8 @@
 {
   "name": "cloudsmith-vscode-extension",
   "displayName": "cloudsmith-vscode-extension",
-  "description": "Cloudsmith CLI capabilities for Visual Studio Code",
-  "version": "0.0.1",
+  "description": "Cloudsmith API capabilities in Visual Studio Code",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -21,12 +21,32 @@
       {
         "command": "cloudsmith-vscode-extension.cloudsmithDocs",
         "category": "Cloudsmith",
-        "title": "Documentation"
+        "title": "Documentation: View official Cloudsmith docs."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithWorkspaces",
+        "category": "Cloudsmith",
+        "title": "Workspaces: Get a list of all workspaces the user belongs to."
       },
       {
         "command": "cloudsmith-vscode-extension.cloudsmithReposList",
         "category": "Cloudsmith",
-        "title": "Repos: List All"
+        "title": "Repos: Get all repositories associated with current user."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposListNamespace",
+        "category": "Cloudsmith",
+        "title": "Repos: Get all repositories within a namespace. "
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateTemplate",
+        "category": "Cloudsmith",
+        "title": "Repos: Create a template file to configure your repository."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateNew",
+        "category": "Cloudsmith",
+        "title": "Repos: Create a new repository from the open template window"
       }
     ]
   },
@@ -45,6 +65,9 @@
   },
   "dependencies": {
     "child_process": "^1.0.2",
-    "json": "^11.0.0"
+    "dotenv": "^16.5.0",
+    "file": "^0.2.2",
+    "json": "^11.0.0",
+    "path": "^0.12.7"
   }
 }

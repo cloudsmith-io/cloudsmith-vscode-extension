@@ -1,70 +1,197 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+const path = require('path');
+const env = require('dotenv').config({ path: path.resolve(__dirname, '.env') }); // Load from .env
+const apiKey = env.parsed.CLOUDSMITH_API_KEY;
+
 const vscode = require('vscode');
-const exec = require('child_process').exec;
-
-
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+const cloudsmithApi = require('./functions/cloudsmith_apis');
 
 /**
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "Cloudsmith VSCli" is now active!');
+async function activate(context) {
 
 
 
-	const reposList = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposList', function() {
+	/*********************************************************************
+	 *********      ----- WORKSPACE ENDPOINTS -----   *************************
+	 *********************************************************************/
 
-		exec('cloudsmith repos list ', (err, stdout, stderr) => {
-		if (err) {
-			vscode.window.showInformationMessage('Failed to run command!');
-			console.log(`stderr: ${stdout}`);
-			return;  
+	let getWorkspaces = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces',
+		async function () {
+
+			// fetch namespaces to prompt user to select
+			const workspaces = await cloudsmithApi.get('namespaces', apiKey);
+			const items = workspaces.map(
+				workspace => {
+					return {
+						label: workspace.name,
+						detail: workspace.slug
+					}
+				})
+
+			const workspace = await vscode.window.showQuickPick(items, {
+				placeHolder: "You have access to the following Workspaces",
+				matchOnDetail: true,
+			})
+			if (workspace == null) return
+			return workspace
 		}
-		// the *entire* stdout and stderr (buffered)
-		console.log(`stdout: ${stdout}`);
-		
-		});
-	});
+	);
 
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	const auth = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithAuth', function () {
-		// The code you place here will be executed every time your command is executed
-		exec('cloudsmith auth -o cloudsmith', (err, stdout, stderr) => {
-		if (err) {
-			vscode.window.showInformationMessage('Failed to run command:', stderr);
-			return;
+
+
+	/*********************************************************************
+	 *********      ----- REPO ENDPOINTS -----   *************************
+	 *********************************************************************/
+
+	// Fetch Repos
+	let reposList = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposList',
+		async function () {
+
+			const response = await cloudsmithApi.get('repos');
+			// Map the json objects to be used by extensions QuickPick
+			const items = response.map(
+				repo => {
+					return {
+						label: repo.namespace + ' | ' + repo.name + ' | ' + '( ' + repo.repository_type_str + ')',
+						detail: repo.description,
+						link: "https://app.cloudsmith.com/" + repo.namespace + "/" + repo.name
+					}
+				})
+
+			const repo = await vscode.window.showQuickPick(items, {
+				placeHolder: "Your Cloudsmith repositories",
+				matchOnDetail: true,
+			})
+			if (repo == null) return
+			//console.log(repo.link)
+
+			vscode.env.openExternal(repo.link) //if user selects a repo it will prompt to open link to it in browser
 		}
-		// the *entire* stdout and stderr (buffered)
-		console.log(`stdout: ${stdout}`);
-		console.log(`stderr: ${stderr}`);
-		});
-		// Display a message box to the user
-		//vscode.window.showInformationMessage('Hello from Cloudsmith!');
-	});
+	);
 
-	const docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs', function () {
-		// The code you place here will be executed every time your command is executed
+	let reposListNamespace = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposListNamespace',
+		async function () {
 
-		vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
+			const workspace = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces');
+			const response = await cloudsmithApi.get('repos/' + workspace.detail, apiKey);
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Opening the Cloudsmith Docs website in your browser!');
-	});
+			const items2 = response.map(
+				repo => {
+					return {
+						label: repo.namespace + ' | ' + repo.name + ' | ' + '( ' + repo.repository_type_str + ')',
+						detail: repo.description,
+						link: "https://app.cloudsmith.com/" + repo.namespace + "/" + repo.name
+					}
+				})
 
-	context.subscriptions.push(auth, docs, reposList);
+			const repo = await vscode.window.showQuickPick(items2, {
+				placeHolder: "Your Cloudsmith repositories",
+				matchOnDetail: true,
+			})
+			if (repo == null) return
+
+			vscode.env.openExternal(repo.link)
+
+
+		}
+	);
+
+	// Creates new json template tab with a json template for end user to configure. 
+	let reposCreateTemplate = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateTemplate',
+		async function () {
+
+			const jsonData = {
+				name: '',
+				content_kind: 'Standard',
+				copy_packages: 'Read',
+				default_privilege: 'None',
+				delete_packages: 'Admin',
+				manage_entitlements_privilege: 'Admin',
+				move_packages: 'Admin',
+				replace_packages: 'Write',
+				repository_type_str: 'Public',
+				resync_packages: 'Admin',
+				scan_packages: 'Read',
+				storage_region: 'default',
+				use_entitlements_privilege: 'Read',
+				view_statistics: 'Read'
+
+			};
+
+			const jsonContent = JSON.stringify(jsonData, null, 2);
+			const doc = await vscode.workspace.openTextDocument({
+				language: 'json',
+				content: jsonContent
+			});
+			await vscode.window.showTextDocument(doc);
+
+		}
+	);
+
+	// Create new repo using the open json file
+	let reposCreateNew = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateNew',
+		async function () {
+
+			// get the json text from the active editor and add to API payload request
+			const editor = vscode.window.activeTextEditor;
+
+			if (!editor) {
+				vscode.window.showErrorMessage('No active text editor found.');
+				return;
+			}
+
+			const namespaces = await cloudsmithApi.get('namespaces');
+			const items = namespaces.map(
+				namespace => {
+					return {
+						label: namespace.name,
+						detail: namespace.slug
+					}
+				})
+
+			const namespace = await vscode.window.showQuickPick(items, {
+				placeHolder: "Select a namespace to create the repository on",
+				matchOnDetail: true,
+			})
+			if (namespace == null) return
+
+			const document = editor.document;
+			const payload = document.getText();
+
+			const url = 'repos/' + namespace.detail + '/';
+			var response = await cloudsmithApi.post(url, payload);
+
+			const message = 'Successfully created the repository called ' + response.name;
+			const buttonText = 'Open in Cloudsmith';
+			const link = 'https://app.cloudsmith.com/' + response.namespace + '/' + response.name; // Replace with your link
+
+			vscode.window.showInformationMessage(message, buttonText).then(selection => {
+				if (selection === buttonText) {
+					vscode.env.openExternal(vscode.Uri.parse(link));
+				}
+			});
+
+
+		}
+	);
+
+	/*********************************************************************
+	 *********      ----- MISC REQUESTS -----   *************************
+	 *********************************************************************/
+
+	let docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs',
+		function () {
+			vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
+		}
+	);
+
+	context.subscriptions.push(docs, reposList, reposCreateTemplate, reposCreateNew, reposListNamespace, getWorkspaces);
 }
 
 // This method is called when your extension is deactivated
-function deactivate() {}
+function deactivate() { }
 
 module.exports = {
 	activate,
