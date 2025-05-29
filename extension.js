@@ -1,12 +1,41 @@
 const vscode = require('vscode');
 const cloudsmithApi = require('./functions/cloudsmith_apis');
-const apiKey = '8759814c39d066a104f9b6c50074cc223b3d1e42';
-const apiURL = 'https://api.cloudsmith.io/v1/';
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
+
+
+
+	/*********************************************************************
+	 *********      ----- WORKSPACE ENDPOINTS -----   *************************
+	 *********************************************************************/
+
+	let getWorkspaces = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces',
+		async function () {
+
+			// fetch namespaces to prompt user to select
+			const workspaces = await cloudsmithApi.get('namespaces');
+			const items = workspaces.map(
+				workspace => {
+					return {
+						label: workspace.name,
+						detail: workspace.slug
+					}
+				})
+
+			const workspace = await vscode.window.showQuickPick(items, {
+				placeHolder: "Select a namespace to return repos",
+				matchOnDetail: true,
+			})
+			if (workspace == null) return 
+			return workspace
+		}
+	);
+
+
+
 
 	/*********************************************************************
 	 *********      ----- REPO ENDPOINTS -----   *************************
@@ -16,7 +45,7 @@ async function activate(context) {
 	let reposList = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposList',
 		async function () {
 
-			var response = await cloudsmithApi.get('repos')
+			const response = await cloudsmithApi.get('repos');
 			// Map the json objects to be used by extensions QuickPick
 			const items = response.map(
 				repo => {
@@ -32,10 +61,38 @@ async function activate(context) {
 				matchOnDetail: true,
 			})
 			if (repo == null) return
-			console.log(repo.link)
+			//console.log(repo.link)
 
 			vscode.env.openExternal(repo.link) //if user selects a repo it will prompt to open link to it in browser
-		});
+		}
+	);
+
+	let reposListNamespace = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposListNamespace',
+		async function () {
+
+			const workspace = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces');
+			const response = await cloudsmithApi.get('repos/' + workspace.detail);
+
+			const items2 = response.map(
+				repo => {
+					return {
+						label: repo.namespace + ' | ' + repo.name + ' | ' + '( ' + repo.repository_type_str + ')',
+						detail: repo.description,
+						link: "https://app.cloudsmith.com/" + repo.namespace + "/" + repo.name
+					}
+				})
+
+			const repo = await vscode.window.showQuickPick(items2, {
+				placeHolder: "Your Cloudsmith repositories",
+				matchOnDetail: true,
+			})
+			if (repo == null) return
+
+			vscode.env.openExternal(repo.link)
+
+
+		}
+	);
 
 	// Creates new json template tab with a json template for end user to configure. 
 	let reposCreateTemplate = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateTemplate',
@@ -66,7 +123,8 @@ async function activate(context) {
 			});
 			await vscode.window.showTextDocument(doc);
 
-		});
+		}
+	);
 
 	// Create new repo using the open json file
 	let reposCreateNew = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateNew',
@@ -104,7 +162,7 @@ async function activate(context) {
 			const message = 'Successfully created the repository called ' + response.name;
 			const buttonText = 'Open in Cloudsmith';
 			const link = 'https://app.cloudsmith.com/' + response.namespace + '/' + response.name; // Replace with your link
-	
+
 			vscode.window.showInformationMessage(message, buttonText).then(selection => {
 				if (selection === buttonText) {
 					vscode.env.openExternal(vscode.Uri.parse(link));
@@ -112,17 +170,20 @@ async function activate(context) {
 			});
 
 
-		});
+		}
+	);
 
 	/*********************************************************************
 	 *********      ----- MISC REQUESTS -----   *************************
 	 *********************************************************************/
 
-	let docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs', function () {
-		vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
-	});
+	let docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs',
+		function () {
+			vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
+		}
+	);
 
-	context.subscriptions.push(docs, reposList, reposCreateTemplate, reposCreateNew);
+	context.subscriptions.push(docs, reposList, reposCreateTemplate, reposCreateNew, reposListNamespace, getWorkspaces);
 }
 
 // This method is called when your extension is deactivated

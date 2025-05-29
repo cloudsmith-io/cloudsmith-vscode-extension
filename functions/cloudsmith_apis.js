@@ -5,7 +5,7 @@ const apiURL = 'https://api.cloudsmith.io/v1/';
 /**
  * GET request to Cloudsmith API.
  *
- * @param   endpoiont  for example 'repos' for v1/repos.
+ * @param   endpoint  for example 'repos' for v1/repos.
  * @returns json response.
  */
 export async function get(endpoint) {
@@ -13,20 +13,21 @@ export async function get(endpoint) {
     const requestOptions = {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${apiKey}`,
+            'accept': 'application/json',
+            'content-type': 'application/json',
+            'X-Api-Key': apiKey,
         },
     };
 
     const response = await makeRequest(endpoint, requestOptions);
     return response;
-    //console.log(response);
 
 }
 
 /**
  * POST request to Cloudsmith API.
  *
- * @param   endpoiont  for example 'repos' for v1/repos.
+ * @param   endpoint  for example 'repos' for v1/repos.
  * @param   payload  json string payload 
  * @returns json response.
  */
@@ -56,12 +57,11 @@ export function post(endpoint, payload) {
 export async function makeRequest(endpoint, requestOptions) {
 
     const url = apiURL + endpoint;
-    console.log(url);
 
     try {
         const response = await fetch(url, requestOptions);
         if (!response.ok) {
-            throw new Error(`Response status: ${response.status}`);
+            throw new Error(`Response status: ${response.status} - ${response.statusText}`);
         }
         const result = response.json();
         return result

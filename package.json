@@ -21,12 +21,22 @@
       {
         "command": "cloudsmith-vscode-extension.cloudsmithDocs",
         "category": "Cloudsmith",
-        "title": "Documentation"
+        "title": "Documentation: View official Cloudsmith docs."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithWorkspaces",
+        "category": "Cloudsmith",
+        "title": "Workspaces: Get a list of all workspaces the user belongs to."
       },
       {
         "command": "cloudsmith-vscode-extension.cloudsmithReposList",
         "category": "Cloudsmith",
-        "title": "Repos: List All"
+        "title": "Repos: Get all repositories associated with current user."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposListNamespace",
+        "category": "Cloudsmith",
+        "title": "Repos: Get all repositories within a namespace. "
       },
       {
         "command": "cloudsmith-vscode-extension.cloudsmithReposCreateTemplate",
