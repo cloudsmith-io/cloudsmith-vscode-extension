@@ -1,14 +1,76 @@
+const vscode = require('vscode');
+const cloudsmithApi = require('./functions/cloudsmith_apis.js');
 const path = require('path');
 const env = require('dotenv').config({ path: path.resolve(__dirname, '.env') }); // Load from .env
 const apiKey = env.parsed.CLOUDSMITH_API_KEY;
 
-const vscode = require('vscode');
-const cloudsmithApi = require('./functions/cloudsmith_apis');
+class MyTreeItem extends vscode.TreeItem {
+	constructor(label, collapsibleState = vscode.TreeItemCollapsibleState.None, contextValue = 'item') {
+		super(label, collapsibleState);
+		this.contextValue = contextValue;
+		this.tooltip = `Details about ${label}`;
+		this.description = label;
+	}
+}
+
+class TreeDataProvider {
+	constructor(fetchDataFn) {
+		this.fetchDataFn = fetchDataFn;
+		this._onDidChangeTreeData = new vscode.EventEmitter();
+		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+	}
+
+	refresh() {
+		this._onDidChangeTreeData.fire();
+	}
+
+	getTreeItem(element) {
+		return element;
+	}
+
+	async getChildren(element) {
+		// Only root level
+		if (!element) {
+			const data = await this.fetchDataFn();
+			return data.map(item => new MyTreeItem(item.name));
+		}
+
+		// No children in this example
+		return [];
+	}
+}
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
+
+	
+	const myWorkspaces = new TreeDataProvider(() => vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces'));
+
+	vscode.commands.executeCommand('setContext', 'cloudsmith.authenticated', true);
+
+	vscode.window.createTreeView('myWorkspaces', {
+		treeDataProvider: myWorkspaces,
+		showCollapseAll: false
+	});
+
+	// Optional: add refresh command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.refreshTree', () => {
+            myWorkspaces.refresh();
+        })
+    );
+
+	vscode.window.createTreeView('myRepos', {
+		treeDataProvider: new TreeDataProvider()
+	});
+
+	vscode.window.createTreeView('myPackages', {
+		treeDataProvider: new TreeDataProvider()
+	});
+
+
 
 
 
@@ -21,6 +83,16 @@ async function activate(context) {
 
 			// fetch namespaces to prompt user to select
 			const workspaces = await cloudsmithApi.get('namespaces', apiKey);
+			return workspaces
+		}
+	);
+
+	let showWorkspacesQP = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspacesQP',
+		async function () {
+
+			// fetch namespaces to prompt user to select
+			const workspaces = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces');
+			
 			const items = workspaces.map(
 				workspace => {
 					return {
@@ -28,7 +100,6 @@ async function activate(context) {
 						detail: workspace.slug
 					}
 				})
-
 			const workspace = await vscode.window.showQuickPick(items, {
 				placeHolder: "You have access to the following Workspaces",
 				matchOnDetail: true,
@@ -37,6 +108,7 @@ async function activate(context) {
 			return workspace
 		}
 	);
+
 
 
 
@@ -187,7 +259,7 @@ async function activate(context) {
 		}
 	);
 
-	context.subscriptions.push(docs, reposList, reposCreateTemplate, reposCreateNew, reposListNamespace, getWorkspaces);
+	context.subscriptions.push(docs, reposList, reposCreateTemplate, reposCreateNew, reposListNamespace, getWorkspaces, showWorkspacesQP);
 }
 
 // This method is called when your extension is deactivated
@@ -197,3 +269,5 @@ module.exports = {
 	activate,
 	deactivate
 }
+
+

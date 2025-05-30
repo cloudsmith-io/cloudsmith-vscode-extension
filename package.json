@@ -1,8 +1,8 @@
 {
   "name": "cloudsmith-vscode-extension",
-  "displayName": "cloudsmith-vscode-extension",
+  "displayName": "Cloudsmith",
   "description": "Cloudsmith API capabilities in Visual Studio Code",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -12,7 +12,36 @@
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "cloudsmithSideBar",
+          "title": "Cloudsmith",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "cloudsmithSideBar": [
+        {
+          "id": "myWorkspaces",
+          "name": "Cloudsmith Workspaces"
+        },
+        {
+          "id": "myRepos",
+          "name": "Cloudsmith Repositories"
+        },
+        {
+          "id": "myPackages",
+          "name": "Cloudsmith Packages"
+        }
+      ]
+    },
     "commands": [
+      {
+        "command": "cloudsmith-vscode-extension.refreshTree",
+        "title": "Refresh Tree View"
+      },
       {
         "command": "cloudsmith-vscode-extension.cloudsmithAuth",
         "category": "Cloudsmith",
@@ -25,6 +54,11 @@
       },
       {
         "command": "cloudsmith-vscode-extension.cloudsmithWorkspaces",
+        "category": "Cloudsmith",
+        "title": "Workspaces: Load Workspaces"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithWorkspacesQP",
         "category": "Cloudsmith",
         "title": "Workspaces: Get a list of all workspaces the user belongs to."
       },
