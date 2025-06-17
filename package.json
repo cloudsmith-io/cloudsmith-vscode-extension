@@ -65,6 +65,11 @@
       {
         "command": "cloudsmith-vscode-extension.cloudsmithReposList",
         "category": "Cloudsmith",
+        "title": "Repos: Load Repos"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposListQP",
+        "category": "Cloudsmith",
         "title": "Repos: Get all repositories associated with current user."
       },
       {
