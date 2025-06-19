@@ -1,77 +1,62 @@
 const vscode = require('vscode');
+const { ViewProvider } = require('./views/viewProvider');
+const { RepoProvider } = require('./views/reposProvider');
+const { PackageProvider } = require('./views/packagesProvider');
 const cloudsmithApi = require('./functions/cloudsmith_apis.js');
 const path = require('path');
 const env = require('dotenv').config({ path: path.resolve(__dirname, '.env') }); // Load from .env
 const apiKey = env.parsed.CLOUDSMITH_API_KEY;
-
-class MyTreeItem extends vscode.TreeItem {
-	constructor(label, collapsibleState = vscode.TreeItemCollapsibleState.None, contextValue = 'item') {
-		super(label, collapsibleState);
-		this.contextValue = contextValue;
-		this.tooltip = `Details about ${label}`;
-		this.description = label;
-	}
-}
-
-class TreeDataProvider {
-	constructor(fetchDataFn) {
-		this.fetchDataFn = fetchDataFn;
-		this._onDidChangeTreeData = new vscode.EventEmitter();
-		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-	}
-
-	refresh() {
-		this._onDidChangeTreeData.fire();
-	}
-
-	getTreeItem(element) {
-		return element;
-	}
-
-	async getChildren(element) {
-		// Only root level
-		if (!element) {
-			const data = await this.fetchDataFn();
-			return data.map(item => new MyTreeItem(item.name));
-		}
-
-		// No children in this example
-		return [];
-	}
-}
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
 
-	
-	const myWorkspaces = new TreeDataProvider(() => vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces'));
-	const myRepos = new TreeDataProvider(() => vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithReposList'));
-
 	vscode.commands.executeCommand('setContext', 'cloudsmith.authenticated', true);
 
-	vscode.window.createTreeView('myWorkspaces', {
-		treeDataProvider: myWorkspaces,
-		showCollapseAll: false,
-		registerCommand: 
-	});
+	let getWorkspaces = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces',
+		async function () {
+			// fetch workspaces
+			const workspaces = await cloudsmithApi.get('namespaces', apiKey);
+			//return workspaces
+			return workspaces;
+		}
+	);
 
-	// Optional: add refresh command
-    context.subscriptions.push(
-        vscode.commands.registerCommand('cloudsmith-vscode-extension.refreshTree', () => {
-            myWorkspaces.refresh();
-        })
-    );
+	const workspacesProvider = new ViewProvider(() => vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces'));
 
-	vscode.window.createTreeView('myRepos', {
-		treeDataProvider: new TreeDataProvider(),
+	vscode.window.createTreeView('workspacesView', {
+		treeDataProvider: workspacesProvider,
 		showCollapseAll: false
 	});
 
-	vscode.window.createTreeView('myPackages', {
-		treeDataProvider: new TreeDataProvider()
+
+
+	vscode.commands.registerCommand('cloudsmith-vscode-extension.selectWorkspace', async (item) => {
+
+		const data = await cloudsmithApi.get('repos/' + item.label, apiKey);
+		const reposProvider = new RepoProvider(() => data); //this needs to point to a separate provider for repos which has selectRepo command associated. 
+
+		vscode.window.createTreeView('reposView', {
+			treeDataProvider: reposProvider,
+			showCollapseAll: false
+		});
+
 	});
+
+	vscode.commands.registerCommand('cloudsmith-vscode-extension.selectRepo', async (item) => {
+
+		const data = await cloudsmithApi.get('packages/colinmoynes-test-org/' + item.label + '/?sort=-date',  apiKey);
+		const packageProvider = new PackageProvider(() => data); //this needs to point to a separate provider for repos which has selectRepo command associated. 
+
+		vscode.window.createTreeView('packagesView', {
+			treeDataProvider: packageProvider,
+			showCollapseAll: false
+		});
+
+	});
+
+
 
 
 
@@ -81,20 +66,14 @@ async function activate(context) {
 	 *********      ----- WORKSPACE ENDPOINTS -----   *************************
 	 *********************************************************************/
 
-	let getWorkspaces = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces',
-		async function () {
-			// fetch workspaces
-			const workspaces = await cloudsmithApi.get('namespaces', apiKey);
-			return workspaces
-		}
-	);
+
 
 	let showWorkspacesQP = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspacesQP',
 		async function () {
 
 			// fetch workspaces to show in quickpick
 			const workspaces = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces');
-			
+
 			const items = workspaces.map(
 				workspace => {
 					return {
@@ -126,7 +105,7 @@ async function activate(context) {
 		}
 	);
 
-	let showReposQP = vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithReposListQP',
+	let showReposQP = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposListQP',
 		async function () {
 
 			const repos = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithReposList');
@@ -149,7 +128,7 @@ async function activate(context) {
 		}
 	);
 
-	let showReposPerWorkspaceQP = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposListNamespace',
+	let showReposPerWorkspaceQP = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposListWorkspaceQP',
 		async function () {
 
 			const workspace = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspacesQP');
@@ -171,7 +150,6 @@ async function activate(context) {
 			if (repo == null) return
 
 			vscode.env.openExternal(repo.link)
-
 
 		}
 	);

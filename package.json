@@ -24,20 +24,52 @@
     "views": {
       "cloudsmithSideBar": [
         {
-          "id": "myWorkspaces",
+          "id": "workspacesView",
           "name": "Cloudsmith Workspaces"
         },
         {
-          "id": "myRepos",
+          "id": "reposView",
           "name": "Cloudsmith Repositories"
         },
         {
-          "id": "myPackages",
+          "id": "packagesView",
           "name": "Cloudsmith Packages"
         }
       ]
     },
     "commands": [
+      {
+        "command": "cloudsmith-vscode-extension.selectWorkspace",
+        "title": "Select Workspace from Workspaces view"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.selectRepo",
+        "title": "Select Repo from Repos view"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.openWorkspacesViewItem",
+        "title": "Open Workspace Item"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.openReposViewItem",
+        "title": "Open Repos Item"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.openPackagesViewItem",
+        "title": "Open Packages Item"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.workspacesContextAction",
+        "title": "Workspace Context Action"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.reposContextAction",
+        "title": "Repos Context Action"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.packagesContextAction",
+        "title": "Packages Context Action"
+      },
       {
         "command": "cloudsmith-vscode-extension.refreshTree",
         "title": "Refresh Tree View"
@@ -73,9 +105,9 @@
         "title": "Repos: Get all repositories associated with current user."
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposListNamespace",
+        "command": "cloudsmith-vscode-extension.cloudsmithReposListWorkspaceQP",
         "category": "Cloudsmith",
-        "title": "Repos: Get all repositories within a namespace. "
+        "title": "Repos: Get all repositories within a workspace. "
       },
       {
         "command": "cloudsmith-vscode-extension.cloudsmithReposCreateTemplate",
@@ -87,7 +119,26 @@
         "category": "Cloudsmith",
         "title": "Repos: Create a new repository from the open template window"
       }
-    ]
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "cloudsmith-vscode-extension.workspacesContextAction",
+          "when": "view == workspacesView && viewItem == workspaceItem",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vscode-extension.reposContextAction",
+          "when": "view == reposView && viewItem == repoItem",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vscode-extension.packagesContextAction",
+          "when": "view == packagesView && viewItem == packageItem",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "lint": "eslint .",
