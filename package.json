@@ -17,7 +17,7 @@
         {
           "id": "cloudsmithSideBar",
           "title": "Cloudsmith",
-          "icon": "media/icon.svg"
+          "icon": "media/CloudsmithSymbol--WhiteTransparent@M.svg"
         }
       ]
     },
@@ -34,6 +34,10 @@
         {
           "id": "packagesView",
           "name": "Cloudsmith Packages"
+        },
+        {
+          "id": "helpView",
+          "name": "Help and Feedback"
         }
       ]
     },
@@ -119,26 +123,7 @@
         "category": "Cloudsmith",
         "title": "Repos: Create a new repository from the open template window"
       }
-    ],
-    "menus": {
-      "view/item/context": [
-        {
-          "command": "cloudsmith-vscode-extension.workspacesContextAction",
-          "when": "view == workspacesView && viewItem == workspaceItem",
-          "group": "navigation"
-        },
-        {
-          "command": "cloudsmith-vscode-extension.reposContextAction",
-          "when": "view == reposView && viewItem == repoItem",
-          "group": "navigation"
-        },
-        {
-          "command": "cloudsmith-vscode-extension.packagesContextAction",
-          "when": "view == packagesView && viewItem == packageItem",
-          "group": "navigation"
-        }
-      ]
-    }
+    ]
   },
   "scripts": {
     "lint": "eslint .",

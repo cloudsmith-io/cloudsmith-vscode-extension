@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const { ViewProvider } = require('./views/viewProvider');
+const { WorkspaceProvider } = require('./views/workspaceProvider');
 const { RepoProvider } = require('./views/reposProvider');
 const { PackageProvider } = require('./views/packagesProvider');
 const cloudsmithApi = require('./functions/cloudsmith_apis.js');
@@ -14,16 +14,18 @@ async function activate(context) {
 
 	vscode.commands.executeCommand('setContext', 'cloudsmith.authenticated', true);
 
+	let activeWorkspace = ""; //the current selected workspace in the workspace view.
+
+	// fetch workspaces and populate workspaces view
 	let getWorkspaces = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces',
 		async function () {
-			// fetch workspaces
-			const workspaces = await cloudsmithApi.get('namespaces', apiKey);
-			//return workspaces
+			const workspaces = await cloudsmithApi.get('namespaces' + '/?sort=slug', apiKey);
+			//console.log(workspaces);
 			return workspaces;
 		}
 	);
 
-	const workspacesProvider = new ViewProvider(() => vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces'));
+	const workspacesProvider = new WorkspaceProvider(() => vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces'));
 
 	vscode.window.createTreeView('workspacesView', {
 		treeDataProvider: workspacesProvider,
@@ -34,24 +36,27 @@ async function activate(context) {
 
 	vscode.commands.registerCommand('cloudsmith-vscode-extension.selectWorkspace', async (item) => {
 
-		const data = await cloudsmithApi.get('repos/' + item.label, apiKey);
-		const reposProvider = new RepoProvider(() => data); //this needs to point to a separate provider for repos which has selectRepo command associated. 
+		activeWorkspace = item.slug;
+
+		const data = await cloudsmithApi.get('repos/' + item.slug + '/?sort=name', apiKey);
+		const reposProvider = new RepoProvider(() => data); 
 
 		vscode.window.createTreeView('reposView', {
 			treeDataProvider: reposProvider,
-			showCollapseAll: false
+			showCollapseAll: true
 		});
 
 	});
 
 	vscode.commands.registerCommand('cloudsmith-vscode-extension.selectRepo', async (item) => {
 
-		const data = await cloudsmithApi.get('packages/colinmoynes-test-org/' + item.label + '/?sort=-date',  apiKey);
-		const packageProvider = new PackageProvider(() => data); //this needs to point to a separate provider for repos which has selectRepo command associated. 
+		const workspace = activeWorkspace;
+		const data = await cloudsmithApi.get('packages/' + workspace + '/' + item.slug + '/?sort=name',  apiKey);
+		const packageProvider = new PackageProvider(() => data); 
 
 		vscode.window.createTreeView('packagesView', {
 			treeDataProvider: packageProvider,
-			showCollapseAll: false
+			showCollapseAll: true,
 		});
 
 	});

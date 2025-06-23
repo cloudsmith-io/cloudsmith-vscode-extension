@@ -1,15 +1,14 @@
 const vscode = require('vscode');
 const path = require('path');
-const PackageModel = require('../models/PackageModel');
 
-class PackageProvider {
+class helpProvider {
     constructor(fetchDataFn) {
         this.fetchDataFn = fetchDataFn;
-        this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
+        this.collapsibleState = vscode.TreeItemCollapsibleState.None;
     }
 
     getTreeItem(element) {
-        let iconPath = path.join(__filename, "..", "..", "media", "CloudsmithSymbol--WhiteTransparent@M.svg");
+        let iconPath = path.join(__filename, "..", "..", "media", "icon.svg");
         return {
             label: element,
             collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
@@ -17,29 +16,13 @@ class PackageProvider {
         };
     }
 
-    async getChildren(element) {
-        try {
-            const pkg = element;
-            console.log(pkg);
-            if (!element) {
-                const data = await this.fetchDataFn();
-                return data.map(item => new PackageModel(item, item.name));
-                
-            }
-            else {
-                return [pkg.status, pkg.slug, pkg.version, pkg.tagsVersion, pkg.tagsInfo];
-            }
-            
-        }
-        catch (err) {
-            console.log(err)
-        }
-
+    getChildren() {
+        return []    
     }
 
 }
 
-module.exports = { PackageProvider };
+module.exports = { helpProvider };
 
 
 

@@ -1,7 +1,8 @@
 const vscode = require('vscode');
-const CloudsmithModel = require('../models/CloudsmithModel');
+const path = require('path');
+const WorkspaceModel = require('../models/WorkspaceModel');
 
-class ViewProvider {
+class WorkspaceProvider {
     constructor(fetchDataFn) {
         this.fetchDataFn = fetchDataFn;
         this._onDidChangeTreeData = new vscode.EventEmitter();
@@ -13,25 +14,27 @@ class ViewProvider {
     }
 
     getTreeItem(element) {
-        const treeItem = new vscode.TreeItem(element.label);
+        //console.log(element);
+        const treeItem = new vscode.TreeItem(element);
+        let iconPath = path.join(__filename, "..", "..", "media", "CloudsmithSymbol--WhiteTransparent@M.svg");
         treeItem.command = {
             command: 'cloudsmith-vscode-extension.selectWorkspace',
             title: 'Select Item',
             arguments: [element]
         };
+        treeItem.tooltip = 'Slug: '+  element.slug;
+        treeItem.iconPath = iconPath;
         return treeItem;
     }
 
     async getChildren(element) {
-        // Only root level
         if (!element) {
             const data = await this.fetchDataFn();
-            return data.map(item => new CloudsmithModel(item.name));
+            return data.map(item => new WorkspaceModel(item.name, item))
+;
         }
-
-        // No children in this example
         return [];
     }
 }
 
-module.exports = { ViewProvider };
+module.exports = { WorkspaceProvider };

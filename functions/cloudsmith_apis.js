@@ -8,7 +8,6 @@ const apiURL = 'https://api.cloudsmith.io/v1/';
  */
 export async function get(endpoint, apiKey) {
 
-    console.log(apiKey);
     const requestOptions = {
         method: 'GET',
         headers: {
@@ -56,15 +55,17 @@ export function post(endpoint, payload, apiKey) {
 export async function makeRequest(endpoint, requestOptions) {
 
     const url = apiURL + endpoint;
-
     try {
         const response = await fetch(url, requestOptions);
         if (!response.ok) {
+            console.log(`Response status: ${response.status} - ${response.statusText}`)
             throw new Error(`Response status: ${response.status} - ${response.statusText}`);
+            
         }
         const result = response.json();
         return result
     } catch (error) {
+        console.log(error.message)
         return error.message
 
     }

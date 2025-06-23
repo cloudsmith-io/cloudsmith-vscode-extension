@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const CloudsmithModel = require('../models/CloudsmithModel');
+const RepoModel = require('../models/RepoModel');
 
 class RepoProvider {
     constructor(fetchDataFn) {
@@ -13,7 +13,7 @@ class RepoProvider {
     }
 
     getTreeItem(element) {
-        const treeItem = new vscode.TreeItem(element.label);
+        const treeItem = new vscode.TreeItem(element);
         treeItem.command = {
             command: 'cloudsmith-vscode-extension.selectRepo',
             title: 'Select Item',
@@ -26,10 +26,8 @@ class RepoProvider {
         // Only root level
         if (!element) {
             const data = await this.fetchDataFn();
-            return data.map(item => new CloudsmithModel(item.name));
+            return data.map(item => new RepoModel(item.name, item));
         }
-
-        // No children in this example
         return [];
     }
 }
