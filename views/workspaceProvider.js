@@ -1,6 +1,6 @@
 const vscode = require('vscode');
 const path = require('path');
-const WorkspaceModel = require('../models/WorkspaceModel');
+const WorkspaceModel = require('../models/workspaceNode');
 
 class WorkspaceProvider {
     constructor(fetchDataFn) {

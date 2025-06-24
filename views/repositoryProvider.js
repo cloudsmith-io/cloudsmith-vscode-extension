@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const RepoModel = require('../models/RepoModel');
+const RepoModel = require('../models/repositoryNode');
 
 class RepoProvider {
     constructor(fetchDataFn) {

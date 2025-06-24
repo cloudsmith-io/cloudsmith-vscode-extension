@@ -24,16 +24,8 @@
     "views": {
       "cloudsmithSideBar": [
         {
-          "id": "workspacesView",
+          "id": "cloudsmithView",
           "name": "Cloudsmith Workspaces"
-        },
-        {
-          "id": "reposView",
-          "name": "Cloudsmith Repositories"
-        },
-        {
-          "id": "packagesView",
-          "name": "Cloudsmith Packages"
         },
         {
           "id": "helpView",
