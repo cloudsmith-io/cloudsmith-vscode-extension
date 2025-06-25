@@ -28,7 +28,6 @@ class CloudsmithProvider {
 
     async getWorkspaces() {
         const workspaces = await cloudsmithApi.get('namespaces' + '/?sort=slug', apiKey);
-        console.log(workspaces)
         const WorkspaceNodes = []
         if(workspaces) {
             for(const id of workspaces) {

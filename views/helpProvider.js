@@ -1,23 +1,24 @@
 const vscode = require('vscode');
-const path = require('path');
+const helpNode = require('../models/helpNode');
 
 class helpProvider {
-    constructor(fetchDataFn) {
-        this.fetchDataFn = fetchDataFn;
-        this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+    constructor() {
+        this._onDidChangeTreeData = new vscode.EventEmitter();
+        this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     }
 
     getTreeItem(element) {
-        let iconPath = path.join(__filename, "..", "..", "media", "icon.svg");
-        return {
-            label: element,
-            collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
-            iconPath: iconPath
-        };
+        return element.getTreeItem()
     }
 
     getChildren() {
-        return []    
+        const links = [
+            { label: 'Read Extension Documentation', url: 'https://cloudsmith.com' },
+            { label: 'Get Started with Cloudsmith', url: 'https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs' },
+            { label: 'Review Issues', url: 'https://code.visualstudio.com' },
+            { label: 'Report Issue', url: 'https://code.visualstudio.com' }
+        ];
+        return links.map(link => new helpNode(link.label, link.url));
     }
 
 }
@@ -27,30 +28,3 @@ module.exports = { helpProvider };
 
 
 
-
-
-/*
-
-getTreeItem(element) {
-        const treeItem = new vscode.TreeItem(element);
-        treeItem.tooltip = element.tooltip;
-        return treeItem;
-    }
-
-
-    async getChildren(element) {
-        // Only root level
-        if (!element) {
-            console.log("getChildren called with ", element);
-            const data = await this.fetchDataFn();
-            return data.map(item => new PackageModel(item, item.name));
-        }
-        let items = this.getTreeItem(element);
-        // Show child fields as TreeItems
-        return {
-                collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
-                items
-        };
-
-    }
-        */

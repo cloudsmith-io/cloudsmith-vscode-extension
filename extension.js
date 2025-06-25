@@ -1,5 +1,6 @@
 const vscode = require('vscode');
 const { CloudsmithProvider } = require('./views/cloudsmithProvider');
+const { helpProvider } = require('./views/helpProvider')
 const cloudsmithApi = require('./util/cloudsmithAPI.js');
 const path = require('path');
 const env = require('dotenv').config({ path: path.resolve(__dirname, '.env') }); // Load from .env
@@ -18,6 +19,9 @@ async function activate(context) {
 		treeDataProvider: cloudsmithProvider,
 		showCollapseAll: true
 	});
+
+	const provider = new helpProvider();
+  	vscode.window.registerTreeDataProvider('helpView', provider);
 
 
 

@@ -1,29 +1,54 @@
 const vscode = require('vscode');
 const path = require('path');
 const packageNode = require("./PackageNode");
+const cloudsmithApi = require('../util/cloudsmithAPI');
+const env = require('dotenv').config({ path: path.resolve(__dirname, '../.env') }); // Load from .env
+const apiKey = env.parsed.CLOUDSMITH_API_KEY;
 
-class RepositoryNode{
-    constructor(repo) {
+class RepositoryNode {
+	constructor(repo, workspace) {
 		this.slug = repo.slug;
 		this.slug_perm = repo.slug_perm;
 		this.name = repo.name;
-		this.packages = [];
+		this.workspace = workspace;
 	}
 
 	getTreeItem() {
 		let iconPath = ''
-		iconPath = path.join(__filename, "..", "..", "media", "repo.svg")
+		const repo = this.name
+		iconPath = path.join(__filename, "..", "..", "media", "repo.png")
 
 		return {
-			label: this.name,
+			label: repo,
 			collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
 			contextValue: "repository",
 			iconPath: iconPath,
 		}
 	}
 
+	async getPackages() {
+		let workspace = this.workspace
+		let repo = this.slug
+		const packages = await cloudsmithApi.get('packages/' + workspace + '/' + repo + '/?sort=name',  apiKey);
+		const PackageNodes = []
+		if (packages) {
+			for (const id of packages) {
+				const packageNode = require('../models/PackageNode')
+				const packageNodeInst = new packageNode(id)
+				PackageNodes.push(packageNodeInst)
+			}
+		}
+		return PackageNodes
+	}
+
 	async getChildren() {
-		return []
+		
+		const packages = await this.getPackages()
+
+		return packages.map(item => {
+			return new packageNode(item)
+		})
+
 	}
 
 }

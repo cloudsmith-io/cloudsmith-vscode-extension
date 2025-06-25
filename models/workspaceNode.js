@@ -7,9 +7,9 @@ const apiKey = env.parsed.CLOUDSMITH_API_KEY;
 
 class WorkspaceNode {
 	constructor(item) {
-		this.name = item.name,
-			this.slug = item.slug,
-			this.repos = []
+		this.name = item.name;
+		this.slug = item.slug;
+		this.repos = [];
 	}
 
 	getTreeItem() {
@@ -24,17 +24,16 @@ class WorkspaceNode {
 	}
 
 	async getRepositories() {
-		const repositories = await cloudsmithApi.get('repos/' + this.slug, apiKey);
-		console.log(repositories)
+		const workspace = this.slug
+		const repositories = await cloudsmithApi.get('repos/' + workspace, apiKey);
 		const RepositoryNodes = []
 		if (repositories) {
 			for (const id of repositories) {
 				const repositoryNode = require('../models/RepositoryNode')
-				const repositoryNodeInst = new repositoryNode(id)
+				const repositoryNodeInst = new repositoryNode(id, this.name)
 				RepositoryNodes.push(repositoryNodeInst)
 			}
 		}
-		//console.log(RepositoryNodes)
 		return RepositoryNodes
 	}
 
@@ -42,7 +41,7 @@ class WorkspaceNode {
 		const repos = await this.getRepositories()
 
 		return repos.map(item => {
-			return new repositoryNode(this.workspaceSlug, item)
+			return new repositoryNode(item, this.slug)
 		})
 	}
 
