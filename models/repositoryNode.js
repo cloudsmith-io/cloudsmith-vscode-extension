@@ -29,7 +29,7 @@ class RepositoryNode {
 	async getPackages() {
 		let workspace = this.workspace
 		let repo = this.slug
-		const packages = await cloudsmithApi.get('packages/' + workspace + '/' + repo + '/?sort=name',  apiKey);
+		const packages = await cloudsmithApi.get('packages/' + workspace + '/' + repo + '/?sort=name', apiKey);
 		const PackageNodes = []
 		if (packages) {
 			for (const id of packages) {
@@ -42,12 +42,20 @@ class RepositoryNode {
 	}
 
 	async getChildren() {
-		
 		const packages = await this.getPackages()
 
-		return packages.map(item => {
-			return new packageNode(item)
-		})
+		if (packages.length > 0) {
+			return packages.map(item => {
+				return new packageNode(item)
+			})
+		}
+		else {
+			return packages.map(item => {
+				return new packageNode(item)
+			})
+		}
+
+
 
 	}
 

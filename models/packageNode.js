@@ -22,7 +22,12 @@ class PackageNode {
 				}
 			}
 			else {
-				this.tags = {"id": "tags", "value": pkg.tags.version};
+				if(pkg.tags.version){
+					this.tags = {"id": "tags", "value": pkg.tags.version};
+				}
+				else {
+					this.tags = {"id": "tags", "value": ""};
+				}
 			};		
 	}
 
@@ -57,7 +62,6 @@ class PackageNode {
 				PackageDetailsNodes.push(packageDetailsNodeInst)
 			}			
 		}
-		console.log(PackageDetailsNodes)
 		return PackageDetailsNodes
 	}
 

@@ -14,7 +14,10 @@ class WorkspaceNode {
 
 	getTreeItem() {
 		const workspace = this.name
-		let iconPath = path.join(__filename, "..", "..", "media", "workspace.svg")
+		let iconPath = {
+			light: path.join(__filename, "..", "..", "media", "workspace_light.svg"),
+			dark: path.join(__filename, "..", "..", "media", "workspace_dark.svg")
+		}
 		return {
 			label: workspace,
 			collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,

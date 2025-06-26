@@ -13,6 +13,10 @@ class PackageDetailsNode {
 		let id = detail.label.id
 		let value = detail.label.value
 
+		if (value === null){
+			value = "..."
+		}
+
 		if (value instanceof Array){ //check if value is an array (tags.info and tags.version combined)
 			value = String(value) //set value to string type
 		}

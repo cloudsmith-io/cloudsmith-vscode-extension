@@ -18,8 +18,17 @@ class helpNode extends vscode.TreeItem {
         const label = this.label
         let iconPath = ''
 
-        if(label.includes('Get Started')){
-            iconPath = path.join(__filename, '..', '..', 'media', 'logo.svg')
+        if (label.includes('Get Started')) {
+            iconPath = {
+                light: path.join(__filename, "..", "..", "media", "workspace_light.svg"),
+                dark: path.join(__filename, "..", "..", "media", "workspace_dark.svg")
+            }
+        }
+        else if (label.includes('Issue')) {
+            iconPath = {
+                light: path.join(__filename, '..', '..', 'media', 'misc', 'light', 'github.svg'),
+                dark: path.join(__filename, '..', '..', 'media', 'misc', 'dark', 'github.svg')
+            }
         }
         else {
             iconPath = new vscode.ThemeIcon('globe');
