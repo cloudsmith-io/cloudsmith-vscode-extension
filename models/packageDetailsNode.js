@@ -50,7 +50,7 @@ class PackageDetailsNode {
 			}
 		}
 		if (id.includes("status")) {
-			if (id.includes("Quarantined")) { //if quarantined, flag it
+			if (value.includes("Quarantined")) { //if quarantined, flag it
 				iconPath = {
 					light: path.join(__filename, "..", "..", "media", "misc", "nope.svg"),
 					dark: path.join(__filename, "..", "..", "media", "misc", "nope.svg"),

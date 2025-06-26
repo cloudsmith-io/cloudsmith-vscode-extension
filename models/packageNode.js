@@ -53,7 +53,6 @@ class PackageNode {
 
 	async getPackageDetails() {
 		let pkgDetails = this.pkgDetails
-		console.log(pkgDetails)
 		const PackageDetailsNodes = []
 		if (pkgDetails) {
 			for (const id of pkgDetails){
