@@ -25,7 +25,7 @@
       "cloudsmithSideBar": [
         {
           "id": "cloudsmithView",
-          "name": "Cloudsmith Workspaces"
+          "name": "Cloudsmith"
         },
         {
           "id": "helpView",
