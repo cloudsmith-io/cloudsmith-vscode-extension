@@ -11,7 +11,14 @@ const apiKey = env.parsed.CLOUDSMITH_API_KEY;
  */
 async function activate(context) {
 
-	vscode.commands.executeCommand('setContext', 'cloudsmith.authenticated', true);
+	// logic here to handle auth and confirm connection is successful and set this accordingly. This will control if the 
+	if(!apiKey) {
+		vscode.commands.executeCommand('setContext', 'cloudsmith.authenticated', false);
+	}
+	else {
+		vscode.commands.executeCommand('setContext', 'cloudsmith.authenticated', true);
+	}
+	
 
 	const cloudsmithProvider = new CloudsmithProvider(() => vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces'));
 

@@ -12,6 +12,13 @@
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
+    "viewsWelcome": [
+      {
+        "view": "cloudsmithView",
+        "contents": "Unable to connect to Cloudsmith. Please configure your API Key to connect securely.",
+        "when": "!cloudsmith.authenticated"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -34,6 +41,18 @@
       ]
     },
     "commands": [
+      {
+        "command": "cloudsmith-vscode-extension.refresh",
+        "title": "Refresh",
+        "icon": {
+          "light": "media/workspace_light.svg",
+          "dark": "media/workspace_dark.svg"
+        }
+      },
+      {
+        "command": "cloudsmith-vscode-extension.inspectPackage",
+        "title": "Inspect Package"
+      },
       {
         "command": "cloudsmith-vscode-extension.selectWorkspace",
         "title": "Select Workspace from Workspaces view"
@@ -115,7 +134,22 @@
         "category": "Cloudsmith",
         "title": "Repos: Create a new repository from the open template window"
       }
-    ]
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "cloudsmith-vscode-extension.inspectPackage",
+          "when": "view == cloudsmithView && viewItem == package"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "cloudsmith-vscode-extension.refresh",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        }
+      ]
+    }
   },
   "scripts": {
     "lint": "eslint .",
