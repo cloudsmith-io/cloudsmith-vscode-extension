@@ -1,5 +1,5 @@
 {
-  "name": "cloudsmith-vscode-extension",
+  "name": "cloudsmith",
   "displayName": "Cloudsmith",
   "description": "Cloudsmith API capabilities in Visual Studio Code",
   "version": "0.0.5",
@@ -43,7 +43,7 @@
     },
     "commands": [
       {
-        "command": "cloudsmith-vscode-extension.refresh",
+        "command": "cloudsmith.refresh",
         "title": "Refresh",
         "icon": {
           "light": "media/workspace_light.svg",
@@ -51,87 +51,87 @@
         }
       },
       {
-        "command": "cloudsmith-vscode-extension.inspectPackage",
+        "command": "cloudsmith.inspectPackage",
         "title": "Inspect Package"
       },
       {
-        "command": "cloudsmith-vscode-extension.selectWorkspace",
+        "command": "cloudsmith.selectWorkspace",
         "title": "Select Workspace from Workspaces view"
       },
       {
-        "command": "cloudsmith-vscode-extension.selectRepo",
+        "command": "cloudsmith.selectRepo",
         "title": "Select Repo from Repos view"
       },
       {
-        "command": "cloudsmith-vscode-extension.openWorkspacesViewItem",
+        "command": "cloudsmith.openWorkspacesViewItem",
         "title": "Open Workspace Item"
       },
       {
-        "command": "cloudsmith-vscode-extension.openReposViewItem",
+        "command": "cloudsmith.openReposViewItem",
         "title": "Open Repos Item"
       },
       {
-        "command": "cloudsmith-vscode-extension.openPackagesViewItem",
+        "command": "cloudsmith.openPackagesViewItem",
         "title": "Open Packages Item"
       },
       {
-        "command": "cloudsmith-vscode-extension.workspacesContextAction",
+        "command": "cloudsmith.workspacesContextAction",
         "title": "Workspace Context Action"
       },
       {
-        "command": "cloudsmith-vscode-extension.reposContextAction",
+        "command": "cloudsmith.reposContextAction",
         "title": "Repos Context Action"
       },
       {
-        "command": "cloudsmith-vscode-extension.packagesContextAction",
+        "command": "cloudsmith.packagesContextAction",
         "title": "Packages Context Action"
       },
       {
-        "command": "cloudsmith-vscode-extension.refreshTree",
+        "command": "cloudsmith.refreshTree",
         "title": "Refresh Tree View"
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithAuth",
+        "command": "cloudsmith.cloudsmithAuth",
         "category": "Cloudsmith",
         "title": "Auth"
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithDocs",
+        "command": "cloudsmith.cloudsmithDocs",
         "category": "Cloudsmith",
         "title": "Documentation: View official Cloudsmith docs."
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithWorkspaces",
+        "command": "cloudsmith.cloudsmithWorkspaces",
         "category": "Cloudsmith",
         "title": "Workspaces: Load Workspaces"
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithWorkspacesQP",
+        "command": "cloudsmith.cloudsmithWorkspacesQP",
         "category": "Cloudsmith",
         "title": "Workspaces: Get a list of all workspaces the user belongs to."
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposList",
+        "command": "cloudsmith.cloudsmithReposList",
         "category": "Cloudsmith",
         "title": "Repos: Load Repos"
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposListQP",
+        "command": "cloudsmith.cloudsmithReposListQP",
         "category": "Cloudsmith",
         "title": "Repos: Get all repositories associated with current user."
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposListWorkspaceQP",
+        "command": "cloudsmith.cloudsmithReposListWorkspaceQP",
         "category": "Cloudsmith",
         "title": "Repos: Get all repositories within a workspace. "
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateTemplate",
+        "command": "cloudsmith.cloudsmithReposCreateTemplate",
         "category": "Cloudsmith",
         "title": "Repos: Create a template file to configure your repository."
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateNew",
+        "command": "cloudsmith.cloudsmithReposCreateNew",
         "category": "Cloudsmith",
         "title": "Repos: Create a new repository from the open template window"
       }
@@ -139,13 +139,13 @@
     "menus": {
       "view/item/context": [
         {
-          "command": "cloudsmith-vscode-extension.inspectPackage",
+          "command": "cloudsmith.inspectPackage",
           "when": "view == cloudsmithView && viewItem == package"
         }
       ],
       "view/title": [
         {
-          "command": "cloudsmith-vscode-extension.refresh",
+          "command": "cloudsmith.refresh",
           "group": "navigation",
           "when": "view == cloudsmithView"
         }

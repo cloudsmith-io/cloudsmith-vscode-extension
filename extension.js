@@ -20,7 +20,7 @@ async function activate(context) {
 	}
 	
 
-	const cloudsmithProvider = new CloudsmithProvider(() => vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces'));
+	const cloudsmithProvider = new CloudsmithProvider(() => vscode.commands.executeCommand('cloudsmith.cloudsmithWorkspaces'));
 
 	vscode.window.createTreeView('cloudsmithView', {
 		treeDataProvider: cloudsmithProvider,
@@ -39,11 +39,11 @@ async function activate(context) {
 
 
 
-	let showWorkspacesQP = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspacesQP',
+	let showWorkspacesQP = vscode.commands.registerCommand('cloudsmith.cloudsmithWorkspacesQP',
 		async function () {
 
 			// fetch workspaces to show in quickpick
-			const workspaces = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces');
+			const workspaces = await vscode.commands.executeCommand('cloudsmith.cloudsmithWorkspaces');
 
 			const items = workspaces.map(
 				workspace => {
@@ -69,17 +69,17 @@ async function activate(context) {
 
 
 	// Fetch Repos
-	let getRepos = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposList',
+	let getRepos = vscode.commands.registerCommand('cloudsmith.cloudsmithReposList',
 		async function () {
 			const repos = await cloudsmithApi.get('repos', apiKey);
 			return repos
 		}
 	);
 
-	let showReposQP = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposListQP',
+	let showReposQP = vscode.commands.registerCommand('cloudsmith.cloudsmithReposListQP',
 		async function () {
 
-			const repos = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithReposList');
+			const repos = await vscode.commands.executeCommand('cloudsmith.cloudsmithReposList');
 			const items = repos.map(
 				repo => {
 					return {
@@ -99,10 +99,10 @@ async function activate(context) {
 		}
 	);
 
-	let showReposPerWorkspaceQP = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposListWorkspaceQP',
+	let showReposPerWorkspaceQP = vscode.commands.registerCommand('cloudsmith.cloudsmithReposListWorkspaceQP',
 		async function () {
 
-			const workspace = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspacesQP');
+			const workspace = await vscode.commands.executeCommand('cloudsmith.cloudsmithWorkspacesQP');
 			const response = await cloudsmithApi.get('repos/' + workspace.detail, apiKey);
 
 			const items2 = response.map(
@@ -127,7 +127,7 @@ async function activate(context) {
 
 
 	// Creates new json template tab with a json template for end user to configure. 
-	let reposCreateTemplate = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateTemplate',
+	let reposCreateTemplate = vscode.commands.registerCommand('cloudsmith.cloudsmithReposCreateTemplate',
 		async function () {
 
 			const jsonData = {
@@ -159,7 +159,7 @@ async function activate(context) {
 	);
 
 	// Create new repo using the open json file
-	let reposCreateNew = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateNew',
+	let reposCreateNew = vscode.commands.registerCommand('cloudsmith.cloudsmithReposCreateNew',
 		async function () {
 
 			// get the json text from the active editor and add to API payload request
@@ -209,7 +209,7 @@ async function activate(context) {
 	 *********      ----- MISC REQUESTS -----   *************************
 	 *********************************************************************/
 
-	let docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs',
+	let docs = vscode.commands.registerCommand('cloudsmith.cloudsmithDocs',
 		function () {
 			vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
 		}
