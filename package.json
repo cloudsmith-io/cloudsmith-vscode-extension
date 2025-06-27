@@ -3,6 +3,7 @@
   "displayName": "Cloudsmith",
   "description": "Cloudsmith API capabilities in Visual Studio Code",
   "version": "0.0.5",
+  "icon": "media/logo.png",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -24,7 +25,7 @@
         {
           "id": "cloudsmithSideBar",
           "title": "Cloudsmith",
-          "icon": "media/logo.svg"
+          "icon": "media/icon.svg"
         }
       ]
     },
