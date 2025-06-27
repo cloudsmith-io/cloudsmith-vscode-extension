@@ -1,6 +1,6 @@
 # Cloudsmith Visual Studio Code Extension
 
-Bringing Cloudsmith to Visual Studio Code! You can now utilise Cloudsmith API capabilities directly within VS Code. 
+Bringing Cloudsmith to Visual Studio Code! You can now utilise Cloudsmith API capabilities directly within VS Code.
 
 ## Features
 
@@ -11,7 +11,7 @@ Bringing Cloudsmith to Visual Studio Code! You can now utilise Cloudsmith API ca
 
 ## Requirements
 
-Configure your Cloudsmith Personal API Token. 
+Configure your Cloudsmith Personal API Token.
 
 ## Known Issues
 
@@ -27,7 +27,10 @@ Initial release
 
 ---
 
+## Design notes
 
+[Use icons from VS Code themes wherever possible](https://code.visualstudio.com/api/references/icons-in-labels).
+[Custom icons can be exported from this Figma file](https://www.figma.com/design/S5jrSWCDUGYRWH9tc9pLu9/VS-Code-Extension?node-id=0-1&p=f&t=1w0iWKl1uPmPzM37-11).
 
 ## For more information
 
