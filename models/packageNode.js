@@ -36,11 +36,19 @@ class PackageNode {
 		let format = this.format
 		let pkg = this.name
 
-		// set package format icon. Using the format value as filename so ensure any new icons added match the format naming convention and are svg files. No need to hardcode logic for each type :)
+		// set package format icon. Using the format value as filename so ensure any new icons added match the format naming convention and are svg files. No need to hardcode logic for each type :) 
+		/*
 		iconPath = {
 				light: path.join(__filename, "..", "..", "media", "formats", "light", format + '.svg'),
 				dark: path.join(__filename, "..", "..", "media", "formats", "dark", format + '.svg')
 			}
+		*/
+
+		const iconURI = 'file_type_' + format + '.svg'
+		iconPath = path.join(__filename, "..", "..", "media", "vscode_icons", iconURI)
+		
+
+		
 
 		return {
 			label: pkg,
