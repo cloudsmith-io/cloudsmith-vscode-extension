@@ -5,30 +5,30 @@ const packageDetailsNode = require('../models/packageDetailsNode')
 
 class PackageNode {
 	constructor(pkg) {
-			this.pkgDetails = [pkg.slug, pkg.slug_perm, pkg.downloads, pkg.version,  pkg.status_str, pkg.tags ];
-			this.slug = {"id": "slug", "value": pkg.slug};
-			this.slug_perm = {"id": "slug_perm", "value": pkg.slug_perm};
+			this.pkgDetails = [pkg.status_str, pkg.slug, pkg.slug_perm, pkg.downloads, pkg.version, pkg.tags ];
+			this.slug = {"id": "Slug", "value": pkg.slug};
+			this.slug_perm = {"id": "Slug Perm", "value": pkg.slug_perm};
 			this.name = pkg.name;
-			this.status_str = {"id": "status", "value": pkg.status_str};
-			this.downloads = {"id": "downloads", "value": String(pkg.downloads)};
-			this.version = {"id": "version", "value": pkg.version};
+			this.status_str = {"id": "Status", "value": pkg.status_str};
+			this.downloads = {"id": "Downloads", "value": String(pkg.downloads)};
+			this.version = {"id": "Version", "value": pkg.version};
 			this.format = pkg.format;
 			if(pkg.tags.info){ // handle tags since we split tags between tags.info and tags.version as both may not coexist at the same time
 				if(pkg.tags.version){
-					this.tags = {"id": "tags", "value": String([pkg.tags.info, pkg.tags.version])}; //combine tags sources
+					this.tags = {"id": "Tags", "value": String([pkg.tags.info, pkg.tags.version])}; //combine tags sources
 				}
 				else {
-					this.tags = {"id": "tags", "value": pkg.tags.info};
+					this.tags = {"id": "Tags", "value": pkg.tags.info};
 				}
 			}
 			else {
 				if(pkg.tags.version){
-					this.tags = {"id": "tags", "value": pkg.tags.version};
+					this.tags = {"id": "Tags", "value": pkg.tags.version};
 				}
 				else {
-					this.tags = {"id": "tags", "value": ""};
+					this.tags = {"id": "Tags", "value": ""};
 				}
-			};		
+			};
 	}
 
 	getTreeItem() {
@@ -36,7 +36,7 @@ class PackageNode {
 		let format = this.format
 		let pkg = this.name
 
-		// set package format icon. Using the format value as filename so ensure any new icons added match the format naming convention and are svg files. No need to hardcode logic for each type :) 
+		// set package format icon. Using the format value as filename so ensure any new icons added match the format naming convention and are svg files. No need to hardcode logic for each type :)
 		iconPath = {
 				light: path.join(__filename, "..", "..", "media", "formats", "light", format + '.svg'),
 				dark: path.join(__filename, "..", "..", "media", "formats", "dark", format + '.svg')
@@ -59,7 +59,7 @@ class PackageNode {
 				const packageDetailsNode = require("./PackageDetailsNode");
 				const packageDetailsNodeInst = new packageDetailsNode(id)
 				PackageDetailsNodes.push(packageDetailsNodeInst)
-			}			
+			}
 		}
 		return PackageDetailsNodes
 	}

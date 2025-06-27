@@ -14,15 +14,12 @@ class RepositoryNode {
 	}
 
 	getTreeItem() {
-		let iconPath = ''
 		const repo = this.name
-		iconPath = path.join(__filename, "..", "..", "media", "repo.png")
 
 		return {
 			label: repo,
 			collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
 			contextValue: "repository",
-			iconPath: iconPath,
 		}
 	}
 
