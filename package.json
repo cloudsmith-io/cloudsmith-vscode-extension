@@ -55,6 +55,10 @@
         "title": "Inspect Package"
       },
       {
+        "command": "cloudsmith.copySelected",
+        "title": "Copy to Clipboard"
+      },
+      {
         "command": "cloudsmith.selectWorkspace",
         "title": "Select Workspace from Workspaces view"
       },
@@ -141,7 +145,11 @@
         {
           "command": "cloudsmith.inspectPackage",
           "when": "view == cloudsmithView && viewItem == package"
-        }
+        },
+        {
+        "command": "cloudsmith.copySelected",
+        "when": "view == cloudsmithView && viewItem == packageDetail"
+      }
       ],
       "view/title": [
         {

@@ -7,7 +7,8 @@ class PackageDetailsNode {
 		this.label = detail;
 	}
 
-	getTreeItem() {
+	getTreeItem(element) {
+		const treeItem = new vscode.TreeItem(element);
 		let iconPath = undefined;
 		let detail = this.label
 		let id = detail.label.id
@@ -46,11 +47,19 @@ class PackageDetailsNode {
 			}
 		}
 
+		treeItem.command = {
+			command: 'cloudsmith.copySelected',
+			title: 'Copy Label',
+			arguments: [treeItem]
+		}
+		
+
 		return {
+			
 			label: value,
 			tooltip: id,
 			collapsibleState: vscode.TreeItemCollapsibleState.None, //no children to show so this cannot be extended
-			conidValue: "packageDetail",
+			contextValue: "packageDetail",
 			iconPath: iconPath,
 
 		}
