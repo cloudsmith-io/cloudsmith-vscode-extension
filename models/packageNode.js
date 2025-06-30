@@ -13,6 +13,8 @@ class PackageNode {
 			this.downloads = {"id": "Downloads", "value": String(pkg.downloads)};
 			this.version = {"id": "Version", "value": pkg.version};
 			this.format = pkg.format;
+			this.repository = pkg.repository;
+			this.namespace = pkg.namespace;
 			if(pkg.tags.info){ // handle tags since we split tags between tags.info and tags.version as both may not coexist at the same time
 				if(pkg.tags.version){
 					this.tags = {"id": "Tags", "value": String([pkg.tags.info, pkg.tags.version])}; //combine tags sources
@@ -36,14 +38,6 @@ class PackageNode {
 		let format = this.format
 		let pkg = this.name
 		let iconURI = 'file_type_' + format + '.svg'
-
-		// set package format icon. Using the format value as filename so ensure any new icons added match the format naming convention and are svg files. No need to hardcode logic for each type :) 
-		/*
-		iconPath = {
-				light: path.join(__filename, "..", "..", "media", "formats", "light", format + '.svg'),
-				dark: path.join(__filename, "..", "..", "media", "formats", "dark", format + '.svg')
-			}
-		*/
 
 		if(format === 'raw'){
 			iconPath = new vscode.ThemeIcon('file-binary');

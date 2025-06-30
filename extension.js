@@ -257,6 +257,39 @@ async function activate(context) {
     })
   );
 
+  // Register the inspect package command
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "cloudsmith.inspectPackage",
+      async (item) => {
+        const name = typeof item === "string" ? item : item.name;
+        const workspace = typeof item === "string" ? item : item.namespace;
+        const slug = typeof item === "string" ? item : item.slug;
+        const identifier = slug.value.value;
+        const repo = typeof item === "string" ? item : item.repository;
+        if (slug) {
+          const result = await cloudsmithApi.get(
+            `packages/${workspace}/${repo}/${identifier}`,
+            apiKey
+          );
+
+          const jsonContent = JSON.stringify(result, null, 2);
+          const doc = await vscode.workspace.openTextDocument({
+            language: "json",
+            content: jsonContent,
+          });
+          await vscode.window.showTextDocument(doc, {preview: false});
+
+          vscode.window.showInformationMessage(
+            `Inspecting package ${name} in repository ${repo}`
+          );
+        } else {
+          vscode.window.showWarningMessage("Nothing to inspect.");
+        }
+      }
+    )
+  );
+
   context.subscriptions.push(
     docs,
     getRepos,

@@ -51,12 +51,12 @@
         }
       },
       {
-        "command": "cloudsmith.inspectPackage",
-        "title": "Inspect Package"
-      },
-      {
         "command": "cloudsmith.copySelected",
         "title": "Copy to Clipboard"
+      },
+      {
+        "command": "cloudsmith.inspectPackage",
+        "title": "Inspect package."
       },
       {
         "command": "cloudsmith.selectWorkspace",
