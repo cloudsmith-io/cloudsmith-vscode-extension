@@ -10,7 +10,8 @@ const apiKey = env.parsed.CLOUDSMITH_API_KEY;
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
-  // logic here to handle auth and confirm connection is successful and set this accordingly. This will control if the
+  // logic here to handle auth and confirm connection is successful and set this accordingly. only dev for now, need to implement a proper way to handle this. extensions storage secrets. 
+  // eventually add sso support. For now it is just api key/ token based auth. 
   if (!apiKey) {
     vscode.commands.executeCommand(
       "setContext",
@@ -278,13 +279,42 @@ async function activate(context) {
             language: "json",
             content: jsonContent,
           });
-          await vscode.window.showTextDocument(doc, {preview: false});
+          await vscode.window.showTextDocument(doc, {preview: true});
 
           vscode.window.showInformationMessage(
             `Inspecting package ${name} in repository ${repo}`
           );
         } else {
           vscode.window.showWarningMessage("Nothing to inspect.");
+        }
+      }
+    )
+  );
+
+  // Register the open package command
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "cloudsmith.openPackage",
+      async (item) => {
+		const workspace = typeof item === "string" ? item : item.namespace;
+		const repo = typeof item === "string" ? item : item.repository;
+        const format = typeof item === "string" ? item : item.format;
+		const name = typeof item === "string" ? item : item.name;
+		const sha = typeof item === "string" ? item : item.version;
+        const slug_perm = typeof item === "string" ? item : item.slug_perm;
+		// get the value from the value object. Silly structure I know :(
+		const version = sha.value.value;
+		const identifier = slug_perm.value.value;
+
+		//need to replace '/' in name as UI URL replaces these with _
+		const pkg = name.replace("/", "_")
+       
+        if (slug_perm) {
+          const url = `https://app.cloudsmith.com/${workspace}/${repo}/${format}/${pkg}/${version}/${identifier}`
+		  console.log(url)
+		  vscode.env.openExternal(url);
+        } else {
+          vscode.window.showWarningMessage("Nothing to open.");
         }
       }
     )

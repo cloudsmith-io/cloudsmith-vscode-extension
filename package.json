@@ -45,10 +45,7 @@
       {
         "command": "cloudsmith.refresh",
         "title": "Refresh",
-        "icon": {
-          "light": "media/workspace_light.svg",
-          "dark": "media/workspace_dark.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "cloudsmith.copySelected",
@@ -56,7 +53,12 @@
       },
       {
         "command": "cloudsmith.inspectPackage",
-        "title": "Inspect package."
+        "title": "Inspect package.",
+        "icon": "media/vscode_icons/folder_type_vscode.svg"
+      },
+      {
+        "command": "cloudsmith.openPackage",
+        "title": "Open in Cloudsmith."
       },
       {
         "command": "cloudsmith.selectWorkspace",
@@ -144,12 +146,19 @@
       "view/item/context": [
         {
           "command": "cloudsmith.inspectPackage",
-          "when": "view == cloudsmithView && viewItem == package"
+          "when": "view == cloudsmithView && viewItem == package",
+          "group": "navigation"
         },
         {
-        "command": "cloudsmith.copySelected",
-        "when": "view == cloudsmithView && viewItem == packageDetail"
-      }
+          "command": "cloudsmith.copySelected",
+          "when": "view == cloudsmithView && viewItem == packageDetail",
+          "group": "9_cutcopypaste"
+        },
+        {
+          "command": "cloudsmith.openPackage",
+          "when": "view == cloudsmithView && viewItem == package",
+          "group": "navigation"
+        }
       ],
       "view/title": [
         {
