@@ -307,16 +307,24 @@ async function activate(context) {
       //need to replace '/' in name as UI URL replaces these with _
       const pkg = name.replace("/", "_");
 
+      const config = vscode.workspace.getConfiguration("cloudsmith");
+      const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
+
       if (slug_perm) {
-        const url = `https://app.cloudsmith.com/${workspace}/${repo}/${format}/${pkg}/${version}/${identifier}`;
-        console.log(url);
-        vscode.env.openExternal(url);
+        if (useLegacyApp) { // workflow handling depending on legacy app setting
+          const url = `https://cloudsmith.io/~${workspace}/repos/${repo}/packages/detail/${format}/${pkg}/${version}`;
+          vscode.env.openExternal(url);
+        } else {
+          const url = `https://app.cloudsmith.com/${workspace}/${repo}/${format}/${pkg}/${version}/${identifier}`;
+          vscode.env.openExternal(url);
+        }
       } else {
         vscode.window.showWarningMessage("Nothing to open.");
       }
     })
   );
 
+  // Register command to open extension settings
   context.subscriptions.push(
     vscode.commands.registerCommand("cloudsmith.openSettings", () => {
       vscode.commands.executeCommand(
