@@ -167,6 +167,16 @@
           "when": "view == cloudsmithView"
         }
       ]
+    },
+    "configuration": {
+      "title": "Cloudsmith",
+      "properties": {
+        "cloudsmith.useLegacyWebApp": {
+          "type": "boolean",
+          "default": false,
+          "description": "If set to true, the extension will use the legacy webapp URL cloudsmith.io for opening links."
+        }
+      }
     }
   },
   "scripts": {
