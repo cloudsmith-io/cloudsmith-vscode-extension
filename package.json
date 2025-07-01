@@ -1,5 +1,6 @@
 {
   "name": "cloudsmith",
+  "publisher": "Cloudsmith",
   "displayName": "Cloudsmith",
   "description": "Cloudsmith API capabilities in Visual Studio Code",
   "version": "0.0.5",
@@ -46,6 +47,11 @@
         "command": "cloudsmith.refresh",
         "title": "Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "cloudsmith.openSettings",
+        "title": "Open Cloudsmith Settings",
+        "icon": "$(settings-gear)"
       },
       {
         "command": "cloudsmith.copySelected",
@@ -163,6 +169,11 @@
       "view/title": [
         {
           "command": "cloudsmith.refresh",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith.openSettings",
           "group": "navigation",
           "when": "view == cloudsmithView"
         }
