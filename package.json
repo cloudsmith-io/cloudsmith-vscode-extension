@@ -185,7 +185,7 @@
         "cloudsmith.useLegacyWebApp": {
           "type": "boolean",
           "default": false,
-          "description": "If set to true, the extension will use the legacy webapp URL cloudsmith.io for opening links."
+          "description": "If enabled, the extension will use the legacy webapp 'cloudsmith.io' for opening links."
         }
       }
     }
