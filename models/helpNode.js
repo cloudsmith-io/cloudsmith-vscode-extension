@@ -3,14 +3,13 @@ const path = require('path');
 
 class helpNode extends vscode.TreeItem {
     constructor(label, url) {
-        super(label, vscode.TreeItemCollapsibleState.None);
+        super(label);
         this.label = label;
-        this.tooltip = url;
-        this.description = url;
+        this.url = url;
         this.command = {
-            command: 'vscode.open',
-            title: 'Open Website',
-            arguments: [vscode.Uri.parse(url)]
+            command: 'cloudsmith.openLink',
+            title: 'Open Link',
+            arguments: [url]
         };
     }
 
@@ -25,14 +24,12 @@ class helpNode extends vscode.TreeItem {
             }
         }
         else if (label.includes('Issue')) {
-            iconPath = {
-                light: path.join(__filename, '..', '..', 'media', 'misc', 'light', 'github.svg'),
-                dark: path.join(__filename, '..', '..', 'media', 'misc', 'dark', 'github.svg')
-            }
+            iconPath = new vscode.ThemeIcon('logo-github')
         }
         else {
-            iconPath = new vscode.ThemeIcon('globe');
+            iconPath = new vscode.ThemeIcon('info')
         }
+        
 
         return {
             label: label,

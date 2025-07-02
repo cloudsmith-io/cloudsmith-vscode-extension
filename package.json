@@ -49,6 +49,11 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "cloudsmith.openLink",
+        "title": "Open Link",
+        "icon": "$(external-link)"
+      },
+      {
         "command": "cloudsmith.openSettings",
         "title": "Open Cloudsmith Settings",
         "icon": "$(settings-gear)"
@@ -59,8 +64,7 @@
       },
       {
         "command": "cloudsmith.inspectPackage",
-        "title": "Inspect package.",
-        "icon": "media/vscode_icons/folder_type_vscode.svg"
+        "title": "Inspect package."
       },
       {
         "command": "cloudsmith.openPackage",
@@ -185,7 +189,12 @@
         "cloudsmith.useLegacyWebApp": {
           "type": "boolean",
           "default": false,
-          "description": "If enabled, the extension will use the legacy webapp 'cloudsmith.io' for opening links."
+          "description": "If enabled, the extension will use the legacy webapp 'cloudsmith.io' for platform links."
+        },
+        "cloudsmith.inspectOutput": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, inspect will create a new text document with the results. By default it sends to Output tab."
         }
       }
     }

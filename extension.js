@@ -241,6 +241,14 @@ async function activate(context) {
     }
   );
 
+  // Register the open links command
+  context.subscriptions.push(
+    vscode.commands.registerCommand("cloudsmith.openLink", (url) => {
+      console.log(`Opening link: ${url}`);
+      vscode.env.openExternal(vscode.Uri.parse(url), true);
+    })
+  );
+
   // Register the copy-to-clipboard command
   context.subscriptions.push(
     vscode.commands.registerCommand("cloudsmith.copySelected", async (item) => {
@@ -273,13 +281,23 @@ async function activate(context) {
             `packages/${workspace}/${repo}/${identifier}`,
             apiKey
           );
-
           const jsonContent = JSON.stringify(result, null, 2);
-          const doc = await vscode.workspace.openTextDocument({
-            language: "json",
-            content: jsonContent,
-          });
-          await vscode.window.showTextDocument(doc, { preview: true });
+
+          const config = vscode.workspace.getConfiguration("cloudsmith");
+          const inspectOutput = await config.get("inspectOutput");
+
+          if (inspectOutput) {
+            const doc = await vscode.workspace.openTextDocument({
+              language: "json",
+              content: jsonContent,
+            });
+            await vscode.window.showTextDocument(doc, { preview: true });
+          } else {
+            const outputChannel = vscode.window.createOutputChannel("Cloudsmith");
+            outputChannel.clear();
+            outputChannel.show(true); 
+            outputChannel.append(jsonContent);
+          }
 
           vscode.window.showInformationMessage(
             `Inspecting package ${name} in repository ${repo}`
@@ -311,7 +329,8 @@ async function activate(context) {
       const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
 
       if (slug_perm) {
-        if (useLegacyApp) { // workflow handling depending on legacy app setting
+        if (useLegacyApp) {
+          // workflow handling depending on legacy app setting
           const url = `https://cloudsmith.io/~${workspace}/repos/${repo}/packages/detail/${format}/${pkg}/${version}`;
           vscode.env.openExternal(url);
         } else {
