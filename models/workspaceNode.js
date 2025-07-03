@@ -28,7 +28,7 @@ class WorkspaceNode {
 
 	async getRepositories() {
 		const workspace = this.slug
-		const repositories = await cloudsmithApi.get('repos/' + workspace, apiKey);
+		const repositories = await cloudsmithApi.get('repos/' + workspace + '/?sort=name', apiKey);
 		const RepositoryNodes = []
 		if (repositories) {
 			for (const id of repositories) {
