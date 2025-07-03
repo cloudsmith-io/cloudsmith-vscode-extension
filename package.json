@@ -44,11 +44,6 @@
     },
     "commands": [
       {
-        "command": "cloudsmith.refresh",
-        "title": "Refresh",
-        "icon": "$(refresh)"
-      },
-      {
         "command": "cloudsmith.openLink",
         "title": "Open Link"
       },
@@ -63,11 +58,11 @@
       },
       {
         "command": "cloudsmith.inspectPackage",
-        "title": "Inspect package."
+        "title": "Inspect package"
       },
       {
         "command": "cloudsmith.openPackage",
-        "title": "View package in Cloudsmith."
+        "title": "View package in Cloudsmith"
       },
       {
         "command": "cloudsmith.selectWorkspace",
@@ -102,8 +97,9 @@
         "title": "Packages Context Action"
       },
       {
-        "command": "cloudsmith.refreshTree",
-        "title": "Refresh Tree View"
+        "command": "cloudsmith.refreshView",
+        "title": "Refresh Packages",
+        "icon": "$(refresh)"
       },
       {
         "command": "cloudsmith.cloudsmithAuth",
@@ -112,37 +108,30 @@
       },
       {
         "command": "cloudsmith.cloudsmithWorkspaces",
-        "category": "Cloudsmith",
         "title": "Workspaces: Load Workspaces"
       },
       {
         "command": "cloudsmith.cloudsmithWorkspacesQP",
-        "category": "Cloudsmith",
         "title": "Workspaces: Get a list of all workspaces the user belongs to."
       },
       {
         "command": "cloudsmith.cloudsmithReposList",
-        "category": "Cloudsmith",
         "title": "Repos: Load Repos"
       },
       {
         "command": "cloudsmith.cloudsmithReposListQP",
-        "category": "Cloudsmith",
-        "title": "Repos: Get all repositories associated with current user."
+        "title": "Repos: Get all repositories associated with current user"
       },
       {
         "command": "cloudsmith.cloudsmithReposListWorkspaceQP",
-        "category": "Cloudsmith",
-        "title": "Repos: Get all repositories within a workspace. "
+        "title": "Repos: Get all repositories within a workspace"
       },
       {
         "command": "cloudsmith.cloudsmithReposCreateTemplate",
-        "category": "Cloudsmith",
         "title": "Repos: Create a template file to configure your repository."
       },
       {
         "command": "cloudsmith.cloudsmithReposCreateNew",
-        "category": "Cloudsmith",
         "title": "Repos: Create a new repository from the open template window"
       }
     ],
@@ -166,7 +155,7 @@
       ],
       "view/title": [
         {
-          "command": "cloudsmith.refresh",
+          "command": "cloudsmith.refreshView",
           "group": "navigation",
           "when": "view == cloudsmithView"
         },

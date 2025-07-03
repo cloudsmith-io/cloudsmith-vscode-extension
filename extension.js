@@ -232,6 +232,13 @@ async function activate(context) {
    *********      ----- MISC REQUESTS -----   *************************
    *********************************************************************/
 
+   // Register refresh command for main view
+  context.subscriptions.push(
+    vscode.commands.registerCommand("cloudsmith.refreshView", () => {
+      cloudsmithProvider.refresh();
+    })
+  );
+
   // Register the copy-to-clipboard command
   context.subscriptions.push(
     vscode.commands.registerCommand("cloudsmith.copySelected", async (item) => {
@@ -276,9 +283,10 @@ async function activate(context) {
             });
             await vscode.window.showTextDocument(doc, { preview: true });
           } else {
-            const outputChannel = vscode.window.createOutputChannel("Cloudsmith");
+            const outputChannel =
+              vscode.window.createOutputChannel("Cloudsmith");
             outputChannel.clear();
-            outputChannel.show(true); 
+            outputChannel.show(true);
             outputChannel.append(jsonContent);
           }
 
