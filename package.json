@@ -67,7 +67,7 @@
       },
       {
         "command": "cloudsmith.openPackage",
-        "title": "Open in Cloudsmith."
+        "title": "View package in Cloudsmith."
       },
       {
         "command": "cloudsmith.selectWorkspace",
