@@ -15,8 +15,8 @@ class WorkspaceNode {
 	getTreeItem() {
 		const workspace = this.name
 		let iconPath = {
-			light: path.join(__filename, "..", "..", "media", "workspace_light.svg"),
-			dark: path.join(__filename, "..", "..", "media", "workspace_dark.svg")
+			light: path.join(__filename, "..", "..", "media", "logo.png"),
+			dark: path.join(__filename, "..", "..", "media", "logo.png")
 		}
 		return {
 			label: workspace,

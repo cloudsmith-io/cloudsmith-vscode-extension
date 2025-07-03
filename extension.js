@@ -232,23 +232,6 @@ async function activate(context) {
    *********      ----- MISC REQUESTS -----   *************************
    *********************************************************************/
 
-  let docs = vscode.commands.registerCommand(
-    "cloudsmith.cloudsmithDocs",
-    function () {
-      vscode.env.openExternal(
-        "https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs"
-      );
-    }
-  );
-
-  // Register the open links command
-  context.subscriptions.push(
-    vscode.commands.registerCommand("cloudsmith.openLink", (url) => {
-      console.log(`Opening link: ${url}`);
-      vscode.env.openExternal(vscode.Uri.parse(url), true);
-    })
-  );
-
   // Register the copy-to-clipboard command
   context.subscriptions.push(
     vscode.commands.registerCommand("cloudsmith.copySelected", async (item) => {
@@ -354,7 +337,6 @@ async function activate(context) {
   );
 
   context.subscriptions.push(
-    docs,
     getRepos,
     showReposQP,
     reposCreateTemplate,

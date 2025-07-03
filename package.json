@@ -50,8 +50,7 @@
       },
       {
         "command": "cloudsmith.openLink",
-        "title": "Open Link",
-        "icon": "$(external-link)"
+        "title": "Open Link"
       },
       {
         "command": "cloudsmith.openSettings",
@@ -110,11 +109,6 @@
         "command": "cloudsmith.cloudsmithAuth",
         "category": "Cloudsmith",
         "title": "Auth"
-      },
-      {
-        "command": "cloudsmith.cloudsmithDocs",
-        "category": "Cloudsmith",
-        "title": "Documentation: View official Cloudsmith docs."
       },
       {
         "command": "cloudsmith.cloudsmithWorkspaces",

@@ -4,16 +4,20 @@ const path = require('path');
 class helpNode extends vscode.TreeItem {
     constructor(label, url) {
         super(label);
+        this.tooltip = url;
+        this.description = url;
         this.label = label;
         this.url = url;
+        // Set the command so clicking opens the URL
         this.command = {
-            command: 'cloudsmith.openLink',
+            command: 'vscode.open',
             title: 'Open Link',
-            arguments: [url]
+            arguments: [vscode.Uri.parse(url)]
         };
     }
 
-    getTreeItem() {
+    getTreeItem(element) {
+        const treeItem = new vscode.TreeItem(element)
         const label = this.label
         let iconPath = ''
 
@@ -24,16 +28,22 @@ class helpNode extends vscode.TreeItem {
             }
         }
         else if (label.includes('Issue')) {
-            iconPath = new vscode.ThemeIcon('logo-github')
+            iconPath = {
+                light: path.join(__filename, '..', '..', 'media', 'misc', 'light', 'github.svg'),
+                dark: path.join(__filename, '..', '..', 'media', 'misc', 'dark', 'github.svg')
+            }
         }
         else {
-            iconPath = new vscode.ThemeIcon('info')
+            iconPath = new vscode.ThemeIcon('link-external');
         }
-        
+
+        // Set the command on the tree item as well (for compatibility)
+        treeItem.command = this.command;
 
         return {
             label: label,
-            iconPath: iconPath
+            iconPath: iconPath,
+            command: this.command
         }
     }
 }

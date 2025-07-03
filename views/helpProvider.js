@@ -2,7 +2,8 @@ const vscode = require('vscode');
 const helpNode = require('../models/helpNode');
 
 class helpProvider {
-    constructor() {
+    constructor(context) {
+        this.context = context;
         this._onDidChangeTreeData = new vscode.EventEmitter();
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     }
