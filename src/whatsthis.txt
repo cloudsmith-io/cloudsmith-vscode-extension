@@ -1,0 +1,2 @@
+Future structure for the extension with proper class management with everything under src/main 
+

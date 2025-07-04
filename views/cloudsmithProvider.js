@@ -11,7 +11,7 @@ class CloudsmithProvider {
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     }
 
-    getTreeItem(element) {
+    getTreeItem(element) { 
         return element.getTreeItem()
     }
 

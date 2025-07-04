@@ -1,4 +1,6 @@
+//const vscode = require("vscode");
 const apiURL = 'https://api.cloudsmith.io/v1/';
+
 
 /**
  * GET request to Cloudsmith API.
@@ -65,7 +67,8 @@ export async function makeRequest(endpoint, requestOptions) {
         const result = response.json();
         return result
     } catch (error) {
-        console.log(error.message)
+        //vscode.window.showErrorMessage(error);
+        console.log(error)
         return error.message
 
     }

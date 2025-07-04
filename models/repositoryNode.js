@@ -30,7 +30,7 @@ class RepositoryNode {
 		const PackageNodes = []
 		if (packages) {
 			for (const id of packages) {
-				const packageNode = require('../models/PackageNode')
+				const packageNode = require('./PackageNode')
 				const packageNodeInst = new packageNode(id)
 				PackageNodes.push(packageNodeInst)
 			}

@@ -1,6 +1,4 @@
 const vscode = require('vscode');
-const path = require('path');
-//const packageDetailsNode = require("./PackageDetailsNode");
 
 class PackageDetailsNode {
 	constructor(detail) {

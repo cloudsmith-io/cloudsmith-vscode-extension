@@ -1,5 +1,4 @@
 const vscode = require('vscode');
-const path = require('path');
 
 class helpNode extends vscode.TreeItem {
     constructor(label, url, icon) {
@@ -19,7 +18,6 @@ class helpNode extends vscode.TreeItem {
     getTreeItem(element) {
         const treeItem = new vscode.TreeItem(element)
         const label = this.label
-        const description = this.description
         let iconPath = this.icon
 
         // Set the command on the tree item as well (for compatibility)

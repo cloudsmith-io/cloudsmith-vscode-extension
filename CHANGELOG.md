@@ -1,4 +1,4 @@
-# Change Log
+clea# Change Log
 
 All notable changes to the "cloudsmith-vscode-extension" extension will be documented in this file.
 

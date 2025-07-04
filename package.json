@@ -2,8 +2,8 @@
   "name": "cloudsmith",
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith",
-  "description": "Cloudsmith API capabilities in Visual Studio Code",
-  "version": "0.0.5",
+  "description": "Cloudsmith Package Explorer for Visual Studio Code.",
+  "version": "1.0.0",
   "icon": "media/logo.png",
   "engines": {
     "vscode": "^1.100.0"
@@ -100,11 +100,6 @@
         "command": "cloudsmith.refreshView",
         "title": "Refresh Packages",
         "icon": "$(refresh)"
-      },
-      {
-        "command": "cloudsmith.cloudsmithAuth",
-        "category": "Cloudsmith",
-        "title": "Auth"
       },
       {
         "command": "cloudsmith.cloudsmithWorkspaces",

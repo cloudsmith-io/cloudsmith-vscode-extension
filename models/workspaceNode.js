@@ -32,7 +32,7 @@ class WorkspaceNode {
 		const RepositoryNodes = []
 		if (repositories) {
 			for (const id of repositories) {
-				const repositoryNode = require('../models/RepositoryNode')
+				const repositoryNode = require('./RepositoryNode')
 				const repositoryNodeInst = new repositoryNode(id, this.name)
 				RepositoryNodes.push(repositoryNodeInst)
 			}

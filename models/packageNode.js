@@ -1,6 +1,6 @@
 const vscode = require('vscode');
 const path = require('path');
-const packageDetailsNode = require('../models/packageDetailsNode')
+const packageDetailsNode = require('./packageDetailsNode')
 
 
 class PackageNode {
