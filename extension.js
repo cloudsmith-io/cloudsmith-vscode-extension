@@ -2,6 +2,7 @@ const vscode = require("vscode");
 const { CloudsmithProvider } = require("./views/cloudsmithProvider");
 const { helpProvider } = require("./views/helpProvider");
 const cloudsmithApi = require("./util/cloudsmithAPI");
+const connectionManager = require("./util/connectionManager"); 
 const path = require("path");
 const env = require("dotenv").config({ path: path.resolve(__dirname, ".env") }); // Load from .env
 const apiKey = env.parsed.CLOUDSMITH_API_KEY;
@@ -43,6 +44,12 @@ async function activate(context) {
  
   // register commands here
   context.subscriptions.push(
+
+    // Register command to set credentials
+    vscode.commands.registerCommand("cloudsmith.configureCredentials", () => {
+        const connection = connectionManager;
+        connection.storeApiKey(context)
+    }),
 
     // Register refresh command for main view
     vscode.commands.registerCommand("cloudsmith.refreshView", () => {

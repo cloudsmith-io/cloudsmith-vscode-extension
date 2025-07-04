@@ -53,6 +53,11 @@
         "icon": "$(settings-gear)"
       },
       {
+        "command": "cloudsmith.configureCredentials",
+        "title": "Configure Cloudsmith Token",
+        "icon": "$(key)"
+      },
+      {
         "command": "cloudsmith.copySelected",
         "title": "Copy to Clipboard"
       },
@@ -156,6 +161,11 @@
         },
         {
           "command": "cloudsmith.openSettings",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith.configureCredentials",
           "group": "navigation",
           "when": "view == cloudsmithView"
         }
