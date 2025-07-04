@@ -58,6 +58,11 @@
         "icon": "$(key)"
       },
       {
+        "command": "cloudsmith.connectCloudsmith",
+        "title": "Connect to Cloudsmith",
+        "icon": "$(debug-disconnect)"
+      },
+      {
         "command": "cloudsmith.copySelected",
         "title": "Copy to Clipboard"
       },
@@ -166,6 +171,11 @@
         },
         {
           "command": "cloudsmith.configureCredentials",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith.connectCloudsmith",
           "group": "navigation",
           "when": "view == cloudsmithView"
         }
