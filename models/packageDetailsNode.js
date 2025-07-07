@@ -1,7 +1,8 @@
 const vscode = require('vscode');
 
 class PackageDetailsNode {
-	constructor(detail) {
+	constructor(detail, context) {
+		this.context = context;
 		this.label = detail;
 	}
 

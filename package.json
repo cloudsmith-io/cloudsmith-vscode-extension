@@ -14,13 +14,6 @@
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "viewsWelcome": [
-      {
-        "view": "cloudsmithView",
-        "contents": "Unable to connect to Cloudsmith. Please configure your API Key to connect securely.",
-        "when": "!cloudsmith.authenticated"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -61,6 +54,11 @@
         "command": "cloudsmith.connectCloudsmith",
         "title": "Connect to Cloudsmith",
         "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "cloudsmith.clearCredentials",
+        "title": "Clear stored credentials",
+        "icon": "$(notebook-delete-cell)"
       },
       {
         "command": "cloudsmith.copySelected",
@@ -171,6 +169,11 @@
         },
         {
           "command": "cloudsmith.configureCredentials",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith.clearCredentials",
           "group": "navigation",
           "when": "view == cloudsmithView"
         },

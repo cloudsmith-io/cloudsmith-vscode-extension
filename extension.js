@@ -1,37 +1,19 @@
 const vscode = require("vscode");
 const { CloudsmithProvider } = require("./views/cloudsmithProvider");
 const { helpProvider } = require("./views/helpProvider");
-const cloudsmithApi = require("./util/cloudsmithAPI");
+const { CloudsmithAPI } = require("./util/cloudsmithAPI");
 const connectionManager = require("./util/connectionManager"); 
-const path = require("path");
-const env = require("dotenv").config({ path: path.resolve(__dirname, ".env") }); // Load from .env
-const apiKey = env.parsed.CLOUDSMITH_API_KEY;
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
 
-  // logic here to handle auth and confirm connection is successful and set this accordingly. only dev for now, need to implement a proper way to handle this. extensions storage secrets.
-  // eventually add sso support. For now it is just api key/ token based auth.
-  if (!apiKey) {
-    vscode.commands.executeCommand(
-      "setContext",
-      "cloudsmith.authenticated",
-      false
-    );
-  } else {
-    vscode.commands.executeCommand(
-      "setContext",
-      "cloudsmith.authenticated",
-      true
-    );
-  }
+  //const workspaces = connectionManager.connect(context)
 
   // Set main view, generate workspace data and pass to new tree view.
-  const cloudsmithProvider = new CloudsmithProvider(() =>
-    vscode.commands.executeCommand("cloudsmith.cloudsmithWorkspaces")
-  );
+  const cloudsmithProvider = new CloudsmithProvider( context);
+
   vscode.window.createTreeView("cloudsmithView", {
     treeDataProvider: cloudsmithProvider,
     showCollapseAll: true,
@@ -45,10 +27,28 @@ async function activate(context) {
   // register commands here
   context.subscriptions.push(
 
+    // Register command to get workspaces
+    vscode.commands.registerCommand("cloudsmith.cloudsmithWorkspaces", () => {
+        CloudsmithApi.get('namespaces' + '/?sort=slug', context);
+    }),
+
+    // Register command to clear credentials
+    vscode.commands.registerCommand("cloudsmith.clearCredentials", () => {
+        const connection = connectionManager;
+        connection.clearCredentials(context)
+    }),
+    
+
     // Register command to set credentials
     vscode.commands.registerCommand("cloudsmith.configureCredentials", () => {
         const connection = connectionManager;
-        connection.storeApiKey(context)
+        connection.storeApiKey(context);
+    }),
+
+     // Register command to connect to Cloudsmith
+    vscode.commands.registerCommand("cloudsmith.connectCloudsmith", () => {
+        const connection = connectionManager;
+        connection.connect(context);
     }),
 
     // Register refresh command for main view
@@ -75,16 +75,15 @@ async function activate(context) {
     vscode.commands.registerCommand(
       "cloudsmith.inspectPackage",
       async (item) => {
+        const cloudsmithAPI = new CloudsmithAPI(context);
+
         const name = typeof item === "string" ? item : item.name;
         const workspace = typeof item === "string" ? item : item.namespace;
         const slug = typeof item === "string" ? item : item.slug;
         const identifier = slug.value.value;
         const repo = typeof item === "string" ? item : item.repository;
         if (slug) {
-          const result = await cloudsmithApi.get(
-            `packages/${workspace}/${repo}/${identifier}`,
-            apiKey
-          );
+          const result = await cloudsmithAPI.get(`packages/${workspace}/${repo}/${identifier}`);
           const jsonContent = JSON.stringify(result, null, 2);
 
           const config = vscode.workspace.getConfiguration("cloudsmith");

@@ -1,45 +1,53 @@
-const vscode = require('vscode');
-const path = require('path');
-const cloudsmithApi = require('../util/cloudsmithAPI');
-const env = require('dotenv').config({ path: path.resolve(__dirname, '../.env') }); // Load from .env
-const apiKey = env.parsed.CLOUDSMITH_API_KEY;
+const vscode = require("vscode");
+const { CloudsmithAPI } = require("../util/cloudsmithAPI");
+const connectionManager = require("../util/connectionManager");
 
 class CloudsmithProvider {
-    constructor(context) {
-        this.context = context;
-        this._onDidChangeTreeData = new vscode.EventEmitter();
-        this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+  constructor(context) {
+    this.context = context;
+    this._onDidChangeTreeData = new vscode.EventEmitter();
+    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+  }
+
+  getTreeItem(element) {
+    return element.getTreeItem();
+  }
+
+  getChildren(element) {
+    if (!element) {
+      return this.getWorkspaces();
+    }
+    return element.getChildren();
+  }
+
+  refresh() {
+    this._onDidChangeTreeData.fire();
+  }
+
+  async getWorkspaces() {
+    const cloudsmithAPI = new CloudsmithAPI(this.context);
+    let workspaces = "";
+
+    const connStatus = await connectionManager.connect(this.context);
+    //const apiKey = await connectionManager.getApiKey(this.context);
+    //console.log(apiKey);
+
+    if (!connStatus) {
+      workspaces = "";
+    } else {
+      workspaces = await cloudsmithAPI.get("namespaces/?sort=slug");
     }
 
-    getTreeItem(element) { 
-        return element.getTreeItem()
+    const WorkspaceNodes = [];
+    if (workspaces) {
+      for (const workspace of workspaces) {
+        const workspaceNode = require("../models/workspaceNode");
+        const workspaceNodeInst = new workspaceNode(workspace, this.context);
+        WorkspaceNodes.push(workspaceNodeInst);
+      }
     }
-
-    getChildren(element) {
-        if (!element) {
-            return this.getWorkspaces()
-        }
-        return element.getChildren()
-    }
-
-    refresh() {
-        this._onDidChangeTreeData.fire();
-    }
-
-    async getWorkspaces() {
-        const workspaces = await cloudsmithApi.get('namespaces' + '/?sort=slug', apiKey);
-        const WorkspaceNodes = []
-        if(workspaces) {
-            for(const id of workspaces) {
-                const workspaceNode = require('../models/workspaceNode')
-                const workspaceNodeInst = new workspaceNode(id)
-                WorkspaceNodes.push(workspaceNodeInst)
-            }
-        }
-        return WorkspaceNodes
-        
-    }
-
+    return WorkspaceNodes;
+  }
 }
 
 module.exports = { CloudsmithProvider };
