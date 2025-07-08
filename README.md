@@ -1,29 +1,24 @@
 # Cloudsmith Visual Studio Code Extension
 
-Bringing Cloudsmith to Visual Studio Code! You can now utilise Cloudsmith API capabilities directly within VS Code.
+Bringing Cloudsmith to Visual Studio Code! You can now view your Cloudsmith hosted packages directly within Visual Studio Code. 
 
 ## Features
 
-* Open Cloudsmith documentation directly in your default browser.
-* List distros, packages, repos and entitlements.
-* Create, delete, list or update Vulnerability policies
+* List Workspaces, Repositories and Packages. 
+* Inspect packages raw json data. 
 
 
 ## Requirements
 
-Configure your Cloudsmith Personal API Token.
-
-## Known Issues
-
+Configure your Cloudsmith Personal API Key or alternative Access Token.
 
 
 ## Release Notes
 
-
-
 ### 1.0.0
 
-Initial release
+* The initial release provides a simple package explorer view into your Cloudsmith environments. 
+* Future releases will continue to build upon this with futher capabilities and features. 
 
 ---
 
