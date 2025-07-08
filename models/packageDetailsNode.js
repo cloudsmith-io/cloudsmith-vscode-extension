@@ -31,6 +31,9 @@ class PackageDetailsNode {
 		if (id.toLowerCase().includes("downloads")) {
 			iconPath = new vscode.ThemeIcon('cloud-download');
 		}
+		if (id.toLowerCase().includes("uploaded")) {
+			iconPath = new vscode.ThemeIcon('cloud-upload');
+		}
 		if (id.toLowerCase().includes("tags")) {
 			iconPath = new vscode.ThemeIcon('tag');
 		}

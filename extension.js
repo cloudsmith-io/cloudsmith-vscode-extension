@@ -9,7 +9,6 @@ const connectionManager = require("./util/connectionManager");
  */
 async function activate(context) {
 
-  //const workspaces = connectionManager.connect(context)
 
   // Set main view, generate workspace data and pass to new tree view.
   const cloudsmithProvider = new CloudsmithProvider( context);

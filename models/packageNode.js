@@ -12,6 +12,7 @@ class PackageNode {
       pkg.downloads,
       pkg.version,
       pkg.tags,
+	  pkg.uploaded_at
     ];
     this.slug = { id: "Slug", value: pkg.slug };
     this.slug_perm = { id: "Slug Perm", value: pkg.slug_perm };
@@ -20,6 +21,7 @@ class PackageNode {
     this.downloads = { id: "Downloads", value: String(pkg.downloads) };
     this.version = { id: "Version", value: pkg.version };
     this.format = pkg.format;
+	this.uploaded_at = { id: "Uploaded At", value: pkg.uploaded_at };
     this.repository = pkg.repository;
     this.namespace = pkg.namespace;
     if (pkg.tags.info) {
