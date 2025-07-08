@@ -2,14 +2,13 @@ const vscode = require("vscode");
 const { CloudsmithProvider } = require("./views/cloudsmithProvider");
 const { helpProvider } = require("./views/helpProvider");
 const { CloudsmithAPI } = require("./util/cloudsmithAPI");
+const { CredentialManager } = require("./util/credentialManager");
 
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
-
-
   // Set main view, generate workspace data and pass to new tree view.
   const cloudsmithProvider = new CloudsmithProvider(context);
 
@@ -18,38 +17,36 @@ async function activate(context) {
     showCollapseAll: true,
   });
 
-  // Set Help & Feedback view. 
+  // Set Help & Feedback view.
   const provider = new helpProvider();
   vscode.window.registerTreeDataProvider("helpView", provider);
 
- 
   // register general commands
   context.subscriptions.push(
-
     // Register command to get workspaces
     vscode.commands.registerCommand("cloudsmith.cloudsmithWorkspaces", () => {
-        CloudsmithAPI.get('namespaces' + '/?sort=slug', context);
+      CloudsmithAPI.get("namespaces" + "/?sort=slug", context);
     }),
 
     // Register command to clear credentials
     vscode.commands.registerCommand("cloudsmith.clearCredentials", () => {
-        const connection = connectionManager;
-        connection.clearCredentials(context)
+      
+      const credentialManager = new CredentialManager(context);
+      credentialManager.clearCredentials();
     }),
-    
 
     // Register command to set credentials
     vscode.commands.registerCommand("cloudsmith.configureCredentials", () => {
-      const connectionManager = require("./util/connectionManager"); 
-        const connection = connectionManager;
-        connection.storeApiKey(context);
+      const credentialManager = new CredentialManager(context);
+      credentialManager.storeApiKey();
     }),
 
-     // Register command to connect to Cloudsmith
+    // Register command to connect to Cloudsmith
     vscode.commands.registerCommand("cloudsmith.connectCloudsmith", () => {
-        const connection = connectionManager;
-        connection.connect(context);
-        vscode.commands.executeCommand("cloudsmith.refreshView");
+      const { ConnectionManager } = require("../util/connectionManager");
+      const connectionManager = new ConnectionManager(context);
+      connectionManager.connect();
+      vscode.commands.executeCommand("cloudsmith.refreshView");
     }),
 
     // Register refresh command for main view
@@ -84,7 +81,9 @@ async function activate(context) {
         const identifier = slug.value.value;
         const repo = typeof item === "string" ? item : item.repository;
         if (slug) {
-          const result = await cloudsmithAPI.get(`packages/${workspace}/${repo}/${identifier}`);
+          const result = await cloudsmithAPI.get(
+            `packages/${workspace}/${repo}/${identifier}`
+          );
           const jsonContent = JSON.stringify(result, null, 2);
 
           const config = vscode.workspace.getConfiguration("cloudsmith");
@@ -152,9 +151,7 @@ async function activate(context) {
         "@ext:Cloudsmith.cloudsmith"
       );
     })
-
-  )
-
+  );
 }
 
 // This method is called when your extension is deactivated
