@@ -1,5 +1,5 @@
 const apiURL = 'https://api.cloudsmith.io/v1/';
-const connectionManager = require('./connectionManager');
+const { CredentialManager } = require('./credentialManager');
 
 class CloudsmithAPI {
     constructor(context){
@@ -16,13 +16,12 @@ class CloudsmithAPI {
     //async function get(endpoint, apiKey) {
     async get(endpoint, apiKey) {
 
+        const credentialManager = new CredentialManager(this.context)
+
         if(!apiKey){
-            //console.log("API Key not passed in")
-            apiKey = await connectionManager.getApiKey(this.context);
-            //console.log(apiKey)
+            apiKey = await credentialManager.getApiKey();
         }
         
-
         const requestOptions = {
             method: 'GET',
             headers: {
@@ -72,22 +71,18 @@ class CloudsmithAPI {
     async makeRequest(endpoint, requestOptions) {
 
         const url = apiURL + endpoint;
-        //console.log(url)
         try {
             const response = await fetch(url, requestOptions);
             if (!response.ok) {
-                //console.log(`Response status: ${response.status} - ${response.statusText}`)
                 throw new Error(`Response status: ${response.status} - ${response.statusText}`);       
             }
             const result = response.json();
             return result
         } catch (error) {
-            //vscode.window.showErrorMessage(error.message || error);
             return error.message
 
         }
     }
-
 }
 
 module.exports = { CloudsmithAPI };

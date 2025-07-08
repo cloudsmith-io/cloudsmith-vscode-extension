@@ -11,7 +11,7 @@ async function activate(context) {
 
 
   // Set main view, generate workspace data and pass to new tree view.
-  const cloudsmithProvider = new CloudsmithProvider( context);
+  const cloudsmithProvider = new CloudsmithProvider(context);
 
   vscode.window.createTreeView("cloudsmithView", {
     treeDataProvider: cloudsmithProvider,
@@ -28,7 +28,7 @@ async function activate(context) {
 
     // Register command to get workspaces
     vscode.commands.registerCommand("cloudsmith.cloudsmithWorkspaces", () => {
-        CloudsmithApi.get('namespaces' + '/?sort=slug', context);
+        CloudsmithAPI.get('namespaces' + '/?sort=slug', context);
     }),
 
     // Register command to clear credentials
@@ -48,6 +48,7 @@ async function activate(context) {
     vscode.commands.registerCommand("cloudsmith.connectCloudsmith", () => {
         const connection = connectionManager;
         connection.connect(context);
+        vscode.commands.executeCommand("cloudsmith.refreshView");
     }),
 
     // Register refresh command for main view
