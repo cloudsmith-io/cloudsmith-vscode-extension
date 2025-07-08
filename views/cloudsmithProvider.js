@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
-const connectionManager = require("../util/connectionManager");
+const { ConnectionManager } = require("../util/connectionManager");
 
 class CloudsmithProvider {
   constructor(context) {
@@ -26,11 +26,10 @@ class CloudsmithProvider {
 
   async getWorkspaces() {
     const cloudsmithAPI = new CloudsmithAPI(this.context);
+    const connectionManager = new ConnectionManager(this.context);
     let workspaces = "";
 
     const connStatus = await connectionManager.connect(this.context);
-    //const apiKey = await connectionManager.getApiKey(this.context);
-    //console.log(apiKey);
 
     if (!connStatus) {
       workspaces = "";

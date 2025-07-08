@@ -2,7 +2,7 @@ const vscode = require("vscode");
 const { CloudsmithProvider } = require("./views/cloudsmithProvider");
 const { helpProvider } = require("./views/helpProvider");
 const { CloudsmithAPI } = require("./util/cloudsmithAPI");
-const connectionManager = require("./util/connectionManager"); 
+
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -23,7 +23,7 @@ async function activate(context) {
   vscode.window.registerTreeDataProvider("helpView", provider);
 
  
-  // register commands here
+  // register general commands
   context.subscriptions.push(
 
     // Register command to get workspaces
@@ -40,6 +40,7 @@ async function activate(context) {
 
     // Register command to set credentials
     vscode.commands.registerCommand("cloudsmith.configureCredentials", () => {
+      const connectionManager = require("./util/connectionManager"); 
         const connection = connectionManager;
         connection.storeApiKey(context);
     }),

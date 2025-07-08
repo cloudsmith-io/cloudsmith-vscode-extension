@@ -7,6 +7,7 @@ class CredentialManager {
 
   // Show input box to enter credential key and store to secret
   async storeApiKey() {
+    const context = this.context;
     const apiKey = await vscode.window.showInputBox({
       prompt: "Enter your Cloudsmith API Key or Service Access Token",
       password: true,
@@ -32,6 +33,7 @@ class CredentialManager {
   }
 
   async clearCredentials() {
+    const context = this.context;
     const apiKey = await context.secrets.get("cloudsmith.authToken");
 
     if (apiKey) {
