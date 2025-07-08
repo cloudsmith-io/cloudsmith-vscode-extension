@@ -26,12 +26,13 @@ class WorkspaceNode {
   }
 
   async getRepositories() {
+    const context = this.context;
     const workspace = this.slug;
-
-	const cloudsmithAPI = new CloudsmithAPI(this.context);
+    const cloudsmithAPI = new CloudsmithAPI(context);
     const repositories = await cloudsmithAPI.get(
       "repos/" + workspace + "/?sort=name"
     );
+    console.log(repositories);
 
     const RepositoryNodes = [];
     if (repositories) {
@@ -44,6 +45,11 @@ class WorkspaceNode {
         RepositoryNodes.push(repositoryNodeInst);
       }
     }
+    context.globalState.update("CloudsmithCache", {
+      name: "Repositories",
+      lastSync: Date.now(),
+      workspaces: repositories,
+    });
     return RepositoryNodes;
   }
 

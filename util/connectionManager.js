@@ -24,10 +24,20 @@ class ConnectionManager {
     return checkPassed;
   }
 
+  async isConnected() {
+
+    const isConnected = await this.context.secrets.get("cloudsmith.isConnected");
+
+    return isConnected
+
+  }
+
   // Connect to Cloudsmith
   async connect() {
-    let connectionStatus = false;
-    const credentialManager = new CredentialManager(this.context);
+    const context = this.context;
+    let connectionStatus = this.isConnected();
+
+    const credentialManager = new CredentialManager(context);
     const apiKey = await credentialManager.getApiKey();
 
     checkCreds: if (!apiKey) {
@@ -57,6 +67,7 @@ class ConnectionManager {
           });
       } else {
         vscode.window.showInformationMessage("Connected to Cloudsmith!");
+        context.secrets.store("isConnected", connectionStatus);
       }
     }
 

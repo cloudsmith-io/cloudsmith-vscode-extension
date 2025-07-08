@@ -25,7 +25,8 @@ async function activate(context) {
   context.subscriptions.push(
     // Register command to get workspaces
     vscode.commands.registerCommand("cloudsmith.cloudsmithWorkspaces", () => {
-      CloudsmithAPI.get("namespaces" + "/?sort=slug", context);
+      const cloudsmithAPI = new CloudsmithAPI(context);
+      cloudsmithAPI.get("namespaces" + "/?sort=slug");
     }),
 
     // Register command to clear credentials
@@ -43,7 +44,7 @@ async function activate(context) {
 
     // Register command to connect to Cloudsmith
     vscode.commands.registerCommand("cloudsmith.connectCloudsmith", () => {
-      const { ConnectionManager } = require("../util/connectionManager");
+      const { ConnectionManager } = require("./util/connectionManager");
       const connectionManager = new ConnectionManager(context);
       connectionManager.connect();
       vscode.commands.executeCommand("cloudsmith.refreshView");

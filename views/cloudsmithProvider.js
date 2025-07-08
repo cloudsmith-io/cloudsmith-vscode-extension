@@ -25,11 +25,12 @@ class CloudsmithProvider {
   }
 
   async getWorkspaces() {
-    const cloudsmithAPI = new CloudsmithAPI(this.context);
-    const connectionManager = new ConnectionManager(this.context);
+    const context = this.context;
+    const cloudsmithAPI = new CloudsmithAPI(context);
+    const connectionManager = new ConnectionManager(context);
     let workspaces = "";
 
-    const connStatus = await connectionManager.connect(this.context);
+    const connStatus = await connectionManager.connect(context);
 
     if (!connStatus) {
       workspaces = "";
@@ -37,14 +38,20 @@ class CloudsmithProvider {
       workspaces = await cloudsmithAPI.get("namespaces/?sort=slug");
     }
 
-    const WorkspaceNodes = [];
+    const WorkspaceNodes = []
     if (workspaces) {
       for (const workspace of workspaces) {
         const workspaceNode = require("../models/workspaceNode");
-        const workspaceNodeInst = new workspaceNode(workspace, this.context);
+        const workspaceNodeInst = new workspaceNode(workspace, context);
         WorkspaceNodes.push(workspaceNodeInst);
       }
+      context.globalState.update('CloudsmithCache', {
+        name: 'Workspaces',
+        lastSync: Date.now(),
+        workspaces: workspaces
+      });
     }
+    
     return WorkspaceNodes;
   }
 }
