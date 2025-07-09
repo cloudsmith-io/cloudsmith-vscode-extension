@@ -32,7 +32,6 @@ class WorkspaceNode {
     const repositories = await cloudsmithAPI.get(
       "repos/" + workspace + "/?sort=name"
     );
-    console.log(repositories);
 
     const RepositoryNodes = [];
     if (repositories) {

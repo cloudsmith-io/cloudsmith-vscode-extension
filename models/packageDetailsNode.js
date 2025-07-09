@@ -31,10 +31,13 @@ class PackageDetailsNode {
 		if (id.toLowerCase().includes("downloads")) {
 			iconPath = new vscode.ThemeIcon('cloud-download');
 		}
-		if (id.toLowerCase().includes("uploaded")) {
+		if (id.toLowerCase().includes("uploaded") || id.toLowerCase().includes("last pushed")) {
 			iconPath = new vscode.ThemeIcon('cloud-upload');
 		}
-		if (id.toLowerCase().includes("tags")) {
+		if (id.toLowerCase().includes("size")) {
+			iconPath = new vscode.ThemeIcon('file-zip');
+		}
+		if (id.toLowerCase().includes("tags") || id.toLowerCase().includes("count")) {
 			iconPath = new vscode.ThemeIcon('tag');
 		}
 		if (id.toLowerCase().includes("version")) {

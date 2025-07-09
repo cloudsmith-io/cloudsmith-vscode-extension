@@ -203,6 +203,11 @@
           "maximum": 30,
           "minimum": 1,
           "description": "Set the maximum number of packages to be returned per repository. Current maximum is 30. "
+        },
+        "cloudsmith.groupByPackageGroups": {
+          "type": "boolean",
+          "default": false,
+          "description": "If enabled, packages are displayed via Package Group."
         }
       }
     }

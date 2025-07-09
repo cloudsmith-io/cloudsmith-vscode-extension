@@ -1,6 +1,7 @@
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
 const packageNode = require("./PackageNode");
+const packageGroupsNode = require("./PackageGroupsNode");
 
 
 class RepositoryNode {
@@ -24,21 +25,39 @@ class RepositoryNode {
 
   async getPackages() {
     const cloudsmithAPI = new CloudsmithAPI(this.context);
+    let packages = '';
 
     let workspace = this.workspace;
     let repo = this.slug;
+
     const config = vscode.workspace.getConfiguration("cloudsmith");
     const maxPackages = await config.get("showMaxPackages"); // get legacy app setting from configuration settings
-    const packages = await cloudsmithAPI.get(
-      "packages/" + workspace + "/" + repo + "/?sort=-date&page_size=" + maxPackages
-    );
+    const groupByPackageGroup = await config.get("groupByPackageGroups");
+
+    if (!groupByPackageGroup) {
+      packages = await cloudsmithAPI.get(
+        "packages/" + workspace + "/" + repo + "/?sort=-date&page_size=" + maxPackages
+      );
+    } else {
+      const groups = await cloudsmithAPI.get(
+        "packages/" + workspace + "/" + repo + "/groups/?sort=-last_push&page_size=" + maxPackages
+      );
+      packages = groups.results
+
+    }
 
     const PackageNodes = [];
     if (packages) {
       for (const pkg of packages) {
-        const packageNode = require("./PackageNode");
-        const packageNodeInst = new packageNode(pkg, this.context);
-        PackageNodes.push(packageNodeInst);
+        if (!groupByPackageGroup) {
+          const packageNode = require("./PackageNode");
+          let packageNodeInst = new packageNode(pkg, this.context);
+          PackageNodes.push(packageNodeInst);
+        } else {
+          const packageGroupsNode = require("./PackageGroupsNode");
+          const packageGroupNodeInst = new packageGroupsNode(pkg, this.context);
+          PackageNodes.push(packageGroupNodeInst);
+        }
       }
     }
     return PackageNodes;
@@ -46,17 +65,18 @@ class RepositoryNode {
 
   async getChildren() {
     const packages = await this.getPackages();
+    const config = vscode.workspace.getConfiguration("cloudsmith");
+    const groupByPackageGroup = await config.get("groupByPackageGroups");
 
     if (packages.length > 0) {
-			return packages.map(item => {
-				return new packageNode(item)
-			})
-		}
-		else {
-			return packages.map(item => {
-				return new packageNode(item)
-			})
-		}
+      return packages.map(item => {
+        if (!groupByPackageGroup) {
+          return new packageNode(item)
+        } else {
+          return new packageGroupsNode(item)
+        }
+      })
+    }
   }
 }
 
