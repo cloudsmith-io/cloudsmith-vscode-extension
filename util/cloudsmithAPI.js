@@ -1,4 +1,5 @@
 // Class to handle Cloudsmith API requests. 
+// Utilises the public Cloudsmith v1 API - https://help.cloudsmith.io/reference/introduction
 
 const apiURL = 'https://api.cloudsmith.io/v1/';
 const { CredentialManager } = require('./credentialManager');
