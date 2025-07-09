@@ -196,6 +196,13 @@
           "type": "boolean",
           "default": false,
           "description": "If enabled, inspect will create a new text document with the results. By default it sends to Output tab."
+        },
+        "cloudsmith.showMaxPackages": {
+          "type": "integer",
+          "default": 30,
+          "maximum": 30,
+          "minimum": 1,
+          "description": "Set the maximum number of packages to be returned per repository. Current maximum is 30. "
         }
       }
     }

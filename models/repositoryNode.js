@@ -27,8 +27,10 @@ class RepositoryNode {
 
     let workspace = this.workspace;
     let repo = this.slug;
+    const config = vscode.workspace.getConfiguration("cloudsmith");
+    const maxPackages = await config.get("showMaxPackages"); // get legacy app setting from configuration settings
     const packages = await cloudsmithAPI.get(
-      "packages/" + workspace + "/" + repo + "/?sort=name"
+      "packages/" + workspace + "/" + repo + "/?sort=-date&page_size=" + maxPackages
     );
 
     const PackageNodes = [];
