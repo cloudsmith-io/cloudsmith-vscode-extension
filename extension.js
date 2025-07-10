@@ -173,7 +173,7 @@ async function activate(context) {
       const identifier = slug_perm.value.value;
 
       //need to replace '/' in name as UI URL replaces these with _
-      const pkg = name.replace("/", "_");
+      const pkg = name.replaceAll("/", "_");
 
       const config = vscode.workspace.getConfiguration("cloudsmith");
       const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
@@ -199,9 +199,11 @@ async function activate(context) {
       const name = typeof item === "string" ? item : item.name;
 
       //need to replace '/' in name as UI URL replaces these with _
+
       name.replace("/", "%2F");
       name.replace(":", "%3A");
       
+
 
       const config = vscode.workspace.getConfiguration("cloudsmith");
       const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
