@@ -32,14 +32,14 @@ class CloudsmithProvider {
 
     const connStatus = await connectionManager.connect(context);
 
-    if (!connStatus) {
+    if (connStatus === "false") {
       workspaces = "";
     } else {
       workspaces = await cloudsmithAPI.get("namespaces/?sort=slug");
     }
 
     const WorkspaceNodes = []
-    if (workspaces) {
+    if (workspaces.length > 0) {
       for (const workspace of workspaces) {
         const workspaceNode = require("../models/workspaceNode");
         const workspaceNodeInst = new workspaceNode(workspace, context);

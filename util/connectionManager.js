@@ -39,7 +39,7 @@ class ConnectionManager {
     const context = this.context;
     let showMsg = true; // contorl whether to show connected notification. Used for refresh.
     let currentConnectionStatus = await this.isConnected();
-    let connectionStatus = "false";
+    let connectionStatus = "";
 
     const credentialManager = new CredentialManager(context);
     const apiKey = await credentialManager.getApiKey();
@@ -55,7 +55,7 @@ class ConnectionManager {
         });
       break checkCreds;
     } else {
-      const connectionStatus = await this.checkConnectivity(apiKey);
+      let connectionStatus = await this.checkConnectivity(apiKey);
 
       if (currentConnectionStatus === connectionStatus) { //if current = new status, no need to show notification
         showMsg = false;
@@ -81,7 +81,6 @@ class ConnectionManager {
         context.secrets.store("isConnected", connectionStatus);
       }
     }
-
     return connectionStatus;
   }
 }
