@@ -58,7 +58,7 @@ class ConnectionManager {
             break select;
           }
         });
-      break checkCreds;
+      return connectionStatus;
     } else {
       let connectionStatus = await this.checkConnectivity(apiKey);
 
