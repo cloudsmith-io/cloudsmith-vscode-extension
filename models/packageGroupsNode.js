@@ -17,7 +17,6 @@ class PackageGroupsNode {
     this.name = pkg.name;
     this.repo = pkg.repo;
     this.workspace = pkg.workspace;
-    //console.log("Pkg Group:", pkg);
     
   }
 

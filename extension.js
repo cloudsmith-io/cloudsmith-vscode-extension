@@ -192,6 +192,35 @@ async function activate(context) {
       }
     }),
 
+     // Register the open package group command
+    vscode.commands.registerCommand("cloudsmith.openPackageGroup", async (item) => {
+      const workspace = typeof item === "string" ? item : item.workspace;
+      const repo = typeof item === "string" ? item : item.repo;
+      const name = typeof item === "string" ? item : item.name;
+
+      //need to replace '/' in name as UI URL replaces these with _
+      name.replace("/", "%2F");
+      name.replace(":", "%3A");
+      
+
+      const config = vscode.workspace.getConfiguration("cloudsmith");
+      const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
+
+      if (name) {
+        if (useLegacyApp) {
+          // workflow handling depending on legacy app setting
+          const url = `https://cloudsmith.io/~${workspace}/repos/${repo}/packages/detail/${format}/${name}/${version}`;
+          vscode.env.openExternal(url);
+        } else {
+          //colinmoynes-test-org/golang?page=1&query=name%3Agitlab&sort=name
+          const url = `https://app.cloudsmith.com/${workspace}/${repo}?page=1&query=name:${name}&sort=name`;
+          vscode.env.openExternal(url);
+        }
+      } else {
+        vscode.window.showWarningMessage("Nothing to open.");
+      }
+    }),
+
     // Register command to open extension settings
     vscode.commands.registerCommand("cloudsmith.openSettings", () => {
       vscode.commands.executeCommand(

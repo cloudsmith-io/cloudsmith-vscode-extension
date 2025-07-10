@@ -80,6 +80,10 @@
         "title": "View package in Cloudsmith"
       },
       {
+        "command": "cloudsmith.openPackageGroup",
+        "title": "View package group in Cloudsmith"
+      },
+      {
         "command": "cloudsmith.selectWorkspace",
         "title": "Select Workspace from Workspaces view"
       },
@@ -165,6 +169,11 @@
         {
           "command": "cloudsmith.openPackage",
           "when": "view == cloudsmithView && viewItem == package",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith.openPackageGroup",
+          "when": "view == cloudsmithView && viewItem == packageGroup",
           "group": "navigation"
         }
       ],
