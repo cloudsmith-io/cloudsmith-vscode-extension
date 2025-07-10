@@ -2,7 +2,7 @@ const vscode = require("vscode");
 const packageDetailsNode = require("./packageDetailsNode");
 
 class PackageGroupsNode {
-  constructor(pkg, context) {
+  constructor(pkg, groupContext, context) {
     this.context = context;
     this.pkgDetails = [
       pkg.count,
@@ -15,6 +15,16 @@ class PackageGroupsNode {
     this.count = { id: "Count", value: String(pkg.count) };
     this.size = { id: "Size", value: String(pkg.size) };
     this.name = pkg.name;
+    //console.log("Repo:", groupContext.repo)
+    //console.log("Workspace:", groupContext.workspace)
+    //this.repo = groupContext[0];
+    //this.workspace = groupContext[1];
+    console.log(pkg)
+    //console.log(groupContext)
+    
+    //this.repository = { id: "Repo", value: groupContext.label.repo};
+    //this.workspace = { id: "Workspace", value: groupContext.label.workspace};
+    
   }
 
   getTreeItem() {

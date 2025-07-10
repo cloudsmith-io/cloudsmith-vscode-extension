@@ -9,6 +9,9 @@ const { CredentialManager } = require("./util/credentialManager");
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
+
+  context.secrets.store("cloudsmith.isConnected", "false");
+
   // Set main view, generate workspace data and pass to new tree view.
   const cloudsmithProvider = new CloudsmithProvider(context);
 
@@ -81,6 +84,8 @@ async function activate(context) {
         const slug = typeof item === "string" ? item : item.slug;
         const identifier = slug.value.value;
         const repo = typeof item === "string" ? item : item.repository;
+        const url = `packages/${workspace}/${repo}/?query=name:"${name}"`;
+        console.log(url)
         if (slug) {
           const result = await cloudsmithAPI.get(
             `packages/${workspace}/${repo}/${identifier}`
@@ -106,6 +111,48 @@ async function activate(context) {
 
           vscode.window.showInformationMessage(
             `Inspecting package ${name} in repository ${repo}`
+          );
+        } else {
+          vscode.window.showWarningMessage("Nothing to inspect.");
+        }
+      }
+    ),
+
+    // Register the inspect package group command
+    vscode.commands.registerCommand(
+      "cloudsmith.inspectPackageGroup",
+      async (item) => {
+        const cloudsmithAPI = new CloudsmithAPI(context);
+        const name = typeof item === "string" ? item : item.name;
+        const workspace = typeof item === "string" ? item : item.workspace;
+        const repo = typeof item === "string" ? item : item.repo;
+        const url = `packages/${workspace}/${repo}/?query=name:"${name}"`;
+        console.log(url)
+        if (name) {
+          const result = await cloudsmithAPI.get(
+            `packages/${workspace}/${repo}/?query=name:"${name}"`
+          );
+          const jsonContent = JSON.stringify(result, null, 2);
+
+          const config = vscode.workspace.getConfiguration("cloudsmith");
+          const inspectOutput = await config.get("inspectOutput");
+
+          if (inspectOutput) {
+            const doc = await vscode.workspace.openTextDocument({
+              language: "json",
+              content: jsonContent,
+            });
+            await vscode.window.showTextDocument(doc, { preview: true });
+          } else {
+            const outputChannel =
+              vscode.window.createOutputChannel("Cloudsmith");
+            outputChannel.clear();
+            outputChannel.show(true);
+            outputChannel.append(jsonContent);
+          }
+
+          vscode.window.showInformationMessage(
+            `Inspecting package group ${name}`
           );
         } else {
           vscode.window.showWarningMessage("Nothing to inspect.");

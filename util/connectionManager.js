@@ -11,14 +11,18 @@ class ConnectionManager {
   // Check response to API for authentication - basic workflow for now
   async checkConnectivity(apiKey) {
     const { CloudsmithAPI } = require("./cloudsmithAPI");
-    let checkPassed = false;
+    let checkPassed = "false";
     const cloudsmithAPI = new CloudsmithAPI(this.context);
     const userAuthenticated = await cloudsmithAPI.get("user/self", apiKey);
 
     if (!userAuthenticated.authenticated) {
-      checkPassed = false;
+      checkPassed = "false";
+      console.log("Not authenticated")
+      await this.context.secrets.store("cloudsmith.isConnected", checkPassed);
     } else {
-      checkPassed = true;
+      checkPassed = "true";
+      console.log("Authenticated")
+      await this.context.secrets.store("cloudsmith.isConnected", checkPassed);
     }
 
     return checkPassed;
@@ -27,6 +31,7 @@ class ConnectionManager {
   async isConnected() {
 
     const isConnected = await this.context.secrets.get("cloudsmith.isConnected");
+    console.log(isConnected);
 
     return isConnected
 
@@ -35,7 +40,9 @@ class ConnectionManager {
   // Connect to Cloudsmith
   async connect() {
     const context = this.context;
-    let connectionStatus = this.isConnected();
+    let showMsg = true; // contorl whether to show connected notification. Used for refresh.
+    let currentConnectionStatus = await this.isConnected();
+    let connectionStatus = "false";
 
     const credentialManager = new CredentialManager(context);
     const apiKey = await credentialManager.getApiKey();
@@ -51,8 +58,15 @@ class ConnectionManager {
         });
       break checkCreds;
     } else {
-      connectionStatus = await this.checkConnectivity(apiKey);
-      if (!connectionStatus) {
+      const connectionStatus = await this.checkConnectivity(apiKey);
+
+
+      console.log("Current:" + currentConnectionStatus + " New:" + connectionStatus)
+      if (currentConnectionStatus === connectionStatus) { //if current = new status, no need to show notification
+        showMsg = false;
+      }
+
+      if (connectionStatus === "false") {
         vscode.window
           .showErrorMessage(
             "Unable to connect Cloudsmith! Ensure your credentials are correct.",
@@ -65,11 +79,16 @@ class ConnectionManager {
               break select;
             }
           });
-      } else {
-        vscode.window.showInformationMessage("Connected to Cloudsmith!");
+      } else { // connection status = true
+        if (showMsg) {
+          vscode.window.showInformationMessage("Connected to Cloudsmith!");
+        }
         context.secrets.store("isConnected", connectionStatus);
       }
     }
+
+
+
 
     return connectionStatus;
   }

@@ -43,16 +43,19 @@
       {
         "command": "cloudsmith.openSettings",
         "title": "Open Cloudsmith Settings",
+        "category": "Cloudsmith",
         "icon": "$(settings-gear)"
       },
       {
         "command": "cloudsmith.configureCredentials",
-        "title": "Configure Cloudsmith Token",
+        "title": "Configure Cloudsmith Credentials",
+        "category": "Cloudsmith",
         "icon": "$(key)"
       },
       {
         "command": "cloudsmith.connectCloudsmith",
         "title": "Connect to Cloudsmith",
+        "category": "Cloudsmith",
         "icon": "$(debug-disconnect)"
       },
       {
@@ -67,6 +70,10 @@
       {
         "command": "cloudsmith.inspectPackage",
         "title": "Inspect package"
+      },
+      {
+        "command": "cloudsmith.inspectPackageGroup",
+        "title": "Inspect package group"
       },
       {
         "command": "cloudsmith.openPackage",
@@ -143,6 +150,11 @@
         {
           "command": "cloudsmith.inspectPackage",
           "when": "view == cloudsmithView && viewItem == package",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith.inspectPackageGroup",
+          "when": "view == cloudsmithView && viewItem == packageGroup",
           "group": "navigation"
         },
         {

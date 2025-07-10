@@ -26,9 +26,11 @@ class RepositoryNode {
   async getPackages() {
     const cloudsmithAPI = new CloudsmithAPI(this.context);
     let packages = '';
+    
 
     let workspace = this.workspace;
     let repo = this.slug;
+    let groupContext = { "repo": repo, "workspace": workspace  };
 
     const config = vscode.workspace.getConfiguration("cloudsmith");
     const maxPackages = await config.get("showMaxPackages"); // get legacy app setting from configuration settings
@@ -55,7 +57,7 @@ class RepositoryNode {
           PackageNodes.push(packageNodeInst);
         } else {
           const packageGroupsNode = require("./PackageGroupsNode");
-          const packageGroupNodeInst = new packageGroupsNode(pkg, this.context);
+          const packageGroupNodeInst = new packageGroupsNode(pkg, groupContext, this.context);
           PackageNodes.push(packageGroupNodeInst);
         }
       }
