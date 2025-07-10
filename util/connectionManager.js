@@ -16,7 +16,7 @@ class ConnectionManager {
     const userAuthenticated = await cloudsmithAPI.get("user/self", apiKey);
 
     if (!userAuthenticated.authenticated) {
-      if (userAuthenticated.authenticated === undefined){
+      if (userAuthenticated.authenticated === undefined) {
         checkPassed = "error";
       } else {
         checkPassed = "false";
@@ -49,7 +49,6 @@ class ConnectionManager {
     const apiKey = await credentialManager.getApiKey();
 
     checkCreds: if (!apiKey) {
-      connectionStatus = "false";
       vscode.window
         .showWarningMessage("No credentials configured!", "Configure", "Cancel")
         .then((selection) => {
@@ -58,9 +57,9 @@ class ConnectionManager {
             break select;
           }
         });
-      return connectionStatus;
+      return "false";
     } else {
-      let connectionStatus = await this.checkConnectivity(apiKey);
+      connectionStatus = await this.checkConnectivity(apiKey);
 
       if (currentConnectionStatus === connectionStatus) { //if current = new status, no need to show notification
         showConnectMsg = false;
@@ -79,7 +78,7 @@ class ConnectionManager {
               break select;
             }
           });
-          return connectionStatus;
+        return connectionStatus;
       } else { // connection status = true
         if (showConnectMsg) {
           vscode.window.showInformationMessage("Connected to Cloudsmith!");
@@ -88,8 +87,8 @@ class ConnectionManager {
       }
       return connectionStatus;
     }
-    
-    
+
+
   }
 }
 
