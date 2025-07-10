@@ -57,6 +57,7 @@ class RepositoryNode {
           PackageNodes.push(packageNodeInst);
         } else {
           const packageGroupsNode = require("./PackageGroupsNode");
+          Object.assign(pkg, groupContext);
           const packageGroupNodeInst = new packageGroupsNode(pkg, groupContext, this.context);
           PackageNodes.push(packageGroupNodeInst);
         }

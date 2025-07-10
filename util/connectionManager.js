@@ -17,11 +17,9 @@ class ConnectionManager {
 
     if (!userAuthenticated.authenticated) {
       checkPassed = "false";
-      console.log("Not authenticated")
       await this.context.secrets.store("cloudsmith.isConnected", checkPassed);
     } else {
       checkPassed = "true";
-      console.log("Authenticated")
       await this.context.secrets.store("cloudsmith.isConnected", checkPassed);
     }
 
@@ -31,7 +29,6 @@ class ConnectionManager {
   async isConnected() {
 
     const isConnected = await this.context.secrets.get("cloudsmith.isConnected");
-    console.log(isConnected);
 
     return isConnected
 
@@ -60,8 +57,6 @@ class ConnectionManager {
     } else {
       const connectionStatus = await this.checkConnectivity(apiKey);
 
-
-      console.log("Current:" + currentConnectionStatus + " New:" + connectionStatus)
       if (currentConnectionStatus === connectionStatus) { //if current = new status, no need to show notification
         showMsg = false;
       }
@@ -86,9 +81,6 @@ class ConnectionManager {
         context.secrets.store("isConnected", connectionStatus);
       }
     }
-
-
-
 
     return connectionStatus;
   }
