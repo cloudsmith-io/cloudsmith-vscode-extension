@@ -11,6 +11,10 @@
   "categories": [
     "Other"
   ],
+  "repository": {
+        "type": "git",
+        "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension"
+    },
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
