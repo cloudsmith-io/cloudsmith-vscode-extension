@@ -45,6 +45,7 @@ class ConnectionManager {
     const apiKey = await credentialManager.getApiKey();
 
     checkCreds: if (!apiKey) {
+      connectionStatus = "false";
       vscode.window
         .showWarningMessage("No credentials configured!", "Configure", "Cancel")
         .then((selection) => {

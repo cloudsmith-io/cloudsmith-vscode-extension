@@ -38,6 +38,8 @@ class CloudsmithProvider {
       workspaces = await cloudsmithAPI.get("namespaces/?sort=slug");
     }
 
+    console.log(workspaces, workspaces.length)
+
     const WorkspaceNodes = []
     if (workspaces.length > 0) {
       for (const workspace of workspaces) {

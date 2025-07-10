@@ -8,7 +8,13 @@ Bringing Cloudsmith to Visual Studio Code! You can now explore your Cloudsmith p
 
 To install the extension, open the Extensions view, search for `cloudsmith` to filter results and select the Cloudsmith extension authorised by Cloudsmith. 
 
-To connect to your Cloudsmith, you need to configure 
+To connect to your Cloudsmith isntance, you need to configure either your own Personal API Key or a Service Account Token. 
+
+* Entitlement tokens are not supported. 
+
+* Personal API Keys provide support for accessing mulitple Cloudsmith Workspaces if access is granted. A Service Account Token will provide access to a specific Workspace only. 
+
+
 
 ## Overview
 
@@ -18,7 +24,6 @@ The Cloudsmith extension contributes a Cloudsmith view to VS Code. The Cloudsmit
 
 The right-click menu provides access to the following commands for packages:
 
-![Package Explorer context menu]()
 
 * List Workspaces, Repositories and Packages. 
 * Inspect packages raw json data. 
