@@ -16,7 +16,11 @@ class ConnectionManager {
     const userAuthenticated = await cloudsmithAPI.get("user/self", apiKey);
 
     if (!userAuthenticated.authenticated) {
-      checkPassed = "false";
+      if (userAuthenticated.authenticated === undefined){
+        checkPassed = "error";
+      } else {
+        checkPassed = "false";
+      }
       await this.context.secrets.store("cloudsmith.isConnected", checkPassed);
     } else {
       checkPassed = "true";
@@ -37,7 +41,7 @@ class ConnectionManager {
   // Connect to Cloudsmith
   async connect() {
     const context = this.context;
-    let showMsg = true; // contorl whether to show connected notification. Used for refresh.
+    let showConnectMsg = true; // contorl whether to show connected notification. Used for refresh.
     let currentConnectionStatus = await this.isConnected();
     let connectionStatus = "";
 
@@ -59,10 +63,10 @@ class ConnectionManager {
       let connectionStatus = await this.checkConnectivity(apiKey);
 
       if (currentConnectionStatus === connectionStatus) { //if current = new status, no need to show notification
-        showMsg = false;
+        showConnectMsg = false;
       }
 
-      if (connectionStatus === "false") {
+      if (connectionStatus === "false" || connectionStatus === "error") {
         vscode.window
           .showErrorMessage(
             "Unable to connect Cloudsmith! Ensure your credentials are correct.",
@@ -75,14 +79,17 @@ class ConnectionManager {
               break select;
             }
           });
+          return connectionStatus;
       } else { // connection status = true
-        if (showMsg) {
+        if (showConnectMsg) {
           vscode.window.showInformationMessage("Connected to Cloudsmith!");
         }
         context.secrets.store("isConnected", connectionStatus);
       }
+      return connectionStatus;
     }
-    return connectionStatus;
+    
+    
   }
 }
 

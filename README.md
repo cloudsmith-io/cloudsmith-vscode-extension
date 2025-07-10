@@ -8,11 +8,13 @@ Bringing Cloudsmith to Visual Studio Code! You can now explore your Cloudsmith p
 
 To install the extension, open the Extensions view, search for `cloudsmith` to filter results and select the Cloudsmith extension authorised by Cloudsmith. 
 
-To connect to your Cloudsmith isntance, you need to configure either your own Personal API Key or a Service Account Token. 
+To connect to your Cloudsmith isntance, you need to configure either your own Personal API Key or a Service Account Token. Click on the `key` icon from the view menu and enter your credential into the input box. To connect press the `connect` or `refresh` icons. 
 
 * Entitlement tokens are not supported. 
 
 * Personal API Keys provide support for accessing mulitple Cloudsmith Workspaces if access is granted. A Service Account Token will provide access to a specific Workspace only. 
+
+![Cloudsmith extension configure](media/readme/configure.gif)
 
 
 
