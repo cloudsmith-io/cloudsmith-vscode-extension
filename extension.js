@@ -200,8 +200,8 @@ async function activate(context) {
 
       //need to replace '/' in name as UI URL replaces these with _
 
-      name.replace("/", "%2F");
-      name.replace(":", "%3A");
+      name.replaceAll("/", "%2F");
+      name.replaceAll(":", "%3A");
       
 
 
