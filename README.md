@@ -8,7 +8,7 @@ Bringing Cloudsmith to your favourite IDE! You can now explore your artifacts di
 
 To install the extension, open the Extensions view, search for `cloudsmith` to filter results and select the Cloudsmith extension authorised by Cloudsmith. 
 
-To connect to your Cloudsmith isntance, you need to configure either your Personal API Key or a Service Account Token. Click on the `key` icon from the view menu and enter your credential into the input box. To connect press the `connect` or `refresh` icons. 
+To connect to your Cloudsmith instance, you need to configure either your Personal API Key or a Service Account Token. Click on the `key` icon from the view menu and enter your credential into the input box. To connect press the `connect` or `refresh` icons. 
 
 * Entitlement tokens are not supported. 
 
