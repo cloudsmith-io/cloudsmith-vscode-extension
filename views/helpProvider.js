@@ -1,3 +1,5 @@
+//  This class handles the help & feedback view
+
 const vscode = require('vscode');
 const helpNode = require('../models/helpNode');
 const path = require('path');

@@ -13,7 +13,7 @@ class CloudsmithAPI {
      * GET request to Cloudsmith API.
      *
      * @param   endpoint  for example 'repos' for v1/repos.
-     * @param.  api token
+     * @param.  api token *optional
      * @returns json response.
      */
     //async function get(endpoint, apiKey) {
@@ -44,6 +44,7 @@ class CloudsmithAPI {
      *
      * @param   endpoint  for example 'repos' for v1/repos.
      * @param   payload  json string payload 
+     * @param   api token *optional
      * @returns json response.
      */
 

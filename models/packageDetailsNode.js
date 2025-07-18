@@ -1,3 +1,5 @@
+// Package details node treeview
+
 const vscode = require('vscode');
 
 class PackageDetailsNode {

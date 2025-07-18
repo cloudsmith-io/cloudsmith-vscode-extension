@@ -1,3 +1,5 @@
+// Help & feedback treeview
+
 const vscode = require('vscode');
 
 class helpNode extends vscode.TreeItem {

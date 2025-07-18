@@ -1,3 +1,5 @@
+// Workspace node treeview
+
 const vscode = require("vscode");
 const path = require("path");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");

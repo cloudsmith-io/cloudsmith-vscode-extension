@@ -12,9 +12,8 @@ async function activate(context) {
 
   context.secrets.store("cloudsmith.isConnected", "false");
 
-  // Set main view, generate workspace data and pass to new tree view.
+  // Define main view provider which populates with data
   const cloudsmithProvider = new CloudsmithProvider(context);
-
   vscode.window.createTreeView("cloudsmithView", {
     treeDataProvider: cloudsmithProvider,
     showCollapseAll: true,
@@ -24,7 +23,7 @@ async function activate(context) {
   const provider = new helpProvider();
   vscode.window.registerTreeDataProvider("helpView", provider);
 
-  // register general commands
+  // register general commands. Will move this over to command Manager in future release.  
   context.subscriptions.push(
     // Register command to get workspaces
     vscode.commands.registerCommand("cloudsmith.cloudsmithWorkspaces", () => {

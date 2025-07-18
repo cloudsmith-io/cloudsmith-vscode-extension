@@ -1,4 +1,6 @@
 // This class handles the connection to Cloudsmith.
+// A connection session is not actually running since we are just making API calls adhoc when needed. 
+// This mostly just handles verification and if connection can be made. 
 
 const vscode = require("vscode");
 const { CredentialManager } = require("./credentialManager");
@@ -30,10 +32,9 @@ class ConnectionManager {
     return checkPassed;
   }
 
+  // Check if currently connected 
   async isConnected() {
-
     const isConnected = await this.context.secrets.get("cloudsmith.isConnected");
-
     return isConnected
 
   }
@@ -41,7 +42,7 @@ class ConnectionManager {
   // Connect to Cloudsmith
   async connect() {
     const context = this.context;
-    let showConnectMsg = true; // contorl whether to show connected notification. Used for refresh.
+    let showConnectMsg = true; // controls whether to show connected notification. Used for refresh.
     let currentConnectionStatus = await this.isConnected();
     let connectionStatus = "";
 
@@ -87,7 +88,6 @@ class ConnectionManager {
       }
       return connectionStatus;
     }
-
 
   }
 }

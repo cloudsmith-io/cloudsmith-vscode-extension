@@ -1,3 +1,5 @@
+// This class handles the main Cloudsmith view. Workspaces are generated and populated here. 
+
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
 const { ConnectionManager } = require("../util/connectionManager");

@@ -1,3 +1,5 @@
+// Package node treeview
+
 const vscode = require("vscode");
 const path = require("path");
 const packageDetailsNode = require("./packageDetailsNode");
