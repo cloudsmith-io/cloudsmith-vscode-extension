@@ -1,6 +1,6 @@
 # Cloudsmith Visual Studio Code Extension
 
-Bringing Cloudsmith to your favourite IDE! You can now explore your Cloudsmith packages directly within Visual Studio Code using the Cloudsmith Package Explorer extension. 
+Bringing Cloudsmith to your favourite IDE! You can now explore your artifacts directly via VS Code using the Cloudsmith extension. 
 
 <img src="./media/readme/overview.gif" alt="overview" width="600"/>
 
