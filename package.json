@@ -2,9 +2,18 @@
   "name": "cloudsmith",
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith",
-  "description": "View and manage your Cloudsmith artifacts directly within VS Code.",
+  "description": "View and manage your Cloudsmith artifacts directly via VS Code.",
   "version": "1.0.0",
   "license": "SEE LICENSE IN LICENSE.txt",
+  "homepage": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md",
+  "bugs": {
+    "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues",
+    "email": "support@cloudsmith.io"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension"
+  },
   "icon": "media/logo.png",
   "engines": {
     "vscode": "^1.100.0"
@@ -12,11 +21,9 @@
   "categories": [
     "Other"
   ],
-  "repository": {
-        "type": "git",
-        "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension"
-    },
-  "activationEvents": [ "onStartupFinished" ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./extension.js",
   "contributes": {
     "viewsContainers": {
@@ -257,5 +264,38 @@
     "file": "^0.2.2",
     "json": "^11.0.0",
     "path": "^0.12.7"
-  }
+  },
+  "keywords": [
+        "cloudsmith",
+        "devops",
+        "artifact management",
+        "packages",  
+        "alpine",
+        "cargo",
+        "chocolatey",     
+        "composer",
+        "conan",
+        "conda",
+        "cran",
+        "dart",
+        "debian",
+        "docker",
+        "go",
+        "gradle",
+        "helm",
+        "hex",
+        "maven",
+        "npm",
+        "nuget",
+        "powershell",
+        "python",
+        "repositories",
+        "rpm",
+        "ruby",
+        "sbt",
+        "swift",
+        "terraform",
+        "unity",
+        "vagrant"
+    ]
 }
