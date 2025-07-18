@@ -4,7 +4,7 @@
   "displayName": "Cloudsmith",
   "description": "View and manage your Cloudsmith artifacts directly via VS Code.",
   "version": "1.0.0",
-  "license": "SEE LICENSE IN LICENSE.txt",
+  "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md",
   "bugs": {
     "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues",
