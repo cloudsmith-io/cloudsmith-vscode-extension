@@ -2,8 +2,9 @@
   "name": "cloudsmith",
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith",
-  "description": "Cloudsmith Package Explorer for Visual Studio Code.",
+  "description": "View and manage your Cloudsmith artifacts directly within VS Code.",
   "version": "1.0.0",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "icon": "media/logo.png",
   "engines": {
     "vscode": "^1.100.0"
@@ -15,7 +16,7 @@
         "type": "git",
         "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension"
     },
-  "activationEvents": [],
+  "activationEvents": [ "onStartupFinished" ],
   "main": "./extension.js",
   "contributes": {
     "viewsContainers": {
