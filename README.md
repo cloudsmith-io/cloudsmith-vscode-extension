@@ -2,7 +2,7 @@
 
 Bringing Cloudsmith to your favourite IDE! You can now explore your Cloudsmith packages directly within Visual Studio Code using the Cloudsmith Package Explorer extension. 
 
-![Cloudsmith extension overview](media/readme/overview.gif)
+<img src="./media/readme/overview.gif" alt="overview" width="600"/>
 
 ## Installation
 
@@ -14,7 +14,8 @@ To connect to your Cloudsmith isntance, you need to configure either your Person
 
 * Personal API Keys provide support for accessing mulitple Cloudsmith Workspaces if access is granted. A Service Account Token will provide access to a specific Workspace only. 
 
-![Cloudsmith extension configure](media/readme/configure.gif)
+
+<img src="./media/readme/configure.gif" alt="configure" width="1000"/>
 
 ### Settings
 
@@ -25,7 +26,8 @@ A range of settings are configurable for the extension. See Overview for usage o
 * Maximum packages to show per repository. Max is limited to 30. 
 * Use Legacy Web App - URLs to Cloudsmith packages will use the legacy Web App instead. 
 
-![Cloudsmith Settings](media/readme/settings.gif)
+
+<img src="./media/readme/settings.gif" alt="settings" width="1000"/>
 
 
 ## Overview
@@ -38,7 +40,8 @@ The Cloudsmith extension contributes a Cloudsmith view to VS Code. The Cloudsmit
 
 By default the extension returns individual packages. You can display them as [package groups](https://help.cloudsmith.io/docs/package-groups) instead. 
 
-![Package view type](media/readme/package_view_type.gif)
+
+<img src="./media/readme/package_view_type.gif" alt="groupBySetting" width="1000"/>
 
 #### Package Details
 
@@ -64,28 +67,28 @@ You can right-click on each detail and copy the value to the clipboard.
 - Number of downloads
 - Last pushed date/time
 
-![Package details](media/readme/package_details.gif)
+
+<img src="./media/readme/package_details.gif" alt="packageDetails" width="350"/>
 
 #### Package Context Menus
 
 The right-click menu provides access to the following commands varying depending on whether you have enabled the package groups setting. 
 
-![Cloudsmith package context menu](media/readme/package_context_menu.gif)
-![Cloudsmith package group context menu](media/readme/packagegroup_context_menu.gif)
-
+<img src="./media/readme/package_context_menu.gif" alt="contextMenu" width="400"/>
 
 #### Package Inspect
 
 Selecting inspect will return the raw JSON data for the selected item. By default it will send the output to the `Output` window. You can configure for output to be sent to a new text document instead. 
 
-![Package inspect](media/readme/package_inspect.gif)
-![Package group inspect](media/readme/packagegroup_inspect.gif)
+<img src="./media/readme/package_inspect.gif" alt="inspectPackage"/>
 
 #### Open Package in Cloudsmith
 
 You can open the package directly in your Cloudsmith Web App.
 
-![Package open](media/readme/package_open_browser.gif)
+
+<img src="./media/readme/package_open_browser.gif" alt="openPackage" width="1000"/>
+
 
 
 
@@ -98,9 +101,7 @@ You can open the package directly in your Cloudsmith Web App.
 
 ---
 
-
-## Contributing
-
 ## License
 
-**Enjoy!**
+MIT License
+
