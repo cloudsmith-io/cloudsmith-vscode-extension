@@ -1,11 +1,13 @@
 
-<img src="./media/banner.png" alt="overview" />
+<img src="./media/readme/brand-banner.png" alt="banner" />
 
 # Cloudsmith Visual Studio Code Extension
 
 Bringing Cloudsmith to your favourite IDE! You can now explore your artifacts directly via VS Code using the Cloudsmith extension. 
 
 <img src="./media/readme/overview.gif" alt="overview" width="600"/>
+
+<img src="./media/readme/brand-card.png" alt="brand-card" />
 
 ## Installation
 
