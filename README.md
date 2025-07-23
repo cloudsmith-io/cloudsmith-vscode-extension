@@ -90,7 +90,10 @@ You can open the package directly in your Cloudsmith Web App.
 <img src="./media/readme/package_open_browser.gif" alt="openPackage" width="1000"/>
 
 
+## Limitations & known issues
 
+* The number of returned packages is restricted to max 30 per repository. This can be configured to between 1-30 in the settings. Packages are sorted by last pushed in descending order. 
+* Authentication is currently restricted to API Key or Service Account Tokens. 
 
 ## Release Notes
 
