@@ -3,8 +3,6 @@
 
 # Cloudsmith Visual Studio Code Extension
 
-Bringing Cloudsmith to your favourite IDE! You can now explore your artifacts directly via VS Code using the Cloudsmith extension. 
-
 <img src="./media/readme/overview.gif" alt="overview" width="600"/>
 
 <img src="./media/readme/brand-card.png" alt="brand-card" />
@@ -13,12 +11,28 @@ Bringing Cloudsmith to your favourite IDE! You can now explore your artifacts di
 
 To install the extension, open the Extensions view, search for `cloudsmith` to filter results and select the Cloudsmith extension authorised by Cloudsmith. 
 
-To connect to your Cloudsmith instance, you need to configure either your Personal API Key or a Service Account Token. Click on the `key` icon from the view menu and enter your credential into the input box. To connect press the `connect` or `refresh` icons. 
-
 * Entitlement tokens are not supported. 
 
 * Personal API Keys provide support for accessing mulitple Cloudsmith Workspaces if access is granted. A Service Account Token will provide access to a specific Workspace only. 
 
+Alternatively, you can install it via the .vsix file located on the repo releases. ( We recommend installing via the Marketplace. )
+
+From the Extensions view in VS Code:
+
+* Go to the Extensions view.
+* Select Views and More Actions...
+* Select Install from VSIX...
+
+From the command line:
+
+### if you use VS Code
+code --install-extension cloudsmith-x.x.x.vsix
+
+### if you use VS Code Insiders
+code-insiders --install-extension cloudsmith-x-x-x.vsix
+
+### Connect
+After installing, to connect to your Cloudsmith instance, you need to configure either your Personal API Key or a Service Account Token. Click on the `key` icon from the view menu and enter your credential into the input box. To connect press the `connect` or `refresh` icons. 
 
 <img src="./media/readme/configure.gif" alt="configure" width="1000"/>
 
