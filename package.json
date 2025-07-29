@@ -2,7 +2,7 @@
   "name": "cloudsmith",
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith",
-  "description": "Access your artifacts from Cloudsmith directly in VS Code.",
+  "description": "Access your artifacts from Cloudsmith.",
   "version": "1.0.0",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md",
