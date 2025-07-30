@@ -10,7 +10,7 @@ const { CredentialManager } = require("./util/credentialManager");
  */
 async function activate(context) {
 
-  context.secrets.store("cloudsmith.isConnected", "false");
+  context.secrets.store("cloudsmith-vsc.isConnected", "false");
 
   // Define main view provider which populates with data
   const cloudsmithProvider = new CloudsmithProvider(context);
@@ -26,39 +26,39 @@ async function activate(context) {
   // register general commands. Will move this over to command Manager in future release.  
   context.subscriptions.push(
     // Register command to get workspaces
-    vscode.commands.registerCommand("cloudsmith.cloudsmithWorkspaces", () => {
+    vscode.commands.registerCommand("cloudsmith-vsc.cloudsmithWorkspaces", () => {
       const cloudsmithAPI = new CloudsmithAPI(context);
       cloudsmithAPI.get("namespaces" + "/?sort=slug");
     }),
 
     // Register command to clear credentials
-    vscode.commands.registerCommand("cloudsmith.clearCredentials", () => {
+    vscode.commands.registerCommand("cloudsmith-vsc.clearCredentials", () => {
       
       const credentialManager = new CredentialManager(context);
       credentialManager.clearCredentials();
     }),
 
     // Register command to set credentials
-    vscode.commands.registerCommand("cloudsmith.configureCredentials", () => {
+    vscode.commands.registerCommand("cloudsmith-vsc.configureCredentials", () => {
       const credentialManager = new CredentialManager(context);
       credentialManager.storeApiKey();
     }),
 
     // Register command to connect to Cloudsmith
-    vscode.commands.registerCommand("cloudsmith.connectCloudsmith", () => {
+    vscode.commands.registerCommand("cloudsmith-vsc.connectCloudsmith", () => {
       const { ConnectionManager } = require("./util/connectionManager");
       const connectionManager = new ConnectionManager(context);
       connectionManager.connect();
-      vscode.commands.executeCommand("cloudsmith.refreshView");
+      vscode.commands.executeCommand("cloudsmith-vsc.refreshView");
     }),
 
     // Register refresh command for main view
-    vscode.commands.registerCommand("cloudsmith.refreshView", () => {
+    vscode.commands.registerCommand("cloudsmith-vsc.refreshView", () => {
       cloudsmithProvider.refresh();
     }),
 
     // Register the copy-to-clipboard command
-    vscode.commands.registerCommand("cloudsmith.copySelected", async (item) => {
+    vscode.commands.registerCommand("cloudsmith-vsc.copySelected", async (item) => {
       const text = typeof item === "string" ? item : item.label;
       const id = text.label.id;
       const value = text.label.value;
@@ -74,7 +74,7 @@ async function activate(context) {
 
     // Register the inspect package command
     vscode.commands.registerCommand(
-      "cloudsmith.inspectPackage",
+      "cloudsmith-vsc.inspectPackage",
       async (item) => {
         const cloudsmithAPI = new CloudsmithAPI(context);
 
@@ -91,7 +91,7 @@ async function activate(context) {
           );
           const jsonContent = JSON.stringify(result, null, 2);
 
-          const config = vscode.workspace.getConfiguration("cloudsmith");
+          const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
           const inspectOutput = await config.get("inspectOutput");
 
           if (inspectOutput) {
@@ -119,7 +119,7 @@ async function activate(context) {
 
     // Register the inspect package group command
     vscode.commands.registerCommand(
-      "cloudsmith.inspectPackageGroup",
+      "cloudsmith-vsc.inspectPackageGroup",
       async (item) => {
         const cloudsmithAPI = new CloudsmithAPI(context);
         const name = typeof item === "string" ? item : item.name;
@@ -133,7 +133,7 @@ async function activate(context) {
           );
           const jsonContent = JSON.stringify(result, null, 2);
 
-          const config = vscode.workspace.getConfiguration("cloudsmith");
+          const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
           const inspectOutput = await config.get("inspectOutput");
 
           if (inspectOutput) {
@@ -160,7 +160,7 @@ async function activate(context) {
     ),
 
     // Register the open package command
-    vscode.commands.registerCommand("cloudsmith.openPackage", async (item) => {
+    vscode.commands.registerCommand("cloudsmith-vsc.openPackage", async (item) => {
       const workspace = typeof item === "string" ? item : item.namespace;
       const repo = typeof item === "string" ? item : item.repository;
       const format = typeof item === "string" ? item : item.format;
@@ -174,7 +174,7 @@ async function activate(context) {
       //need to replace '/' in name as UI URL replaces these with _
       const pkg = name.replaceAll("/", "_");
 
-      const config = vscode.workspace.getConfiguration("cloudsmith");
+      const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
       const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
 
       if (slug_perm) {
@@ -192,7 +192,7 @@ async function activate(context) {
     }),
 
      // Register the open package group command
-    vscode.commands.registerCommand("cloudsmith.openPackageGroup", async (item) => {
+    vscode.commands.registerCommand("cloudsmith-vsc.openPackageGroup", async (item) => {
       const workspace = typeof item === "string" ? item : item.workspace;
       const repo = typeof item === "string" ? item : item.repo;
       const name = typeof item === "string" ? item : item.name;
@@ -204,7 +204,7 @@ async function activate(context) {
       
 
 
-      const config = vscode.workspace.getConfiguration("cloudsmith");
+      const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
       const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
 
       if (name) {
@@ -223,10 +223,10 @@ async function activate(context) {
     }),
 
     // Register command to open extension settings
-    vscode.commands.registerCommand("cloudsmith.openSettings", () => {
+    vscode.commands.registerCommand("cloudsmith-vsc.openSettings", () => {
       vscode.commands.executeCommand(
         "workbench.action.openSettings",
-        "@ext:Cloudsmith.cloudsmith"
+        "@ext:Cloudsmith.cloudsmith-vsc"
       );
     })
   );

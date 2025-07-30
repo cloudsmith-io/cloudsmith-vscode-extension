@@ -17,7 +17,7 @@ class CredentialManager {
     });
 
     if (apiKey) {
-      await context.secrets.store("cloudsmith.authToken", apiKey);
+      await context.secrets.store("cloudsmith-vsc.authToken", apiKey);
       vscode.window.showInformationMessage("Credential saved securely!");
     }
   }
@@ -25,7 +25,7 @@ class CredentialManager {
   // Fetch credential from secret store
   async getApiKey() {
     const context = this.context;
-    const apiKey = await context.secrets.get("cloudsmith.authToken");
+    const apiKey = await context.secrets.get("cloudsmith-vsc.authToken");
 
     if (!apiKey) {
       return null;
@@ -37,7 +37,7 @@ class CredentialManager {
   // Clear secret
   async clearCredentials() {
     const context = this.context;
-    const apiKey = await context.secrets.get("cloudsmith.authToken");
+    const apiKey = await context.secrets.get("cloudsmith-vsc.authToken");
 
     if (apiKey) {
       vscode.window
@@ -48,7 +48,7 @@ class CredentialManager {
         )
         .then(async (selection) => {
           if (selection === "Delete") {
-            await context.secrets.delete("cloudsmith.authToken");
+            await context.secrets.delete("cloudsmith-vsc.authToken");
             vscode.window.showInformationMessage("Credentials cleared.");
           }
         });

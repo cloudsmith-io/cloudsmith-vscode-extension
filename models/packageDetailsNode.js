@@ -55,7 +55,7 @@ class PackageDetailsNode {
 		}
 
 		treeItem.command = {
-			command: 'cloudsmith.copySelected',
+			command: 'cloudsmith-vsc.copySelected',
 			title: 'Copy Label',
 			arguments: [treeItem]
 		}

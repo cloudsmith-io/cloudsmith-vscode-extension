@@ -34,7 +34,7 @@ class RepositoryNode {
     let repo = this.slug;
     let groupContext = { "repo": repo, "workspace": workspace  };
 
-    const config = vscode.workspace.getConfiguration("cloudsmith");
+    const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
     const maxPackages = await config.get("showMaxPackages"); // get legacy app setting from configuration settings
     const groupByPackageGroup = await config.get("groupByPackageGroups");
 
@@ -70,7 +70,7 @@ class RepositoryNode {
 
   async getChildren() {
     const packages = await this.getPackages();
-    const config = vscode.workspace.getConfiguration("cloudsmith");
+    const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
     const groupByPackageGroup = await config.get("groupByPackageGroups");
 
     if (packages.length > 0) {

@@ -23,10 +23,10 @@ class ConnectionManager {
       } else {
         checkPassed = "false";
       }
-      await this.context.secrets.store("cloudsmith.isConnected", checkPassed);
+      await this.context.secrets.store("cloudsmith-vsc.isConnected", checkPassed);
     } else {
       checkPassed = "true";
-      await this.context.secrets.store("cloudsmith.isConnected", checkPassed);
+      await this.context.secrets.store("cloudsmith-vsc.isConnected", checkPassed);
     }
 
     return checkPassed;
@@ -34,7 +34,7 @@ class ConnectionManager {
 
   // Check if currently connected 
   async isConnected() {
-    const isConnected = await this.context.secrets.get("cloudsmith.isConnected");
+    const isConnected = await this.context.secrets.get("cloudsmith-vsc.isConnected");
     return isConnected
 
   }
@@ -54,7 +54,7 @@ class ConnectionManager {
         .showWarningMessage("No credentials configured!", "Configure", "Cancel")
         .then((selection) => {
           select: if (selection === "Configure") {
-            vscode.commands.executeCommand("cloudsmith.configureCredentials");
+            vscode.commands.executeCommand("cloudsmith-vsc.configureCredentials");
             break select;
           }
         });
@@ -75,7 +75,7 @@ class ConnectionManager {
           )
           .then((selection) => {
             select: if (selection === "Configure") {
-              vscode.commands.executeCommand("cloudsmith.configureCredentials");
+              vscode.commands.executeCommand("cloudsmith-vsc.configureCredentials");
               break select;
             }
           });
