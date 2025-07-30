@@ -83,8 +83,7 @@ async function activate(context) {
         const slug = typeof item === "string" ? item : item.slug;
         const identifier = slug.value.value;
         const repo = typeof item === "string" ? item : item.repository;
-        const url = `packages/${workspace}/${repo}/?query=name:"${name}"`;
-        console.log(url)
+
         if (slug) {
           const result = await cloudsmithAPI.get(
             `packages/${workspace}/${repo}/${identifier}`
@@ -125,8 +124,7 @@ async function activate(context) {
         const name = typeof item === "string" ? item : item.name;
         const workspace = typeof item === "string" ? item : item.workspace;
         const repo = typeof item === "string" ? item : item.repo;
-        const url = `packages/${workspace}/${repo}/?query=name:"${name}"`;
-        console.log(url)
+
         if (name) {
           const result = await cloudsmithAPI.get(
             `packages/${workspace}/${repo}/?query=name:"${name}"`
