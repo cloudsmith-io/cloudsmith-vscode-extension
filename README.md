@@ -125,5 +125,5 @@ You can open the package directly in your Cloudsmith Web App.
 
 ## License
 
-MIT License
+Apache 2.0
 
