@@ -1,199 +1,239 @@
-const path = require('path');
-const env = require('dotenv').config({ path: path.resolve(__dirname, '.env') }); // Load from .env
-const apiKey = env.parsed.CLOUDSMITH_API_KEY;
+const vscode = require("vscode");
+const { CloudsmithProvider } = require("./views/cloudsmithProvider");
+const { helpProvider } = require("./views/helpProvider");
+const { CloudsmithAPI } = require("./util/cloudsmithAPI");
+const { CredentialManager } = require("./util/credentialManager");
 
-const vscode = require('vscode');
-const cloudsmithApi = require('./functions/cloudsmith_apis');
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
 
+  context.secrets.store("cloudsmith-vsc.isConnected", "false");
+
+  // Define main view provider which populates with data
+  const cloudsmithProvider = new CloudsmithProvider(context);
+  vscode.window.createTreeView("cloudsmithView", {
+    treeDataProvider: cloudsmithProvider,
+    showCollapseAll: true,
+  });
+
+  // Set Help & Feedback view.
+  const provider = new helpProvider();
+  vscode.window.registerTreeDataProvider("helpView", provider);
+
+  // register general commands. Will move this over to command Manager in future release.  
+  context.subscriptions.push(
+    // Register command to get workspaces
+    vscode.commands.registerCommand("cloudsmith-vsc.cloudsmithWorkspaces", () => {
+      const cloudsmithAPI = new CloudsmithAPI(context);
+      cloudsmithAPI.get("namespaces" + "/?sort=slug");
+    }),
+
+    // Register command to clear credentials
+    vscode.commands.registerCommand("cloudsmith-vsc.clearCredentials", () => {
+      
+      const credentialManager = new CredentialManager(context);
+      credentialManager.clearCredentials();
+    }),
+
+    // Register command to set credentials
+    vscode.commands.registerCommand("cloudsmith-vsc.configureCredentials", () => {
+      const credentialManager = new CredentialManager(context);
+      credentialManager.storeApiKey();
+    }),
+
+    // Register command to connect to Cloudsmith
+    vscode.commands.registerCommand("cloudsmith-vsc.connectCloudsmith", () => {
+      const { ConnectionManager } = require("./util/connectionManager");
+      const connectionManager = new ConnectionManager(context);
+      connectionManager.connect();
+      vscode.commands.executeCommand("cloudsmith-vsc.refreshView");
+    }),
+
+    // Register refresh command for main view
+    vscode.commands.registerCommand("cloudsmith-vsc.refreshView", () => {
+      cloudsmithProvider.refresh();
+    }),
+
+    // Register the copy-to-clipboard command
+    vscode.commands.registerCommand("cloudsmith-vsc.copySelected", async (item) => {
+      const text = typeof item === "string" ? item : item.label;
+      const id = text.label.id;
+      const value = text.label.value;
+      if (text) {
+        await vscode.env.clipboard.writeText(value.toString());
+        vscode.window.showInformationMessage(
+          `Copied ${id} to clipboard : ${value}`
+        );
+      } else {
+        vscode.window.showWarningMessage("Nothing to copy.");
+      }
+    }),
+
+    // Register the inspect package command
+    vscode.commands.registerCommand(
+      "cloudsmith-vsc.inspectPackage",
+      async (item) => {
+        const cloudsmithAPI = new CloudsmithAPI(context);
+
+        const name = typeof item === "string" ? item : item.name;
+        const workspace = typeof item === "string" ? item : item.namespace;
+        const slug = typeof item === "string" ? item : item.slug;
+        const identifier = slug.value.value;
+        const repo = typeof item === "string" ? item : item.repository;
+
+        if (slug) {
+          const result = await cloudsmithAPI.get(
+            `packages/${workspace}/${repo}/${identifier}`
+          );
+          const jsonContent = JSON.stringify(result, null, 2);
+
+          const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
+          const inspectOutput = await config.get("inspectOutput");
+
+          if (inspectOutput) {
+            const doc = await vscode.workspace.openTextDocument({
+              language: "json",
+              content: jsonContent,
+            });
+            await vscode.window.showTextDocument(doc, { preview: true });
+          } else {
+            const outputChannel =
+              vscode.window.createOutputChannel("Cloudsmith");
+            outputChannel.clear();
+            outputChannel.show(true);
+            outputChannel.append(jsonContent);
+          }
+
+          vscode.window.showInformationMessage(
+            `Inspecting package ${name} in repository ${repo}`
+          );
+        } else {
+          vscode.window.showWarningMessage("Nothing to inspect.");
+        }
+      }
+    ),
+
+    // Register the inspect package group command
+    vscode.commands.registerCommand(
+      "cloudsmith-vsc.inspectPackageGroup",
+      async (item) => {
+        const cloudsmithAPI = new CloudsmithAPI(context);
+        const name = typeof item === "string" ? item : item.name;
+        const workspace = typeof item === "string" ? item : item.workspace;
+        const repo = typeof item === "string" ? item : item.repo;
+
+        if (name) {
+          const result = await cloudsmithAPI.get(
+            `packages/${workspace}/${repo}/?query=name:"${name}"`
+          );
+          const jsonContent = JSON.stringify(result, null, 2);
+
+          const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
+          const inspectOutput = await config.get("inspectOutput");
+
+          if (inspectOutput) {
+            const doc = await vscode.workspace.openTextDocument({
+              language: "json",
+              content: jsonContent,
+            });
+            await vscode.window.showTextDocument(doc, { preview: true });
+          } else {
+            const outputChannel =
+              vscode.window.createOutputChannel("Cloudsmith");
+            outputChannel.clear();
+            outputChannel.show(true);
+            outputChannel.append(jsonContent);
+          }
+
+          vscode.window.showInformationMessage(
+            `Inspecting package group ${name}`
+          );
+        } else {
+          vscode.window.showWarningMessage("Nothing to inspect.");
+        }
+      }
+    ),
+
+    // Register the open package command
+    vscode.commands.registerCommand("cloudsmith-vsc.openPackage", async (item) => {
+      const workspace = typeof item === "string" ? item : item.namespace;
+      const repo = typeof item === "string" ? item : item.repository;
+      const format = typeof item === "string" ? item : item.format;
+      const name = typeof item === "string" ? item : item.name;
+      const sha = typeof item === "string" ? item : item.version;
+      const slug_perm = typeof item === "string" ? item : item.slug_perm;
+      // get the value from the value object. Silly structure I know :(
+      const version = sha.value.value;
+      const identifier = slug_perm.value.value;
+
+      //need to replace '/' in name as UI URL replaces these with _
+      const pkg = name.replaceAll("/", "_");
+
+      const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
+      const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
+
+      if (slug_perm) {
+        if (useLegacyApp) {
+          // workflow handling depending on legacy app setting
+          const url = `https://cloudsmith.io/~${workspace}/repos/${repo}/packages/detail/${format}/${pkg}/${version}`;
+          vscode.env.openExternal(url);
+        } else {
+          const url = `https://app.cloudsmith.com/${workspace}/${repo}/${format}/${pkg}/${version}/${identifier}`;
+          vscode.env.openExternal(url);
+        }
+      } else {
+        vscode.window.showWarningMessage("Nothing to open.");
+      }
+    }),
+
+     // Register the open package group command
+    vscode.commands.registerCommand("cloudsmith-vsc.openPackageGroup", async (item) => {
+      const workspace = typeof item === "string" ? item : item.workspace;
+      const repo = typeof item === "string" ? item : item.repo;
+      const name = typeof item === "string" ? item : item.name;
+
+      //need to replace '/' in name as UI URL replaces these with _
+
+      name.replaceAll("/", "%2F");
+      name.replaceAll(":", "%3A");
+      
 
 
-	/*********************************************************************
-	 *********      ----- WORKSPACE ENDPOINTS -----   *************************
-	 *********************************************************************/
+      const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
+      const useLegacyApp = await config.get("useLegacyWebApp"); // get legacy app setting from configuration settings
 
-	let getWorkspaces = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces',
-		async function () {
+      if (name) {
+        if (useLegacyApp) {
+          // workflow handling depending on legacy app setting
+          const url = `https://cloudsmith.io/~${workspace}/repos/${repo}/packages/detail/${format}/${name}/${version}`;
+          vscode.env.openExternal(url);
+        } else {
+          //colinmoynes-test-org/golang?page=1&query=name%3Agitlab&sort=name
+          const url = `https://app.cloudsmith.com/${workspace}/${repo}?page=1&query=name:${name}&sort=name`;
+          vscode.env.openExternal(url);
+        }
+      } else {
+        vscode.window.showWarningMessage("Nothing to open.");
+      }
+    }),
 
-			// fetch namespaces to prompt user to select
-			const workspaces = await cloudsmithApi.get('namespaces', apiKey);
-			const items = workspaces.map(
-				workspace => {
-					return {
-						label: workspace.name,
-						detail: workspace.slug
-					}
-				})
-
-			const workspace = await vscode.window.showQuickPick(items, {
-				placeHolder: "You have access to the following Workspaces",
-				matchOnDetail: true,
-			})
-			if (workspace == null) return
-			return workspace
-		}
-	);
-
-
-
-
-	/*********************************************************************
-	 *********      ----- REPO ENDPOINTS -----   *************************
-	 *********************************************************************/
-
-	// Fetch Repos
-	let reposList = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposList',
-		async function () {
-
-			const response = await cloudsmithApi.get('repos');
-			// Map the json objects to be used by extensions QuickPick
-			const items = response.map(
-				repo => {
-					return {
-						label: repo.namespace + ' | ' + repo.name + ' | ' + '( ' + repo.repository_type_str + ')',
-						detail: repo.description,
-						link: "https://app.cloudsmith.com/" + repo.namespace + "/" + repo.name
-					}
-				})
-
-			const repo = await vscode.window.showQuickPick(items, {
-				placeHolder: "Your Cloudsmith repositories",
-				matchOnDetail: true,
-			})
-			if (repo == null) return
-			//console.log(repo.link)
-
-			vscode.env.openExternal(repo.link) //if user selects a repo it will prompt to open link to it in browser
-		}
-	);
-
-	let reposListNamespace = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposListNamespace',
-		async function () {
-
-			const workspace = await vscode.commands.executeCommand('cloudsmith-vscode-extension.cloudsmithWorkspaces');
-			const response = await cloudsmithApi.get('repos/' + workspace.detail, apiKey);
-
-			const items2 = response.map(
-				repo => {
-					return {
-						label: repo.namespace + ' | ' + repo.name + ' | ' + '( ' + repo.repository_type_str + ')',
-						detail: repo.description,
-						link: "https://app.cloudsmith.com/" + repo.namespace + "/" + repo.name
-					}
-				})
-
-			const repo = await vscode.window.showQuickPick(items2, {
-				placeHolder: "Your Cloudsmith repositories",
-				matchOnDetail: true,
-			})
-			if (repo == null) return
-
-			vscode.env.openExternal(repo.link)
-
-
-		}
-	);
-
-	// Creates new json template tab with a json template for end user to configure. 
-	let reposCreateTemplate = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateTemplate',
-		async function () {
-
-			const jsonData = {
-				name: '',
-				content_kind: 'Standard',
-				copy_packages: 'Read',
-				default_privilege: 'None',
-				delete_packages: 'Admin',
-				manage_entitlements_privilege: 'Admin',
-				move_packages: 'Admin',
-				replace_packages: 'Write',
-				repository_type_str: 'Public',
-				resync_packages: 'Admin',
-				scan_packages: 'Read',
-				storage_region: 'default',
-				use_entitlements_privilege: 'Read',
-				view_statistics: 'Read'
-
-			};
-
-			const jsonContent = JSON.stringify(jsonData, null, 2);
-			const doc = await vscode.workspace.openTextDocument({
-				language: 'json',
-				content: jsonContent
-			});
-			await vscode.window.showTextDocument(doc);
-
-		}
-	);
-
-	// Create new repo using the open json file
-	let reposCreateNew = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithReposCreateNew',
-		async function () {
-
-			// get the json text from the active editor and add to API payload request
-			const editor = vscode.window.activeTextEditor;
-
-			if (!editor) {
-				vscode.window.showErrorMessage('No active text editor found.');
-				return;
-			}
-
-			const namespaces = await cloudsmithApi.get('namespaces');
-			const items = namespaces.map(
-				namespace => {
-					return {
-						label: namespace.name,
-						detail: namespace.slug
-					}
-				})
-
-			const namespace = await vscode.window.showQuickPick(items, {
-				placeHolder: "Select a namespace to create the repository on",
-				matchOnDetail: true,
-			})
-			if (namespace == null) return
-
-			const document = editor.document;
-			const payload = document.getText();
-
-			const url = 'repos/' + namespace.detail + '/';
-			var response = await cloudsmithApi.post(url, payload);
-
-			const message = 'Successfully created the repository called ' + response.name;
-			const buttonText = 'Open in Cloudsmith';
-			const link = 'https://app.cloudsmith.com/' + response.namespace + '/' + response.name; // Replace with your link
-
-			vscode.window.showInformationMessage(message, buttonText).then(selection => {
-				if (selection === buttonText) {
-					vscode.env.openExternal(vscode.Uri.parse(link));
-				}
-			});
-
-
-		}
-	);
-
-	/*********************************************************************
-	 *********      ----- MISC REQUESTS -----   *************************
-	 *********************************************************************/
-
-	let docs = vscode.commands.registerCommand('cloudsmith-vscode-extension.cloudsmithDocs',
-		function () {
-			vscode.env.openExternal("https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs")
-		}
-	);
-
-	context.subscriptions.push(docs, reposList, reposCreateTemplate, reposCreateNew, reposListNamespace, getWorkspaces);
+    // Register command to open extension settings
+    vscode.commands.registerCommand("cloudsmith-vsc.openSettings", () => {
+      vscode.commands.executeCommand(
+        "workbench.action.openSettings",
+        "@ext:Cloudsmith.cloudsmith-vsc"
+      );
+    })
+  );
 }
 
 // This method is called when your extension is deactivated
-function deactivate() { }
+function deactivate() {}
 
 module.exports = {
-	activate,
-	deactivate
-}
+  activate,
+  deactivate,
+};
