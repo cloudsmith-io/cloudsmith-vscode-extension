@@ -1,5 +1,4 @@
 {
-
   "name": "cloudsmith-vsc",
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith",
@@ -16,19 +15,12 @@
     "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension"
   },
   "icon": "media/logo.png",
-
-  "name": "cloudsmith-vscode-extension",
-  "displayName": "cloudsmith-vscode-extension",
-  "description": "Cloudsmith API capabilities in Visual Studio Code",
-  "version": "0.0.3",
-
   "engines": {
     "vscode": "^1.100.0"
   },
   "categories": [
     "Other"
   ],
-
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -251,106 +243,100 @@
           "description": "If enabled, packages are displayed via Package Group."
         }
       }
-    }
-
+    },
   "activationEvents": [],
-  "main": "./extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithAuth",
-        "category": "Cloudsmith",
-        "title": "Auth"
-      },
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithDocs",
-        "category": "Cloudsmith",
-        "title": "Documentation: View official Cloudsmith docs."
-      },
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithWorkspaces",
-        "category": "Cloudsmith",
-        "title": "Workspaces: Get a list of all workspaces the user belongs to."
-      },
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposList",
-        "category": "Cloudsmith",
-        "title": "Repos: Get all repositories associated with current user."
-      },
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposListNamespace",
-        "category": "Cloudsmith",
-        "title": "Repos: Get all repositories within a namespace. "
-      },
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateTemplate",
-        "category": "Cloudsmith",
-        "title": "Repos: Create a template file to configure your repository."
-      },
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateNew",
-        "category": "Cloudsmith",
-        "title": "Repos: Create a new repository from the open template window"
-      }
+    "main": "./extension.js",
+    "contributes": {
+      "commands": [
+        {
+          "command": "cloudsmith-vscode-extension.cloudsmithAuth",
+          "category": "Cloudsmith",
+          "title": "Auth"
+        },
+        {
+          "command": "cloudsmith-vscode-extension.cloudsmithDocs",
+          "category": "Cloudsmith",
+          "title": "Documentation: View official Cloudsmith docs."
+        },
+        {
+          "command": "cloudsmith-vscode-extension.cloudsmithWorkspaces",
+          "category": "Cloudsmith",
+          "title": "Workspaces: Get a list of all workspaces the user belongs to."
+        },
+        {
+          "command": "cloudsmith-vscode-extension.cloudsmithReposList",
+          "category": "Cloudsmith",
+          "title": "Repos: Get all repositories associated with current user."
+        },
+        {
+          "command": "cloudsmith-vscode-extension.cloudsmithReposListNamespace",
+          "category": "Cloudsmith",
+          "title": "Repos: Get all repositories within a namespace. "
+        },
+        {
+          "command": "cloudsmith-vscode-extension.cloudsmithReposCreateTemplate",
+          "category": "Cloudsmith",
+          "title": "Repos: Create a template file to configure your repository."
+        },
+        {
+          "command": "cloudsmith-vscode-extension.cloudsmithReposCreateNew",
+          "category": "Cloudsmith",
+          "title": "Repos: Create a new repository from the open template window"
+        }
+      ]
+    },
+    "scripts": {
+      "lint": "eslint .",
+      "pretest": "npm run lint",
+      "test": "vscode-test"
+    },
+    "devDependencies": {
+      "@types/mocha": "^10.0.10",
+      "@types/node": "20.x",
+      "@types/vscode": "^1.100.0",
+      "@vscode/test-cli": "^0.0.10",
+      "@vscode/test-electron": "^2.5.2",
+      "eslint": "^9.25.1"
+    },
+    "dependencies": {
+      "child_process": "^1.0.2",
+      "dotenv": "^16.5.0",
+      "file": "^0.2.2",
+      "json": "^11.0.0",
+      "path": "^0.12.7"
+    },
+    "keywords": [
+      "cloudsmith",
+      "devops",
+      "artifact management",
+      "packages",
+      "alpine",
+      "cargo",
+      "chocolatey",
+      "composer",
+      "conan",
+      "conda",
+      "cran",
+      "dart",
+      "debian",
+      "docker",
+      "go",
+      "gradle",
+      "helm",
+      "hex",
+      "maven",
+      "npm",
+      "nuget",
+      "powershell",
+      "python",
+      "repositories",
+      "rpm",
+      "ruby",
+      "sbt",
+      "swift",
+      "terraform",
+      "unity",
+      "vagrant"
     ]
-
-  },
-  "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
-    "@types/vscode": "^1.100.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.5.2",
-    "eslint": "^9.25.1"
-  },
-  "dependencies": {
-    "child_process": "^1.0.2",
-    "dotenv": "^16.5.0",
-    "file": "^0.2.2",
-    "json": "^11.0.0",
-    "path": "^0.12.7"
-
-  },
-  "keywords": [
-        "cloudsmith",
-        "devops",
-        "artifact management",
-        "packages",  
-        "alpine",
-        "cargo",
-        "chocolatey",     
-        "composer",
-        "conan",
-        "conda",
-        "cran",
-        "dart",
-        "debian",
-        "docker",
-        "go",
-        "gradle",
-        "helm",
-        "hex",
-        "maven",
-        "npm",
-        "nuget",
-        "powershell",
-        "python",
-        "repositories",
-        "rpm",
-        "ruby",
-        "sbt",
-        "swift",
-        "terraform",
-        "unity",
-        "vagrant"
-    ]
-}
-
   }
 }
-
