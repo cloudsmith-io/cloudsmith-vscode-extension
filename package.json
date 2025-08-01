@@ -1,4 +1,5 @@
 {
+
   "name": "cloudsmith-vsc",
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith",
@@ -15,12 +16,19 @@
     "url": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension"
   },
   "icon": "media/logo.png",
+
+  "name": "cloudsmith-vscode-extension",
+  "displayName": "cloudsmith-vscode-extension",
+  "description": "Cloudsmith API capabilities in Visual Studio Code",
+  "version": "0.0.3",
+
   "engines": {
     "vscode": "^1.100.0"
   },
   "categories": [
     "Other"
   ],
+
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -244,6 +252,48 @@
         }
       }
     }
+
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithAuth",
+        "category": "Cloudsmith",
+        "title": "Auth"
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithDocs",
+        "category": "Cloudsmith",
+        "title": "Documentation: View official Cloudsmith docs."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithWorkspaces",
+        "category": "Cloudsmith",
+        "title": "Workspaces: Get a list of all workspaces the user belongs to."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposList",
+        "category": "Cloudsmith",
+        "title": "Repos: Get all repositories associated with current user."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposListNamespace",
+        "category": "Cloudsmith",
+        "title": "Repos: Get all repositories within a namespace. "
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateTemplate",
+        "category": "Cloudsmith",
+        "title": "Repos: Create a template file to configure your repository."
+      },
+      {
+        "command": "cloudsmith-vscode-extension.cloudsmithReposCreateNew",
+        "category": "Cloudsmith",
+        "title": "Repos: Create a new repository from the open template window"
+      }
+    ]
+
   },
   "scripts": {
     "lint": "eslint .",
@@ -264,6 +314,7 @@
     "file": "^0.2.2",
     "json": "^11.0.0",
     "path": "^0.12.7"
+
   },
   "keywords": [
         "cloudsmith",
@@ -299,3 +350,7 @@
         "vagrant"
     ]
 }
+
+  }
+}
+
