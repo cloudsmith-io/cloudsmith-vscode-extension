@@ -1,0 +1,39 @@
+---
+name: CI Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint Check (shell, python, yaml)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install common tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck yamllint
+
+      - name: Python Lint (if *.py exists)
+        run: |
+          if ls **/*.py > /dev/null 2>&1; then
+            pip install ruff
+            ruff .
+          else
+            echo "No Python files found."
+          fi
+
+      - name: YAML Lint
+        run: |
+          yamllint .github/
+
+      - name: ShellCheck
+        run: |
+          find . -type f -name "*.sh" -exec shellcheck {} \; || true
