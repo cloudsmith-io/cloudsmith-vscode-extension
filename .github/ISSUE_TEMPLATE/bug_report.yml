@@ -1,0 +1,57 @@
+---
+name: 🐛 Bug Report
+description: Report a reproducible issue in this template or a script
+title: "[BUG] <short description>"
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the form below.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Bug Summary
+      placeholder: e.g. Cloudsmith CLI fails to upload .deb files
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: List the steps to reproduce the issue
+      placeholder: |
+        1. Run `python upload.py`
+        2. See error in the terminal
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment Info
+      placeholder: OS, Python version, CLI version, etc.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Screenshots
+      description: Paste any relevant logs or screenshots
+      placeholder: Paste logs here
+    validations:
+      required: false
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: How urgent is this?
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+      default: 1

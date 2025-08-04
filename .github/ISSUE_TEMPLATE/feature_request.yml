@@ -1,0 +1,57 @@
+---
+name: 💡 Feature Request
+description: Suggest a new feature or improvement
+title: "[FEATURE] <short description>"
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a feature!
+        Please fill in the details below
+
+  - type: input
+    id: feature
+    attributes:
+      label: Feature Title
+      placeholder: Short title for your feature
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the feature
+      placeholder: Describe what the feature does and how it helps
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use Case
+      description: Describe the problem this feature solves
+      placeholder: Who needs this and why?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: Other approaches or tools?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+      default: 1
