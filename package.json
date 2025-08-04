@@ -1,7 +1,7 @@
 {
   "name": "cloudsmith-vsc",
   "publisher": "Cloudsmith",
-  "displayName": "Cloudsmith",
+  "displayName": "Cloudsmith VSCode",
   "description": "Access your artifacts from Cloudsmith instance.",
   "version": "1.0.0",
   "license": "SEE LICENSE IN LICENSE",
