@@ -1,4 +1,8 @@
 
+## 1.0.1 - 3rd Sept 2025
+
+- Added support for Cursor IDE. Install the extension via the vsix file. 
+- Updated Cloudsmith documentation links to the new website. 
 
 ## 1.0.0 - July 2025
 ### Initial release

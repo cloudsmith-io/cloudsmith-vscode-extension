@@ -3,7 +3,7 @@
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith VSCode",
   "description": "Access your artifacts from Cloudsmith instance.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md",
   "bugs": {
