@@ -228,20 +228,10 @@ async function activate(context) {
       );
     }),
 
-    // Register the missing commands that were defined in package.json
-    vscode.commands.registerCommand("cloudsmith-vscode-extension.cloudsmithAuth", () => {
-      vscode.window.showInformationMessage("Cloudsmith authentication command executed");
-      // TODO: Implement authentication logic
-    }),
-
     vscode.commands.registerCommand("cloudsmith-vscode-extension.cloudsmithDocs", () => {
-      vscode.env.openExternal("https://help.cloudsmith.io/");
+      vscode.env.openExternal("https://docs.cloudsmith.com/");
     }),
 
-    vscode.commands.registerCommand("cloudsmith-vscode-extension.cloudsmithReposListNamespace", () => {
-      vscode.window.showInformationMessage("Cloudsmith repos list namespace command executed");
-      // TODO: Implement namespace repos list logic
-    })
   );
 }
 

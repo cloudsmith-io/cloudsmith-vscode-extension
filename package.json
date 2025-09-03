@@ -161,19 +161,9 @@
         "title": "Repos: Create a new repository from the open template window"
       },
       {
-        "command": "cloudsmith-vscode-extension.cloudsmithAuth",
-        "category": "Cloudsmith",
-        "title": "Auth"
-      },
-      {
         "command": "cloudsmith-vscode-extension.cloudsmithDocs",
         "category": "Cloudsmith",
         "title": "Documentation: View official Cloudsmith docs."
-      },
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithReposListNamespace",
-        "category": "Cloudsmith",
-        "title": "Repos: Get all repositories within a namespace. "
       }
     ],
     "menus": {
