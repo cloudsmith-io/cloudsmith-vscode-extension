@@ -226,6 +226,21 @@ async function activate(context) {
         "workbench.action.openSettings",
         "@ext:Cloudsmith.cloudsmith-vsc"
       );
+    }),
+
+    // Register the missing commands that were defined in package.json
+    vscode.commands.registerCommand("cloudsmith-vscode-extension.cloudsmithAuth", () => {
+      vscode.window.showInformationMessage("Cloudsmith authentication command executed");
+      // TODO: Implement authentication logic
+    }),
+
+    vscode.commands.registerCommand("cloudsmith-vscode-extension.cloudsmithDocs", () => {
+      vscode.env.openExternal("https://help.cloudsmith.io/");
+    }),
+
+    vscode.commands.registerCommand("cloudsmith-vscode-extension.cloudsmithReposListNamespace", () => {
+      vscode.window.showInformationMessage("Cloudsmith repos list namespace command executed");
+      // TODO: Implement namespace repos list logic
     })
   );
 }
