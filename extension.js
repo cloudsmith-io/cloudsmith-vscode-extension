@@ -226,7 +226,12 @@ async function activate(context) {
         "workbench.action.openSettings",
         "@ext:Cloudsmith.cloudsmith-vsc"
       );
-    })
+    }),
+
+    vscode.commands.registerCommand("cloudsmith-vscode-extension.cloudsmithDocs", () => {
+      vscode.env.openExternal("https://docs.cloudsmith.com/");
+    }),
+
   );
 }
 

@@ -23,8 +23,8 @@ class helpProvider {
             }
 
         const links = [
-            { label: 'Read Extension Documentation', url: 'https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md', icon: new vscode.ThemeIcon('link-external') },
-            { label: 'Get Started with Cloudsmith', url: 'https://help.cloudsmith.io/docs/welcome-to-cloudsmith-docs', icon: cloudsmithLogo },
+            { label: 'Read Extension Documentation', url: 'https://docs.cloudsmith.com/developer-tools/vscode', icon: new vscode.ThemeIcon('link-external') },
+            { label: 'Get Started with Cloudsmith', url: 'https://docs.cloudsmith.com/', icon: cloudsmithLogo },
             { label: 'Review Issues', url: 'https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues', icon: new vscode.ThemeIcon('logo-github') },
             { label: 'Report Issue', url: 'https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues', icon: new vscode.ThemeIcon('logo-github') }
         ];
