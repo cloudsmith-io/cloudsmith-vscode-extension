@@ -264,7 +264,9 @@
     "eslint": "^9.25.1"
   },
   "dependencies": {},
-  "enabledApiProposals": ["extensionRuntime"],
+  "enabledApiProposals": [
+    "extensionRuntime"
+  ],
   "keywords": [
     "cloudsmith",
     "devops",
