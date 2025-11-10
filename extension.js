@@ -19,12 +19,26 @@ async function activate(context) {
     showCollapseAll: true,
   });
 
+
+
   // Set Help & Feedback view.
   const provider = new helpProvider();
   vscode.window.registerTreeDataProvider("helpView", provider);
 
   // register general commands. Will move this over to command Manager in future release.  
   context.subscriptions.push(
+
+    // Register the load more command
+    vscode.commands.registerCommand(
+      "cloudsmith-vsc.loadMoreRepos",
+      async (workspaceNode) => {
+        if (!workspaceNode) return;
+        await workspaceNode.getRepositories(true);
+        vscode.commands.executeCommand("cloudsmith-vsc.refreshTree"); // optional, triggers your provider’s refresh
+      }
+    ),
+
+
     // Register command to get workspaces
     vscode.commands.registerCommand("cloudsmith-vsc.cloudsmithWorkspaces", () => {
       const cloudsmithAPI = new CloudsmithAPI(context);
@@ -33,7 +47,7 @@ async function activate(context) {
 
     // Register command to clear credentials
     vscode.commands.registerCommand("cloudsmith-vsc.clearCredentials", () => {
-      
+
       const credentialManager = new CredentialManager(context);
       credentialManager.clearCredentials();
     }),
@@ -189,7 +203,7 @@ async function activate(context) {
       }
     }),
 
-     // Register the open package group command
+    // Register the open package group command
     vscode.commands.registerCommand("cloudsmith-vsc.openPackageGroup", async (item) => {
       const workspace = typeof item === "string" ? item : item.workspace;
       const repo = typeof item === "string" ? item : item.repo;
@@ -199,7 +213,7 @@ async function activate(context) {
 
       name.replaceAll("/", "%2F");
       name.replaceAll(":", "%3A");
-      
+
 
 
       const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
@@ -236,7 +250,7 @@ async function activate(context) {
 }
 
 // This method is called when your extension is deactivated
-function deactivate() {}
+function deactivate() { }
 
 module.exports = {
   activate,
