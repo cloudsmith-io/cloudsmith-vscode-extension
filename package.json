@@ -159,11 +159,6 @@
       {
         "command": "cloudsmith-vsc.cloudsmithReposCreateNew",
         "title": "Repos: Create a new repository from the open template window"
-      },
-      {
-        "command": "cloudsmith-vscode-extension.cloudsmithDocs",
-        "category": "Cloudsmith",
-        "title": "Documentation: View official Cloudsmith docs."
       }
     ],
     "menus": {
@@ -264,9 +259,6 @@
     "eslint": "^9.25.1"
   },
   "dependencies": {},
-  "enabledApiProposals": [
-    "extensionRuntime"
-  ],
   "keywords": [
     "cloudsmith",
     "devops",
