@@ -11,9 +11,17 @@ class CloudsmithProvider {
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
   }
 
+  //getTreeItem(element) {
+  //return element.getTreeItem();
+  //}
+
   getTreeItem(element) {
+    if (element instanceof vscode.TreeItem) {
+      return element;
+    }
     return element.getTreeItem();
   }
+
 
   getChildren(element) {
     if (!element) {
@@ -22,9 +30,10 @@ class CloudsmithProvider {
     return element.getChildren();
   }
 
-  refresh() {
-    this._onDidChangeTreeData.fire();
+  refresh(element) {
+    this._onDidChangeTreeData.fire(element);
   }
+
 
   async getWorkspaces() {
     const context = this.context;
@@ -53,7 +62,7 @@ class CloudsmithProvider {
         workspaces: workspaces
       });
     }
-    
+
     return WorkspaceNodes;
   }
 }

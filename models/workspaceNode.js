@@ -67,7 +67,7 @@ class WorkspaceNode {
       this.context.globalState.update("CloudsmithCache", {
         name: "Repositories",
         lastSync: Date.now(),
-        workspaces: this.repos,
+        repositories: this.repos,
       });
 
       return repoNodes;

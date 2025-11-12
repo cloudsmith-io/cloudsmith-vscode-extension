@@ -28,17 +28,6 @@ async function activate(context) {
   // register general commands. Will move this over to command Manager in future release.  
   context.subscriptions.push(
 
-    // Register the load more command
-    vscode.commands.registerCommand(
-      "cloudsmith-vsc.loadMoreRepos",
-      async (workspaceNode) => {
-        if (!workspaceNode) return;
-        await workspaceNode.getRepositories(true);
-        vscode.commands.executeCommand("cloudsmith-vsc.refreshTree"); // optional, triggers your provider’s refresh
-      }
-    ),
-
-
     // Register command to get workspaces
     vscode.commands.registerCommand("cloudsmith-vsc.cloudsmithWorkspaces", () => {
       const cloudsmithAPI = new CloudsmithAPI(context);
@@ -70,6 +59,13 @@ async function activate(context) {
     vscode.commands.registerCommand("cloudsmith-vsc.refreshView", () => {
       cloudsmithProvider.refresh();
     }),
+
+    vscode.commands.registerCommand(
+      "cloudsmith-vsc.refreshTreeView",
+      (element) => {
+        cloudsmithProvider.refresh(element);
+      }
+    ),
 
     // Register the copy-to-clipboard command
     vscode.commands.registerCommand("cloudsmith-vsc.copySelected", async (item) => {
@@ -245,6 +241,18 @@ async function activate(context) {
     vscode.commands.registerCommand("cloudsmith-vscode-extension.cloudsmithDocs", () => {
       vscode.env.openExternal("https://docs.cloudsmith.com/");
     }),
+
+    // Register the load more command
+    vscode.commands.registerCommand(
+      "cloudsmith-vsc.loadMoreRepos",
+      async (workspaceNode) => {
+        if (!workspaceNode) return;
+        await workspaceNode.getRepositories(true);
+        // 🔄 Tell the provider to re-render just this workspace node
+        cloudsmithProvider.refresh(workspaceNode);
+        //vscode.commands.executeCommand("cloudsmith-vsc.refreshTreeView"); // optional, triggers your provider’s refresh
+      }
+    ),
 
   );
 }
