@@ -168,6 +168,12 @@
         "category": "Cloudsmith"
       },
       {
+        "command": "cloudsmith-vsc.filterVulnerabilities",
+        "title": "Filter Vulnerabilities",
+        "category": "Cloudsmith",
+        "icon": "$(filter)"
+      },
+      {
         "command": "cloudsmith-vsc.explainQuarantine",
         "title": "Explain Quarantine",
         "category": "Cloudsmith"
@@ -364,6 +370,16 @@
         {
           "command": "cloudsmith-vsc.showVulnerabilities",
           "when": "viewItem =~ /^(package|packageQuarantined|dependencyHealthBlocked|dependencyHealthViolated)$/",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.filterVulnerabilities",
+          "when": "viewItem == vulnerabilitySummary",
+          "group": "inline"
+        },
+        {
+          "command": "cloudsmith-vsc.filterVulnerabilities",
+          "when": "viewItem == vulnerabilitySummary",
           "group": "navigation"
         },
         {

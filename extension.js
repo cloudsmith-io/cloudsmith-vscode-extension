@@ -1110,6 +1110,86 @@ async function activate(context) {
       await vulnerabilityProvider.show(item);
     }),
 
+    // Register vulnerability filter command — updates a summary node in-place
+    vscode.commands.registerCommand("cloudsmith-vsc.filterVulnerabilities", async (vulnSummaryNode) => {
+      if (!vulnSummaryNode ||
+          typeof vulnSummaryNode.setSeverityFilter !== "function" ||
+          typeof vulnSummaryNode.setCvssThreshold !== "function") {
+        vscode.window.showWarningMessage("No vulnerability summary selected.");
+        return;
+      }
+
+      const filterType = await vscode.window.showQuickPick([
+        { label: "$(filter) Filter by severity", value: "severity" },
+        { label: "$(dashboard) Filter by CVSS threshold", value: "cvss" },
+        { label: "$(clear-all) Clear all filters", value: "clear" },
+      ], {
+        placeHolder: "Filter vulnerabilities",
+      });
+
+      if (!filterType) {
+        return;
+      }
+
+      if (filterType.value === "severity") {
+        const severities = await vscode.window.showQuickPick([
+          { label: "Critical", picked: true },
+          { label: "High", picked: true },
+          { label: "Medium", picked: false },
+          { label: "Low", picked: false },
+        ], {
+          canPickMany: true,
+          placeHolder: "Select severity levels to show",
+        });
+
+        if (!severities || severities.length === 0) {
+          return;
+        }
+
+        vulnSummaryNode.setSeverityFilter(severities.map(item => item.label.toLowerCase()));
+      } else if (filterType.value === "cvss") {
+        const thresholdPick = await vscode.window.showQuickPick([
+          { label: "CVSS >= 9.0 (Critical)", value: 9.0 },
+          { label: "CVSS >= 7.0 (High+)", value: 7.0 },
+          { label: "CVSS >= 4.0 (Medium+)", value: 4.0 },
+          { label: "Custom threshold...", value: "custom" },
+        ], {
+          placeHolder: "Select minimum CVSS score",
+        });
+
+        if (!thresholdPick) {
+          return;
+        }
+
+        let cvssValue = thresholdPick.value;
+        if (cvssValue === "custom") {
+          const input = await vscode.window.showInputBox({
+            prompt: "Enter minimum CVSS score (0.0 - 10.0)",
+            placeHolder: "7.0",
+            validateInput: (value) => {
+              const parsed = Number.parseFloat(value);
+              return Number.isNaN(parsed) || parsed < 0 || parsed > 10
+                ? "Enter a number between 0.0 and 10.0"
+                : null;
+            },
+          });
+          if (!input) {
+            return;
+          }
+          cvssValue = Number.parseFloat(input);
+        }
+
+        vulnSummaryNode.setCvssThreshold(cvssValue);
+      } else {
+        vulnSummaryNode.setSeverityFilter(null);
+        vulnSummaryNode.setCvssThreshold(null);
+      }
+
+      cloudsmithProvider._onDidChangeTreeData.fire(vulnSummaryNode);
+      searchProvider._onDidChangeTreeData.fire(vulnSummaryNode);
+      dependencyHealthProvider._onDidChangeTreeData.fire(vulnSummaryNode);
+    }),
+
     // Register explain quarantine command — opens WebView panel with policy trace
     vscode.commands.registerCommand("cloudsmith-vsc.explainQuarantine", async (item) => {
       if (!item) {
