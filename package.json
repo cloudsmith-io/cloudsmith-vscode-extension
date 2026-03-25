@@ -400,12 +400,12 @@
         },
         {
           "command": "cloudsmith-vsc.copyInstallCommand",
-          "when": "viewItem =~ /^(package|packageQuarantined|dependencyHealth|dependencyHealthBlocked|dependencyHealthViolated)$/",
+          "when": "viewItem =~ /^(package|dependencyHealth|dependencyHealthViolated)$/",
           "group": "navigation"
         },
         {
           "command": "cloudsmith-vsc.showInstallCommand",
-          "when": "viewItem =~ /^(package|packageQuarantined|dependencyHealth|dependencyHealthBlocked|dependencyHealthViolated)$/",
+          "when": "viewItem =~ /^(package|dependencyHealth|dependencyHealthViolated)$/",
           "group": "navigation"
         },
         {

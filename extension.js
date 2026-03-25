@@ -61,6 +61,105 @@ function extractPackageInfo(item) {
   };
 }
 
+function getNestedInstallField(item, fieldName) {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+  if (item[fieldName] != null) {
+    return item[fieldName];
+  }
+  if (item.cloudsmithMatch && item.cloudsmithMatch[fieldName] != null) {
+    return item.cloudsmithMatch[fieldName];
+  }
+  return null;
+}
+
+function isQuarantinedPackage(item) {
+  const status = unwrapValue(item && item.status_str) ||
+    (item && item.status_str_raw) ||
+    getNestedInstallField(item, "status_str");
+  return status === "Quarantined";
+}
+
+function getInstallTags(item) {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+
+  if (item.tags_raw && typeof item.tags_raw === "object" && !Array.isArray(item.tags_raw)) {
+    return item.tags_raw;
+  }
+
+  if (item.tags && typeof item.tags === "object" && !Array.isArray(item.tags)) {
+    if (!(item.tags.id && Object.prototype.hasOwnProperty.call(item.tags, "value"))) {
+      return item.tags;
+    }
+  }
+
+  if (item.cloudsmithMatch && item.cloudsmithMatch.tags && typeof item.cloudsmithMatch.tags === "object") {
+    return item.cloudsmithMatch.tags;
+  }
+
+  return null;
+}
+
+function getInstallOptions(item) {
+  const installOpts = {};
+  const tags = getInstallTags(item);
+  if (tags) {
+    installOpts.tags = tags;
+  }
+
+  const showDigest = vscode.workspace.getConfiguration("cloudsmith-vsc").get("showDockerDigestCommand", false);
+  if (showDigest) {
+    const checksumSha256 = getNestedInstallField(item, "checksum_sha256");
+    if (checksumSha256) {
+      installOpts.checksumSha256 = checksumSha256;
+    }
+
+    const versionDigest = getNestedInstallField(item, "version_digest");
+    if (versionDigest) {
+      installOpts.versionDigest = versionDigest;
+    }
+  }
+
+  const cdnUrl = getNestedInstallField(item, "cdn_url");
+  if (cdnUrl) {
+    installOpts.cdnUrl = cdnUrl;
+  }
+
+  const filename = getNestedInstallField(item, "filename");
+  if (filename) {
+    installOpts.filename = filename;
+  }
+
+  return installOpts;
+}
+
+async function pickInstallCommandVariant(result) {
+  if (!result.alternatives || result.alternatives.length === 0) {
+    return result.command;
+  }
+
+  const picks = [
+    {
+      label: "$(arrow-right) Primary",
+      description: InstallCommandBuilder.toClipboardCommand(result.command),
+      _cmd: result.command,
+    },
+    ...result.alternatives.map(a => ({
+      label: `$(arrow-right) ${a.label}`,
+      description: InstallCommandBuilder.toClipboardCommand(a.command),
+      _cmd: a.command,
+    })),
+  ];
+
+  const pick = await vscode.window.showQuickPick(picks, {
+    placeHolder: "Choose install command variant",
+  });
+  return pick ? pick._cmd : null;
+}
+
 /**
  * Prompt user to select from recently interacted packages.
  * Returns a package-like object or null if no selection made.
@@ -1069,25 +1168,17 @@ async function activate(context) {
         if (!action) return;
 
         if (action.id === "install") {
-          const installOpts = {};
-          const showDigest = vscode.workspace.getConfiguration("cloudsmith-vsc").get("showDockerDigestCommand", false);
-          if (showDigest && pkg.checksum_sha256) {
-            installOpts.checksumSha256 = pkg.checksum_sha256;
-          }
-          if (pkg.cdn_url) installOpts.cdnUrl = pkg.cdn_url;
-          if (pkg.filename) installOpts.filename = pkg.filename;
-          const installResult = InstallCommandBuilder.build(format, name, pkg.version, workspace, pkgRepo, installOpts);
-          let chosenCommand = installResult.command;
-          if (installResult.alternatives && installResult.alternatives.length > 0) {
-            const picks = [
-              { label: "$(arrow-right) Primary", description: installResult.command.split("\n").pop(), _cmd: installResult.command },
-              ...installResult.alternatives.map(a => ({ label: `$(arrow-right) ${a.label}`, description: a.command.split("\n").pop(), _cmd: a.command })),
-            ];
-            const pick = await vscode.window.showQuickPick(picks, { placeHolder: "Choose install command variant" });
-            if (!pick) return;
-            chosenCommand = pick._cmd;
-          }
-          await vscode.env.clipboard.writeText(chosenCommand);
+          const installResult = InstallCommandBuilder.build(
+            format,
+            name,
+            pkg.version,
+            workspace,
+            pkgRepo,
+            getInstallOptions(pkg)
+          );
+          const chosenCommand = await pickInstallCommandVariant(installResult);
+          if (!chosenCommand) return;
+          await vscode.env.clipboard.writeText(InstallCommandBuilder.toClipboardCommand(chosenCommand));
           let msg = `Install command copied for ${name} ${pkg.version}`;
           if (crossRepo) msg += ` (from ${pkgRepo})`;
           if (installResult.note) msg += ` \u2014 Note: ${installResult.note}`;
@@ -1265,33 +1356,22 @@ async function activate(context) {
         item = await pickRecentPackage();
         if (!item) return;
       }
+      if (isQuarantinedPackage(item)) {
+        vscode.window.showWarningMessage("Install commands are not available for quarantined packages.");
+        return;
+      }
       recentPackages.add(item);
       const info = extractPackageInfo(item);
       if (!info.name || !info.format || !info.workspace || !info.repo) {
         vscode.window.showWarningMessage("Could not determine package details for install command.");
         return;
       }
-      const installOpts = {};
-      const showDigest = vscode.workspace.getConfiguration("cloudsmith-vsc").get("showDockerDigestCommand", false);
-      if (showDigest && item.checksum_sha256) {
-        installOpts.checksumSha256 = item.checksum_sha256;
-      }
-      if (item.cdn_url) installOpts.cdnUrl = item.cdn_url;
-      if (item.filename) installOpts.filename = item.filename;
       const result = InstallCommandBuilder.build(
-        info.format, info.name, info.version || "latest", info.workspace, info.repo, installOpts
+        info.format, info.name, info.version || "latest", info.workspace, info.repo, getInstallOptions(item)
       );
-      let chosenCommand = result.command;
-      if (result.alternatives && result.alternatives.length > 0) {
-        const picks = [
-          { label: "$(arrow-right) Primary", description: result.command.split("\n").pop(), _cmd: result.command },
-          ...result.alternatives.map(a => ({ label: `$(arrow-right) ${a.label}`, description: a.command.split("\n").pop(), _cmd: a.command })),
-        ];
-        const pick = await vscode.window.showQuickPick(picks, { placeHolder: "Choose install command variant" });
-        if (!pick) return;
-        chosenCommand = pick._cmd;
-      }
-      await vscode.env.clipboard.writeText(chosenCommand);
+      const chosenCommand = await pickInstallCommandVariant(result);
+      if (!chosenCommand) return;
+      await vscode.env.clipboard.writeText(InstallCommandBuilder.toClipboardCommand(chosenCommand));
       let msg = `Install command copied for ${info.name}`;
       if (result.note) {
         msg += ` \u2014 Note: ${result.note}`;
@@ -1421,21 +1501,18 @@ async function activate(context) {
         item = await pickRecentPackage();
         if (!item) return;
       }
+      if (isQuarantinedPackage(item)) {
+        vscode.window.showWarningMessage("Install commands are not available for quarantined packages.");
+        return;
+      }
       recentPackages.add(item);
       const info = extractPackageInfo(item);
       if (!info.name || !info.format || !info.workspace || !info.repo) {
         vscode.window.showWarningMessage("Could not determine package details for install command.");
         return;
       }
-      const installOpts = {};
-      const showDigest = vscode.workspace.getConfiguration("cloudsmith-vsc").get("showDockerDigestCommand", false);
-      if (showDigest && item.checksum_sha256) {
-        installOpts.checksumSha256 = item.checksum_sha256;
-      }
-      if (item.cdn_url) installOpts.cdnUrl = item.cdn_url;
-      if (item.filename) installOpts.filename = item.filename;
       const result = InstallCommandBuilder.build(
-        info.format, info.name, info.version || "latest", info.workspace, info.repo, installOpts
+        info.format, info.name, info.version || "latest", info.workspace, info.repo, getInstallOptions(item)
       );
       let content = result.command;
       if (result.alternatives && result.alternatives.length > 0) {

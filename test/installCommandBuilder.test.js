@@ -48,10 +48,14 @@ suite("InstallCommandBuilder Test Suite", () => {
   });
 
   test("docker generates tag-based pull command", () => {
-    const result = InstallCommandBuilder.build("docker", "nginx", "1.25", ws, repo);
+    const result = InstallCommandBuilder.build("docker", "chainguard/python", "df07729a6842572922ea04b17580ce397f141fbfb9f88265972a840f5fbc567e", ws, repo, {
+      tags: {
+        version: ["latest"],
+      },
+    });
     assert.strictEqual(
       result.command,
-      "# Verify package details before running\ndocker pull docker.cloudsmith.io/my-org/my-repo/nginx:1.25"
+      "# Verify package details before running\ndocker pull docker.cloudsmith.io/my-org/my-repo/chainguard/python:latest"
     );
     assert.ok(result.note);
     assert.ok(result.note.includes("docker login"));
@@ -64,7 +68,10 @@ suite("InstallCommandBuilder Test Suite", () => {
   });
 
   test("docker includes digest alternative when checksumSha256 provided", () => {
-    const result = InstallCommandBuilder.build("docker", "nginx", "1.25", ws, repo, {
+    const result = InstallCommandBuilder.build("docker", "nginx", "digest-value", ws, repo, {
+      tags: {
+        version: ["1.25"],
+      },
       checksumSha256: "abc123def456",
     });
     assert.ok(result.command.includes("nginx:1.25"), "Primary is tag-based");
@@ -74,9 +81,76 @@ suite("InstallCommandBuilder Test Suite", () => {
     assert.ok(result.alternatives[0].label.includes("digest"));
   });
 
+  test("docker prefers tags.version over digest-like version", () => {
+    const result = InstallCommandBuilder.build("docker", "flask-app", "7d954406d981866d429fcfd1d832391a38546fdea1aa8a3ae1d4db08a9a250f2", ws, repo, {
+      tags: {
+        version: ["stable"],
+      },
+    });
+    assert.ok(result.command.includes("docker pull docker.cloudsmith.io/my-org/my-repo/flask-app:stable"));
+    assert.ok(!result.command.includes("'flask-app'"));
+    assert.ok(!result.command.includes("'stable'"));
+  });
+
+  test("docker falls back to version when tags.version is missing", () => {
+    const result = InstallCommandBuilder.build("docker", "flask-app", "sha256:7d954406d981866d429fcfd1d832391a38546fdea1aa8a3ae1d4db08a9a250f2", ws, repo);
+    assert.ok(result.command.includes("docker pull docker.cloudsmith.io/my-org/my-repo/flask-app:sha256:7d954406d981866d429fcfd1d832391a38546fdea1aa8a3ae1d4db08a9a250f2"));
+  });
+
+  test("docker uses versionDigest when checksumSha256 is unavailable", () => {
+    const result = InstallCommandBuilder.build("docker", "nginx", "1.25", ws, repo, {
+      versionDigest: "sha256:def456abc123",
+    });
+    assert.ok(result.alternatives, "Should have digest alternative");
+    assert.strictEqual(result.alternatives.length, 1);
+    assert.ok(result.alternatives[0].command.includes("nginx@sha256:def456abc123"));
+  });
+
   test("docker has no digest alternative when checksumSha256 is missing", () => {
     const result = InstallCommandBuilder.build("docker", "nginx", "1.25", ws, repo, {});
     assert.ok(!result.alternatives, "No alternatives without checksum");
+  });
+
+  test("extractDockerTag prefers tags.version before other fields", () => {
+    const tag = InstallCommandBuilder.extractDockerTag({
+      tags: {
+        version: ["release-1.0.0"],
+      },
+      docker_tag: "ignored",
+    });
+    assert.strictEqual(tag, "release-1.0.0");
+  });
+
+  test("extractDockerTag reads the first version tag from arrays", () => {
+    const tag = InstallCommandBuilder.extractDockerTag({
+      tags_raw: {
+        version: ["stable", "latest"],
+      },
+    });
+    assert.strictEqual(tag, "stable");
+  });
+
+  test("toClipboardCommand removes the verification banner only", () => {
+    const command = "# Verify package details before running\ndocker pull docker.cloudsmith.io/my-org/my-repo/nginx:1.25";
+    assert.strictEqual(
+      InstallCommandBuilder.toClipboardCommand(command),
+      "docker pull docker.cloudsmith.io/my-org/my-repo/nginx:1.25"
+    );
+  });
+
+  test("docker strips trailing .sig from image names", () => {
+    const result = InstallCommandBuilder.build("docker", "chainguard/python.sig", "digest-value", ws, repo, {
+      tags: {
+        version: ["latest"],
+      },
+    });
+    assert.ok(result.command.includes("docker pull docker.cloudsmith.io/my-org/my-repo/chainguard/python:latest"));
+    assert.ok(!result.command.includes(".sig:latest"));
+  });
+
+  test("toClipboardCommand leaves raw commands unchanged", () => {
+    const command = "curl -L -O https://example.com/file.tgz";
+    assert.strictEqual(InstallCommandBuilder.toClipboardCommand(command), command);
   });
 
   test("helm generates helm install with repo URL", () => {

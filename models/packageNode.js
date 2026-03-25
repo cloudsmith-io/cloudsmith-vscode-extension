@@ -18,6 +18,7 @@ class PackageNode {
     this.namespace = pkg.namespace;
     this.status_reason = pkg.status_reason || null;
     this.checksum_sha256 = pkg.checksum_sha256 || null;
+    this.version_digest = pkg.version_digest || null;
     this.cdn_url = pkg.cdn_url || null;
     this.filename = pkg.filename || null;
 
