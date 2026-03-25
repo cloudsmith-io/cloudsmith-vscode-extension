@@ -17,19 +17,17 @@ class helpNode extends vscode.TreeItem {
         };
     }
 
-    getTreeItem(element) {
-        const treeItem = new vscode.TreeItem(element)
-        const label = this.label
-        let iconPath = this.icon
-
-        // Set the command on the tree item as well (for compatibility)
-        treeItem.command = this.command;
-
+    getTreeItem() {
         return {
-            label: label,
-            iconPath: iconPath,
-            command: this.command
-        }
+            label: this.label,
+            iconPath: this.icon,
+            command: this.command,
+            tooltip: this.tooltip,
+        };
+    }
+
+    getChildren() {
+        return [];
     }
 }
 

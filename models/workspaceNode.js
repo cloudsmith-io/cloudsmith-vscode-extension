@@ -36,16 +36,26 @@ class WorkspaceNode {
     );
 
     const RepositoryNodes = [];
-    if (repositories) {
-      for (const repo of repositories) {
-        const repositoryNodeInst = new repositoryNode(
-          repo,
-          this.name,
-          this.context
-        );
-        RepositoryNodes.push(repositoryNodeInst);
-      }
+    if (typeof repositories === "string") {
+      vscode.window.showErrorMessage(
+        `Failed to load repositories for ${workspace}: ${repositories}`
+      );
+      return RepositoryNodes;
     }
+
+    if (!Array.isArray(repositories)) {
+      return RepositoryNodes;
+    }
+
+    for (const repo of repositories) {
+      const repositoryNodeInst = new repositoryNode(
+        repo,
+        this.slug,
+        this.context
+      );
+      RepositoryNodes.push(repositoryNodeInst);
+    }
+
     context.globalState.update("CloudsmithCache", {
       name: "Repositories",
       lastSync: Date.now(),
@@ -55,11 +65,8 @@ class WorkspaceNode {
   }
 
   async getChildren() {
-    const repos = await this.getRepositories();
-
-    return repos.map((item) => {
-      return new repositoryNode(item, this.slug, this.context);
-    });
+    // getRepositories() already returns RepositoryNode instances — return directly
+    return this.getRepositories();
   }
 }
 

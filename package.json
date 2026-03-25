@@ -3,7 +3,7 @@
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith VSCode",
   "description": "Access your artifacts from Cloudsmith instance.",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md",
   "bugs": {
@@ -42,16 +42,20 @@
           "name": "Workspaces"
         },
         {
+          "id": "cloudsmithSearchView",
+          "name": "Package Search"
+        },
+        {
+          "id": "cloudsmithDependencyHealthView",
+          "name": "Dependency Health"
+        },
+        {
           "id": "helpView",
           "name": "Help and Feedback"
         }
       ]
     },
     "commands": [
-      {
-        "command": "cloudsmith-vsc.openLink",
-        "title": "Open Link"
-      },
       {
         "command": "cloudsmith-vsc.openSettings",
         "title": "Open Cloudsmith Settings",
@@ -60,7 +64,7 @@
       },
       {
         "command": "cloudsmith-vsc.configureCredentials",
-        "title": "Configure Cloudsmith Credentials",
+        "title": "Set Up Cloudsmith Authentication",
         "category": "Cloudsmith",
         "icon": "$(key)"
       },
@@ -96,74 +100,158 @@
         "title": "View package group in Cloudsmith"
       },
       {
-        "command": "cloudsmith-vsc.selectWorkspace",
-        "title": "Select Workspace from Workspaces view"
-      },
-      {
-        "command": "cloudsmith-vsc.selectRepo",
-        "title": "Select Repo from Repos view"
-      },
-      {
-        "command": "cloudsmith-vsc.openWorkspacesViewItem",
-        "title": "Open Workspace Item"
-      },
-      {
-        "command": "cloudsmith-vsc.openReposViewItem",
-        "title": "Open Repos Item"
-      },
-      {
-        "command": "cloudsmith-vsc.openPackagesViewItem",
-        "title": "Open Packages Item"
-      },
-      {
-        "command": "cloudsmith-vsc.workspacesContextAction",
-        "title": "Workspace Context Action"
-      },
-      {
-        "command": "cloudsmith-vsc.reposContextAction",
-        "title": "Repos Context Action"
-      },
-      {
-        "command": "cloudsmith-vsc.packagesContextAction",
-        "title": "Packages Context Action"
-      },
-      {
         "command": "cloudsmith-vsc.refreshView",
         "title": "Refresh Packages",
         "icon": "$(refresh)"
       },
       {
-        "command": "cloudsmith-vsc.cloudsmithWorkspaces",
-        "title": "Workspaces: Load Workspaces"
-      },
-      {
-        "command": "cloudsmith-vsc.cloudsmithWorkspacesQP",
-        "title": "Workspaces: Get a list of all workspaces the user belongs to."
-      },
-      {
-        "command": "cloudsmith-vsc.cloudsmithReposList",
-        "title": "Repos: Load Repos"
-      },
-      {
-        "command": "cloudsmith-vsc.cloudsmithReposListQP",
-        "title": "Repos: Get all repositories associated with current user"
-      },
-      {
-        "command": "cloudsmith-vsc.cloudsmithReposListWorkspaceQP",
-        "title": "Repos: Get all repositories within a workspace"
-      },
-      {
-        "command": "cloudsmith-vsc.cloudsmithReposCreateTemplate",
-        "title": "Repos: Create a template file to configure your repository."
-      },
-      {
-        "command": "cloudsmith-vsc.cloudsmithReposCreateNew",
-        "title": "Repos: Create a new repository from the open template window"
-      },
-      {
         "command": "cloudsmith-vscode-extension.cloudsmithDocs",
         "category": "Cloudsmith",
         "title": "Documentation: View official Cloudsmith docs."
+      },
+      {
+        "command": "cloudsmith-vsc.searchPackages",
+        "title": "Search Packages",
+        "category": "Cloudsmith",
+        "icon": "$(search)"
+      },
+      {
+        "command": "cloudsmith-vsc.clearSearch",
+        "title": "Clear Search Results",
+        "category": "Cloudsmith",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "cloudsmith-vsc.searchNextPage",
+        "title": "Load More Results",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.searchInWorkspace",
+        "title": "Search packages in this workspace",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.guidedSearch",
+        "title": "Advanced Search",
+        "category": "Cloudsmith",
+        "icon": "$(list-filter)"
+      },
+      {
+        "command": "cloudsmith-vsc.filterPackages",
+        "title": "Filter packages in this repository",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.clearFilter",
+        "title": "Clear package filter",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.changeFilter",
+        "title": "Change package filter",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.findSafeVersion",
+        "title": "Find safe version",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.openCVE",
+        "title": "Open CVE in browser",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.showVulnerabilities",
+        "title": "Show vulnerabilities",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.explainQuarantine",
+        "title": "Explain Quarantine",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.scanDependencies",
+        "title": "Scan Dependencies",
+        "category": "Cloudsmith",
+        "icon": "$(play)"
+      },
+      {
+        "command": "cloudsmith-vsc.rescanDependencies",
+        "title": "Rescan Dependencies",
+        "category": "Cloudsmith",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "cloudsmith-vsc.changeDependencyFolder",
+        "title": "Change Project Folder",
+        "category": "Cloudsmith",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "cloudsmith-vsc.copyInstallCommand",
+        "title": "Copy install command",
+        "category": "Cloudsmith",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "cloudsmith-vsc.showInstallCommand",
+        "title": "Show install command",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.searchByLicense",
+        "title": "Search packages by license",
+        "category": "Cloudsmith",
+        "icon": "$(law)"
+      },
+      {
+        "command": "cloudsmith-vsc.openLicenseUrl",
+        "title": "View license",
+        "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.ssoLogin",
+        "title": "Sign in with SSO",
+        "category": "Cloudsmith",
+        "icon": "$(sign-in)"
+      },
+      {
+        "command": "cloudsmith-vsc.importCLICredentials",
+        "title": "Import credentials from Cloudsmith CLI",
+        "category": "Cloudsmith",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "cloudsmith-vsc.setDefaultWorkspace",
+        "title": "Set Default Workspace",
+        "category": "Cloudsmith",
+        "icon": "$(home)"
+      },
+      {
+        "command": "cloudsmith-vsc.previewUpstreamResolution",
+        "title": "Preview Upstream Resolution",
+        "category": "Cloudsmith",
+        "icon": "$(cloud)"
+      },
+      {
+        "command": "cloudsmith-vsc.showPromotionStatus",
+        "title": "Show Promotion Status",
+        "category": "Cloudsmith",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "cloudsmith-vsc.promotePackage",
+        "title": "Promote Package",
+        "category": "Cloudsmith",
+        "icon": "$(arrow-right)"
+      },
+      {
+        "command": "cloudsmith-vsc.copyEntitlementToken",
+        "title": "Copy Entitlement Token",
+        "category": "Cloudsmith"
       }
     ],
     "menus": {
@@ -192,9 +280,159 @@
           "command": "cloudsmith-vsc.openPackageGroup",
           "when": "view == cloudsmithView && viewItem == packageGroup",
           "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.searchInWorkspace",
+          "when": "view == cloudsmithView && viewItem == workspace",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.inspectPackage",
+          "when": "view == cloudsmithView && viewItem == packageQuarantined",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.openPackage",
+          "when": "view == cloudsmithView && viewItem == packageQuarantined",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.inspectPackage",
+          "when": "view == cloudsmithSearchView && viewItem == packageQuarantined",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.openPackage",
+          "when": "view == cloudsmithSearchView && viewItem == packageQuarantined",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.inspectPackage",
+          "when": "view == cloudsmithDependencyHealthView && viewItem =~ /^(dependencyHealth|dependencyHealthBlocked|dependencyHealthViolated|dependencyHealthSyncing)$/",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.openPackage",
+          "when": "view == cloudsmithDependencyHealthView && viewItem =~ /^(dependencyHealth|dependencyHealthBlocked|dependencyHealthViolated|dependencyHealthSyncing)$/",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.filterPackages",
+          "when": "view == cloudsmithView && viewItem == repository",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.filterPackages",
+          "when": "view == cloudsmithView && viewItem == repositoryFiltered",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.changeFilter",
+          "when": "view == cloudsmithView && viewItem == repositoryFiltered",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.clearFilter",
+          "when": "view == cloudsmithView && viewItem == repositoryFiltered",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.inspectPackage",
+          "when": "view == cloudsmithSearchView && viewItem == package",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.openPackage",
+          "when": "view == cloudsmithSearchView && viewItem == package",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.copySelected",
+          "when": "view == cloudsmithSearchView && viewItem == packageDetail",
+          "group": "9_cutcopypaste"
+        },
+        {
+          "command": "cloudsmith-vsc.findSafeVersion",
+          "when": "viewItem =~ /^(package|packageQuarantined|dependencyHealthBlocked|dependencyHealthViolated)$/",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.openCVE",
+          "when": "viewItem == vulnerability",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.showVulnerabilities",
+          "when": "viewItem =~ /^(package|packageQuarantined|dependencyHealthBlocked|dependencyHealthViolated)$/",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.explainQuarantine",
+          "when": "viewItem =~ /^(packageQuarantined|dependencyHealthBlocked)$/",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.copyInstallCommand",
+          "when": "viewItem =~ /^(package|packageQuarantined|dependencyHealth|dependencyHealthBlocked|dependencyHealthViolated)$/",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.showInstallCommand",
+          "when": "viewItem =~ /^(package|packageQuarantined|dependencyHealth|dependencyHealthBlocked|dependencyHealthViolated)$/",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.openLicenseUrl",
+          "when": "view == cloudsmithView && viewItem == licenseDetail",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.openLicenseUrl",
+          "when": "view == cloudsmithSearchView && viewItem == licenseDetail",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.previewUpstreamResolution",
+          "when": "view == cloudsmithDependencyHealthView && viewItem == dependencyHealthNotFound",
+          "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.showPromotionStatus",
+          "when": "view == cloudsmithView && viewItem == package",
+          "group": "2_promotion"
+        },
+        {
+          "command": "cloudsmith-vsc.showPromotionStatus",
+          "when": "view == cloudsmithView && viewItem == packageQuarantined",
+          "group": "2_promotion"
+        },
+        {
+          "command": "cloudsmith-vsc.showPromotionStatus",
+          "when": "view == cloudsmithSearchView && viewItem == package",
+          "group": "2_promotion"
+        },
+        {
+          "command": "cloudsmith-vsc.promotePackage",
+          "when": "view == cloudsmithView && viewItem == package",
+          "group": "2_promotion"
+        },
+        {
+          "command": "cloudsmith-vsc.promotePackage",
+          "when": "view == cloudsmithSearchView && viewItem == package",
+          "group": "2_promotion"
+        },
+        {
+          "command": "cloudsmith-vsc.copyEntitlementToken",
+          "when": "viewItem == entitlement",
+          "group": "9_cutcopypaste"
         }
       ],
       "view/title": [
+        {
+          "command": "cloudsmith-vsc.setDefaultWorkspace",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
         {
           "command": "cloudsmith-vsc.refreshView",
           "group": "navigation",
@@ -219,6 +457,51 @@
           "command": "cloudsmith-vsc.connectCloudsmith",
           "group": "navigation",
           "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith-vsc.ssoLogin",
+          "group": "navigation",
+          "when": "view == cloudsmithView"
+        },
+        {
+          "command": "cloudsmith-vsc.searchPackages",
+          "group": "navigation",
+          "when": "view == cloudsmithSearchView"
+        },
+        {
+          "command": "cloudsmith-vsc.clearSearch",
+          "group": "navigation",
+          "when": "view == cloudsmithSearchView"
+        },
+        {
+          "command": "cloudsmith-vsc.guidedSearch",
+          "group": "navigation",
+          "when": "view == cloudsmithSearchView"
+        },
+        {
+          "command": "cloudsmith-vsc.searchByLicense",
+          "group": "navigation",
+          "when": "view == cloudsmithSearchView"
+        },
+        {
+          "command": "cloudsmith-vsc.previewUpstreamResolution",
+          "group": "navigation",
+          "when": "view == cloudsmithSearchView"
+        },
+        {
+          "command": "cloudsmith-vsc.scanDependencies",
+          "group": "navigation",
+          "when": "view == cloudsmithDependencyHealthView"
+        },
+        {
+          "command": "cloudsmith-vsc.rescanDependencies",
+          "group": "navigation",
+          "when": "view == cloudsmithDependencyHealthView"
+        },
+        {
+          "command": "cloudsmith-vsc.changeDependencyFolder",
+          "group": "navigation",
+          "when": "view == cloudsmithDependencyHealthView"
         }
       ]
     },
@@ -246,6 +529,103 @@
           "type": "boolean",
           "default": false,
           "description": "If enabled, packages are displayed via Package Group."
+        },
+        "cloudsmith-vsc.showPermissibilityIndicators": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show visual indicators for package permissibility status (quarantined, policy violations). When disabled, format-based icons are used for all packages."
+        },
+        "cloudsmith-vsc.searchPageSize": {
+          "type": "integer",
+          "default": 50,
+          "minimum": 10,
+          "maximum": 100,
+          "description": "Number of results per page when searching packages."
+        },
+        "cloudsmith-vsc.recentSearches": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 0,
+          "maximum": 50,
+          "description": "Number of recent searches to remember."
+        },
+        "cloudsmith-vsc.defaultWorkspace": {
+          "type": "string",
+          "default": "",
+          "description": "Cloudsmith workspace slug to use by default. When set, repositories load directly without a workspace picker. Leave empty to show all accessible workspaces."
+        },
+        "cloudsmith-vsc.autoScanOnOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically scan project dependencies against Cloudsmith when a workspace is opened. Requires a configured Cloudsmith workspace."
+        },
+        "cloudsmith-vsc.dependencyScanWorkspace": {
+          "type": "string",
+          "default": "",
+          "description": "Cloudsmith workspace slug to use for dependency health scanning. Leave empty to be prompted each time."
+        },
+        "cloudsmith-vsc.dependencyScanRepo": {
+          "type": "string",
+          "default": "",
+          "description": "Cloudsmith repository slug to use for dependency health scanning. Leave empty for workspace-wide search."
+        },
+        "cloudsmith-vsc.maxDependenciesToScan": {
+          "type": "integer",
+          "default": 200,
+          "minimum": 1,
+          "description": "Maximum number of dependencies to scan before truncating a dependency health run."
+        },
+        "cloudsmith-vsc.showLicenseIndicators": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show license risk classification on packages. When disabled, license nodes are hidden."
+        },
+        "cloudsmith-vsc.experimentalSSOBrowser": {
+          "type": "boolean",
+          "default": false,
+          "description": "Experimental: Attempt browser-based SSO authentication directly via SAML redirect. Falls back to CLI import if this fails. Enable to help debug the SSO token exchange."
+        },
+        "cloudsmith-vsc.resolveTransitiveDependencies": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use package manager CLI to resolve transitive (indirect) dependencies. Requires the package manager to be installed and dependencies to be installed in the project."
+        },
+        "cloudsmith-vsc.showLegacyPolicies": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show legacy classic policy violation fields (deny, license, vulnerability). Disable if your workspace only uses Enterprise Policy Manager."
+        },
+        "cloudsmith-vsc.restrictiveLicenses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["AGPL-3.0", "GPL-3.0", "GPL-2.0", "SSPL-1.0"],
+          "description": "SPDX identifiers to treat as restrictive. Packages with these licenses will be flagged. These extend the built-in restrictive set."
+        },
+        "cloudsmith-vsc.promotionPipeline": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Optional ordered list of repository slugs for your promotion pipeline (e.g., ['dev', 'staging', 'production']). When set, promotion suggests the next repo in the pipeline. When empty, all workspace repos are shown."
+        },
+        "cloudsmith-vsc.promotionTags": {
+          "type": "object",
+          "default": {
+            "onPromote": ["promoted-to-{target}", "approved-{date}"],
+            "onReceive": ["promoted-from-{source}"]
+          },
+          "description": "Tag templates applied when promoting packages. Supports {target}, {source}, {date} placeholders."
+        },
+        "cloudsmith-vsc.showEntitlements": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show active entitlement tokens under each repository. Useful for debugging download access issues."
+        },
+        "cloudsmith-vsc.showRepoMetrics": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show storage and bandwidth usage indicators on repositories."
         }
       }
     }
