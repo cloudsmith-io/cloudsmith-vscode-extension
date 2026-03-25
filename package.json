@@ -252,6 +252,18 @@
         "command": "cloudsmith-vsc.copyEntitlementToken",
         "title": "Copy Entitlement Token",
         "category": "Cloudsmith"
+      },
+      {
+        "command": "cloudsmith-vsc.filterVulnerable",
+        "title": "Show Vulnerable Packages",
+        "category": "Cloudsmith",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "cloudsmith-vsc.filterVulnerableWorkspace",
+        "title": "Show Vulnerable Packages (All Repos)",
+        "category": "Cloudsmith",
+        "icon": "$(shield)"
       }
     ],
     "menus": {
@@ -285,6 +297,11 @@
           "command": "cloudsmith-vsc.searchInWorkspace",
           "when": "view == cloudsmithView && viewItem == workspace",
           "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.filterVulnerableWorkspace",
+          "when": "view == cloudsmithView && viewItem == workspace",
+          "group": "filter@3"
         },
         {
           "command": "cloudsmith-vsc.inspectPackage",
@@ -335,6 +352,16 @@
           "command": "cloudsmith-vsc.clearFilter",
           "when": "view == cloudsmithView && viewItem == repositoryFiltered",
           "group": "navigation"
+        },
+        {
+          "command": "cloudsmith-vsc.filterVulnerable",
+          "when": "view == cloudsmithView && viewItem == repository",
+          "group": "filter@3"
+        },
+        {
+          "command": "cloudsmith-vsc.filterVulnerable",
+          "when": "view == cloudsmithView && viewItem == repositoryFiltered",
+          "group": "filter@3"
         },
         {
           "command": "cloudsmith-vsc.inspectPackage",
@@ -579,6 +606,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show license risk classification on packages. When disabled, license nodes are hidden."
+        },
+        "cloudsmith-vsc.showDockerDigestCommand": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show an additional 'Pull by digest' option for Docker install commands. Digest-based pulls pin to an exact image for reproducibility."
         },
         "cloudsmith-vsc.experimentalSSOBrowser": {
           "type": "boolean",

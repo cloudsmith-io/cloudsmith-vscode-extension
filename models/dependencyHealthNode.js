@@ -32,6 +32,9 @@ class DependencyHealthNode {
       this.version = { id: "Version", value: cloudsmithMatch.version };
       this.status_str = { id: "Status", value: cloudsmithMatch.status_str };
       this.self_webapp_url = cloudsmithMatch.self_webapp_url || null;
+      this.checksum_sha256 = cloudsmithMatch.checksum_sha256 || null;
+      this.cdn_url = cloudsmithMatch.cdn_url || null;
+      this.filename = cloudsmithMatch.filename || null;
       this.num_vulnerabilities = cloudsmithMatch.num_vulnerabilities || 0;
       this.max_severity = cloudsmithMatch.max_severity || null;
       this.status_reason = cloudsmithMatch.status_reason || null;

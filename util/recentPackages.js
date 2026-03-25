@@ -12,10 +12,12 @@ function add(pkg) {
   if (!pkg || !pkg.name) {
     return;
   }
-  // Deduplicate by name + version + repository
-  const key = `${pkg.name}:${pkg.version || ""}:${pkg.repository || ""}`;
+  const workspace = pkg.cloudsmithWorkspace || pkg.namespace || "";
+  const version = pkg.version || pkg.declaredVersion || "";
+  // Deduplicate by workspace + name + version + repository
+  const key = `${workspace}:${pkg.name}:${version}:${pkg.repository || ""}`;
   const idx = _recent.findIndex(p =>
-    `${p.name}:${p.version || ""}:${p.repository || ""}` === key
+    `${p.cloudsmithWorkspace || p.namespace || ""}:${p.name}:${p.version || ""}:${p.repository || ""}` === key
   );
   if (idx >= 0) {
     _recent.splice(idx, 1);
@@ -31,6 +33,9 @@ function add(pkg) {
     slug: pkg.slug || null,
     num_vulnerabilities: pkg.num_vulnerabilities || 0,
     max_severity: pkg.max_severity || null,
+    checksum_sha256: pkg.checksum_sha256 || null,
+    cdn_url: pkg.cdn_url || null,
+    filename: pkg.filename || null,
     cloudsmithWorkspace: pkg.cloudsmithWorkspace || pkg.namespace || null,
     cloudsmithRepo: pkg.cloudsmithRepo || pkg.repository || null,
   });

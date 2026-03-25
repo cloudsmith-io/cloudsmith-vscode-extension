@@ -18,9 +18,14 @@ class InstallCommandBuilder {
    * @param   {string} version   Package version.
    * @param   {string} workspace Cloudsmith workspace/owner slug.
    * @param   {string} repo      Cloudsmith repository slug.
-   * @returns {{ command: string, note: string|null }}
+   * @param   {object} [opts]    Extra package fields for format-specific handling.
+   * @param   {string} [opts.checksumSha256] Docker image digest for pinned pulls.
+   * @param   {string} [opts.cdnUrl]         Direct CDN download URL (raw/generic).
+   * @param   {string} [opts.filename]       Original filename (raw/generic).
+   * @returns {{ command: string, note: string|null, alternatives?: Array<{label: string, command: string}> }}
    */
-  static build(format, name, version, workspace, repo) {
+  static build(format, name, version, workspace, repo, opts) {
+    const options = opts || {};
     const safeName = InstallCommandBuilder.shellEscape(name);
     const safeVersion = InstallCommandBuilder.shellEscape(version);
     const commands = {
@@ -39,10 +44,6 @@ class InstallCommandBuilder {
       nuget: {
         command: `# Verify package details before running\ndotnet add package ${safeName} --version ${safeVersion} --source https://nuget.cloudsmith.io/${workspace}/${repo}/v3/index.json`,
         note: "For private repos, configure NuGet source credentials.",
-      },
-      docker: {
-        command: `# Verify package details before running\ndocker pull docker.cloudsmith.io/${workspace}/${repo}/${safeName}:${safeVersion}`,
-        note: "Run `docker login docker.cloudsmith.io` first for private repos.",
       },
       helm: {
         command: `# Verify package details before running\nhelm install ${safeName} --repo https://dl.cloudsmith.io/basic/${workspace}/${repo}/helm/charts/ --version ${safeVersion}`,
@@ -74,6 +75,17 @@ class InstallCommandBuilder {
       },
     };
 
+    // Formats with dedicated handlers
+    if (format === "docker") {
+      return InstallCommandBuilder._buildDocker(name, version, workspace, repo, options);
+    }
+    if (format === "rpm") {
+      return InstallCommandBuilder._buildRpm(name, version, workspace, repo);
+    }
+    if (format === "raw" || format === "generic") {
+      return InstallCommandBuilder._buildRaw(name, version, workspace, repo, options);
+    }
+
     const entry = commands[format];
     if (!entry) {
       return {
@@ -82,6 +94,61 @@ class InstallCommandBuilder {
       };
     }
     return entry;
+  }
+
+  /**
+   * Build Docker pull command — tag-first with optional digest alternative.
+   */
+  static _buildDocker(name, version, workspace, repo, opts) {
+    const registry = `docker.cloudsmith.io/${workspace}/${repo}`;
+    const tag = version || "latest";
+    const result = {
+      command: `# Verify package details before running\ndocker pull ${registry}/${name}:${tag}`,
+      note: "Run `docker login docker.cloudsmith.io` first for private repos.",
+    };
+
+    if (opts.checksumSha256) {
+      result.alternatives = [{
+        label: "Pull by digest (pinned)",
+        command: `# Verify package details before running\ndocker pull ${registry}/${name}@sha256:${opts.checksumSha256}`,
+      }];
+    }
+
+    return result;
+  }
+
+  /**
+   * Build RPM install command — dnf primary, yum alternative.
+   */
+  static _buildRpm(name, version, workspace, repo) {
+    const safeName = InstallCommandBuilder.shellEscape(name);
+    const safeVersion = InstallCommandBuilder.shellEscape(version);
+    return {
+      command: `# Verify package details before running\ndnf install ${safeName}-${safeVersion}`,
+      note: `Requires Cloudsmith repo configured in /etc/yum.repos.d/.\nRepo URL: https://dl.cloudsmith.io/basic/${workspace}/${repo}/rpm/`,
+      alternatives: [{
+        label: "Install via yum",
+        command: `# Verify package details before running\nyum install ${safeName}-${safeVersion}`,
+      }],
+    };
+  }
+
+  /**
+   * Build Raw/Generic download command — curl primary, wget alternative.
+   */
+  static _buildRaw(name, version, workspace, repo, opts) {
+    const filename = opts.filename || `${name}-${version}`;
+    const cdnUrl = opts.cdnUrl ||
+      `https://dl.cloudsmith.io/basic/${workspace}/${repo}/raw/names/${encodeURIComponent(name)}/versions/${encodeURIComponent(version)}/${encodeURIComponent(filename)}`;
+
+    return {
+      command: `# Verify package details before running\ncurl -L -O "${cdnUrl}"`,
+      note: 'For private repos, replace "basic" with your entitlement token or use authentication headers.',
+      alternatives: [{
+        label: "Download via wget",
+        command: `# Verify package details before running\nwget "${cdnUrl}"`,
+      }],
+    };
   }
 
   /**

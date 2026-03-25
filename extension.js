@@ -105,6 +105,11 @@ const FILTER_PRESETS = [
       applyBuilder: (builder) => builder.raw("policy_violated:true"),
     },
     {
+      label: "$(shield) Vulnerable packages",
+      description: "Packages with known vulnerabilities",
+      applyBuilder: (builder) => builder.raw("vulnerabilities:>0"),
+    },
+    {
       label: "Packages with vulnerability violations",
       applyBuilder: (builder) => builder.raw("vulnerability_policy_violated:true"),
     },
@@ -950,6 +955,26 @@ async function activate(context) {
       vscode.commands.executeCommand("cloudsmith-vsc.filterPackages", item);
     }),
 
+    // Show vulnerable packages in a specific repo
+    vscode.commands.registerCommand("cloudsmith-vsc.filterVulnerable", async (item) => {
+      if (!item || !item.workspace || !item.slug) {
+        vscode.window.showWarningMessage("Could not determine repository details.");
+        return;
+      }
+      await searchProvider.search(item.workspace, "vulnerabilities:>0", 1, item.slug);
+      vscode.commands.executeCommand("cloudsmithSearchView.focus");
+    }),
+
+    // Show vulnerable packages across an entire workspace
+    vscode.commands.registerCommand("cloudsmith-vsc.filterVulnerableWorkspace", async (item) => {
+      if (!item || !item.slug) {
+        vscode.window.showWarningMessage("Could not determine workspace details.");
+        return;
+      }
+      await searchProvider.search(item.slug, "vulnerabilities:>0");
+      vscode.commands.executeCommand("cloudsmithSearchView.focus");
+    }),
+
     // Register find safe version command
     vscode.commands.registerCommand("cloudsmith-vsc.findSafeVersion", async (item) => {
       if (!item) {
@@ -1044,8 +1069,25 @@ async function activate(context) {
         if (!action) return;
 
         if (action.id === "install") {
-          const installResult = InstallCommandBuilder.build(format, name, pkg.version, workspace, pkgRepo);
-          await vscode.env.clipboard.writeText(installResult.command);
+          const installOpts = {};
+          const showDigest = vscode.workspace.getConfiguration("cloudsmith-vsc").get("showDockerDigestCommand", false);
+          if (showDigest && pkg.checksum_sha256) {
+            installOpts.checksumSha256 = pkg.checksum_sha256;
+          }
+          if (pkg.cdn_url) installOpts.cdnUrl = pkg.cdn_url;
+          if (pkg.filename) installOpts.filename = pkg.filename;
+          const installResult = InstallCommandBuilder.build(format, name, pkg.version, workspace, pkgRepo, installOpts);
+          let chosenCommand = installResult.command;
+          if (installResult.alternatives && installResult.alternatives.length > 0) {
+            const picks = [
+              { label: "$(arrow-right) Primary", description: installResult.command.split("\n").pop(), _cmd: installResult.command },
+              ...installResult.alternatives.map(a => ({ label: `$(arrow-right) ${a.label}`, description: a.command.split("\n").pop(), _cmd: a.command })),
+            ];
+            const pick = await vscode.window.showQuickPick(picks, { placeHolder: "Choose install command variant" });
+            if (!pick) return;
+            chosenCommand = pick._cmd;
+          }
+          await vscode.env.clipboard.writeText(chosenCommand);
           let msg = `Install command copied for ${name} ${pkg.version}`;
           if (crossRepo) msg += ` (from ${pkgRepo})`;
           if (installResult.note) msg += ` \u2014 Note: ${installResult.note}`;
@@ -1229,10 +1271,27 @@ async function activate(context) {
         vscode.window.showWarningMessage("Could not determine package details for install command.");
         return;
       }
+      const installOpts = {};
+      const showDigest = vscode.workspace.getConfiguration("cloudsmith-vsc").get("showDockerDigestCommand", false);
+      if (showDigest && item.checksum_sha256) {
+        installOpts.checksumSha256 = item.checksum_sha256;
+      }
+      if (item.cdn_url) installOpts.cdnUrl = item.cdn_url;
+      if (item.filename) installOpts.filename = item.filename;
       const result = InstallCommandBuilder.build(
-        info.format, info.name, info.version || "latest", info.workspace, info.repo
+        info.format, info.name, info.version || "latest", info.workspace, info.repo, installOpts
       );
-      await vscode.env.clipboard.writeText(result.command);
+      let chosenCommand = result.command;
+      if (result.alternatives && result.alternatives.length > 0) {
+        const picks = [
+          { label: "$(arrow-right) Primary", description: result.command.split("\n").pop(), _cmd: result.command },
+          ...result.alternatives.map(a => ({ label: `$(arrow-right) ${a.label}`, description: a.command.split("\n").pop(), _cmd: a.command })),
+        ];
+        const pick = await vscode.window.showQuickPick(picks, { placeHolder: "Choose install command variant" });
+        if (!pick) return;
+        chosenCommand = pick._cmd;
+      }
+      await vscode.env.clipboard.writeText(chosenCommand);
       let msg = `Install command copied for ${info.name}`;
       if (result.note) {
         msg += ` \u2014 Note: ${result.note}`;
@@ -1368,10 +1427,22 @@ async function activate(context) {
         vscode.window.showWarningMessage("Could not determine package details for install command.");
         return;
       }
+      const installOpts = {};
+      const showDigest = vscode.workspace.getConfiguration("cloudsmith-vsc").get("showDockerDigestCommand", false);
+      if (showDigest && item.checksum_sha256) {
+        installOpts.checksumSha256 = item.checksum_sha256;
+      }
+      if (item.cdn_url) installOpts.cdnUrl = item.cdn_url;
+      if (item.filename) installOpts.filename = item.filename;
       const result = InstallCommandBuilder.build(
-        info.format, info.name, info.version || "latest", info.workspace, info.repo
+        info.format, info.name, info.version || "latest", info.workspace, info.repo, installOpts
       );
       let content = result.command;
+      if (result.alternatives && result.alternatives.length > 0) {
+        for (const alt of result.alternatives) {
+          content += `\n\n# Alternative: ${alt.label}\n${alt.command}`;
+        }
+      }
       if (result.note) {
         content += "\n\n# Note: " + result.note;
       }

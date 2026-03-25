@@ -21,6 +21,9 @@ class SearchResultNode {
         this.version = { id: "Version", value: pkg.version };
         this.uploaded_at = { id: "Uploaded At", value: pkg.uploaded_at };
         this.status_reason = pkg.status_reason || null;
+        this.checksum_sha256 = pkg.checksum_sha256 || null;
+        this.cdn_url = pkg.cdn_url || null;
+        this.filename = pkg.filename || null;
 
         // Raw status for permissibility icon logic
         this.status_str_raw = pkg.status_str;
