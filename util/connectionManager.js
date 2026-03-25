@@ -4,6 +4,7 @@
 
 const vscode = require("vscode");
 const { CredentialManager } = require("./credentialManager");
+const { formatApiError } = require("./errorFormatter");
 
 class ConnectionManager {
   constructor(context) {
@@ -18,6 +19,8 @@ class ConnectionManager {
     const userAuthenticated = await cloudsmithAPI.get("user/self", apiKey);
 
     if (!userAuthenticated.authenticated) {
+      // Store the raw error for better messaging
+      this._lastError = typeof userAuthenticated === "string" ? userAuthenticated : null;
       if (userAuthenticated.authenticated === undefined) {
         checkPassed = "error";
       } else {
@@ -67,9 +70,12 @@ class ConnectionManager {
       }
 
       if (connectionStatus === "false" || connectionStatus === "error") {
+        const errorMsg = this._lastError
+          ? formatApiError(this._lastError)
+          : "Unable to connect to Cloudsmith. Ensure your credentials are correct.";
         vscode.window
           .showErrorMessage(
-            "Unable to connect Cloudsmith! Ensure your credentials are correct.",
+            errorMsg,
             "Configure",
             "Cancel"
           )
@@ -84,7 +90,7 @@ class ConnectionManager {
         if (showConnectMsg) {
           vscode.window.showInformationMessage("Connected to Cloudsmith!");
         }
-        context.secrets.store("isConnected", connectionStatus);
+        // checkConnectivity() already stored "cloudsmith-vsc.isConnected"
       }
       return connectionStatus;
     }

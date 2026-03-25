@@ -5,6 +5,7 @@ The following maintainers manage the project and are reponsible for reviewing/me
 - Nick Peacock ([@nickxn](https://github.com/nickxn)) - [Cloudsmith Ltd](https://cloudsmith.io)
 - Ranjan Singh ([@opswithranjan](https://github.com/opswithranjan)) - [Cloudsmith Ltd](https://cloudsmith.io)
 - Colin Moynes ([@colinmoynes](https://github.com/colinmoynes)) - [Cloudsmith Ltd](https://cloudsmith.io)
+- Devon Lawler ([@devonl](https://github.com/DevonL)) - [Cloudsmith Ltd](https://cloudsmith.io)
 
 # Contributors
 

@@ -110,6 +110,26 @@ You can open the package directly in your Cloudsmith Web App.
 <img src="media/readme/package_open_browser.gif" alt="openPackage" width="1000"/>
 
 
+## Testing
+
+### Unit Tests
+
+```bash
+npm test
+```
+
+Runs lint followed by all unit tests via `@vscode/test-cli`.
+
+### Integration Tests
+
+Integration tests run against the live Cloudsmith API and require an API key:
+
+```bash
+CLOUDSMITH_TEST_API_KEY=your_key_here npm test
+```
+
+Integration tests are automatically skipped when `CLOUDSMITH_TEST_API_KEY` is not set, so `npm test` always passes in CI without credentials. They use the `dl-technology-consulting` workspace with known test fixtures.
+
 ## Limitations & known issues
 
 * The number of returned packages is restricted to max 30 per repository. This can be configured to between 1-30 in the settings. Packages are sorted by last pushed in descending order. 

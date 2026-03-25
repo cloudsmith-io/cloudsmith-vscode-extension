@@ -2,6 +2,8 @@
 // Utilises the public Cloudsmith v1 API - https://help.cloudsmith.io/reference/introduction
 
 const apiURL = 'https://api.cloudsmith.io/v1/';
+const apiV2URL = 'https://api.cloudsmith.io/v2/';
+const ALLOWED_API_HOST = "api.cloudsmith.io";
 const { CredentialManager } = require('./credentialManager');
 
 class CloudsmithAPI {
@@ -24,14 +26,18 @@ class CloudsmithAPI {
         if(!apiKey){
             apiKey = await credentialManager.getApiKey();
         }
-        
+
+        const headers = {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+        };
+        if (apiKey) {
+            headers['X-Api-Key'] = apiKey;
+        }
+
         const requestOptions = {
             method: 'GET',
-            headers: {
-                'accept': 'application/json',
-                'content-type': 'application/json',
-                'X-Api-Key': apiKey,
-            },
+            headers: headers,
         };
 
         const response = this.makeRequest(endpoint, requestOptions);
@@ -49,14 +55,23 @@ class CloudsmithAPI {
      */
 
     async post(endpoint, payload, apiKey) {
+        const credentialManager = new CredentialManager(this.context);
+
+        if (!apiKey) {
+            apiKey = await credentialManager.getApiKey();
+        }
+
+        const headers = {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+        };
+        if (apiKey) {
+            headers['X-Api-Key'] = apiKey;
+        }
 
         const requestOptions = {
             method: 'POST',
-            headers: {
-                'accept': 'application/json',
-                'content-type': 'application/json',
-                'X-Api-Key': apiKey,
-            },
+            headers: headers,
             body: payload
         };
 
@@ -72,16 +87,164 @@ class CloudsmithAPI {
      * @param   requestOptions Request options such as method, headers and body. 
      * @returns json response.
      */
-    async makeRequest(endpoint, requestOptions) {
+    /**
+     * GET request that returns both data and pagination headers.
+     *
+     * @param   endpoint  for example 'packages/owner/' with query params.
+     * @param   apiKey *optional
+     * @returns { data, headers } where headers contains pagination info.
+     */
+    async getWithHeaders(endpoint, apiKey) {
 
-        const url = apiURL + endpoint;
+        const credentialManager = new CredentialManager(this.context)
+
+        if(!apiKey){
+            apiKey = await credentialManager.getApiKey();
+        }
+
+        const headers = {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+        };
+        if (apiKey) {
+            headers['X-Api-Key'] = apiKey;
+        }
+
+        const requestOptions = {
+            method: 'GET',
+            headers: headers,
+        };
+
+        const response = this.makeRequest(endpoint, requestOptions, true);
+        return response;
+
+    }
+
+    /**
+     * GET request to Cloudsmith v2 API.
+     *
+     * @param   endpoint  for example 'workspaces/my-org/policies/'
+     * @param   apiKey *optional
+     * @returns json response.
+     */
+    async getV2(endpoint, apiKey) {
+
+        const credentialManager = new CredentialManager(this.context)
+
+        if(!apiKey){
+            apiKey = await credentialManager.getApiKey();
+        }
+
+        const headers = {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+        };
+        if (apiKey) {
+            headers['X-Api-Key'] = apiKey;
+        }
+
+        const requestOptions = {
+            method: 'GET',
+            headers: headers,
+        };
+
+        const response = this.makeRequest(endpoint, requestOptions, false, apiV2URL);
+        return response;
+
+    }
+
+    /**
+     * GET request to Cloudsmith v2 API that returns both data and pagination headers.
+     *
+     * @param   endpoint  for example 'workspaces/my-org/policies/'
+     * @param   apiKey *optional
+     * @returns { data, headers } where headers contains pagination info.
+     */
+    async getV2WithHeaders(endpoint, apiKey) {
+
+        const credentialManager = new CredentialManager(this.context)
+
+        if(!apiKey){
+            apiKey = await credentialManager.getApiKey();
+        }
+
+        const headers = {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+        };
+        if (apiKey) {
+            headers['X-Api-Key'] = apiKey;
+        }
+
+        const requestOptions = {
+            method: 'GET',
+            headers: headers,
+        };
+
+        const response = this.makeRequest(endpoint, requestOptions, true, apiV2URL);
+        return response;
+
+    }
+
+    /**
+     * GET upstream configurations for a repository and format.
+     *
+     * @param   workspace  Workspace/owner slug.
+     * @param   repo       Repository slug.
+     * @param   format     Package format slug (e.g., 'python', 'npm', 'maven', 'docker').
+     * @returns Array of upstream config objects, or empty array on error.
+     */
+    async getUpstreams(workspace, repo, format) {
+        const result = await this.get(`repos/${workspace}/${repo}/upstream/${format}/`);
+        if (typeof result === 'string' || !Array.isArray(result)) {
+            return [];
+        }
+        return result;
+    }
+
+    /**
+     * Make the actual request to the API endpoint.
+     *
+     * @param   endpoint  for example 'repos' for v1/repos.
+     * @param   requestOptions Request options such as method, headers and body.
+     * @param   includeHeaders If true, return { data, headers } with pagination info.
+     * @returns json response.
+     */
+    async makeRequest(endpoint, requestOptions, includeHeaders = false, baseUrl = apiURL) {
         try {
-            const response = await fetch(url, requestOptions);
-            if (!response.ok) {
-                throw new Error(`Response status: ${response.status} - ${response.statusText}`);       
+            const requestUrl = new URL(endpoint, baseUrl);
+            if (requestUrl.protocol !== "https:" || requestUrl.hostname !== ALLOWED_API_HOST) {
+                return "Blocked non-Cloudsmith request target.";
             }
-            const result = response.json();
-            return result
+
+            const response = await fetch(requestUrl, requestOptions);
+
+            // Verify the response was not redirected to an untrusted host
+            if (response.url) {
+                const responseUrl = new URL(response.url);
+                if (responseUrl.hostname !== ALLOWED_API_HOST) {
+                    return "Request was redirected to an untrusted host: " + responseUrl.hostname;
+                }
+            }
+
+            if (!response.ok) {
+                let errorBody = '';
+                try { errorBody = await response.text(); } catch (_) { /* ignore */ }
+                throw new Error(`Response status: ${response.status} - ${response.statusText} - ${errorBody}`);
+            }
+            const result = await response.json();
+            if (includeHeaders) {
+                return {
+                    data: result,
+                    headers: {
+                        page: response.headers.get('X-Pagination-Page'),
+                        pageTotal: response.headers.get('X-Pagination-PageTotal'),
+                        count: response.headers.get('X-Pagination-Count'),
+                        pageSize: response.headers.get('X-Pagination-PageSize'),
+                    }
+                };
+            }
+            return result;
         } catch (error) {
             return error.message
 

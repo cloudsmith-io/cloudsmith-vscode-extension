@@ -12,15 +12,18 @@ class helpProvider {
     }
 
     getTreeItem(element) {
-        return element.getTreeItem()
+        return element.getTreeItem();
     }
 
-    getChildren() {
+    getChildren(element) {
+        if (element && typeof element.getChildren === "function") {
+            return element.getChildren();
+        }
 
         const cloudsmithLogo = {
-                light: path.join(__filename, "..", "..", "media", "workspace_light.svg"),
-                dark: path.join(__filename, "..", "..", "media", "workspace_dark.svg")
-            }
+            light: path.join(__filename, "..", "..", "media", "workspace_light.svg"),
+            dark: path.join(__filename, "..", "..", "media", "workspace_dark.svg")
+        };
 
         const links = [
             { label: 'Read Extension Documentation', url: 'https://docs.cloudsmith.com/developer-tools/vscode', icon: new vscode.ThemeIcon('link-external') },
@@ -30,10 +33,13 @@ class helpProvider {
         ];
         return links.map(link => new helpNode(link.label, link.url, link.icon));
     }
+
+    refresh() {
+        this._onDidChangeTreeData.fire();
+    }
 }
 
 module.exports = { helpProvider };
-
 
 
 

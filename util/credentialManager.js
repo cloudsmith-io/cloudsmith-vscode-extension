@@ -19,7 +19,9 @@ class CredentialManager {
     if (apiKey) {
       await context.secrets.store("cloudsmith-vsc.authToken", apiKey);
       vscode.window.showInformationMessage("Credential saved securely!");
+      return true;
     }
+    return false;
   }
 
   // Fetch credential from secret store
