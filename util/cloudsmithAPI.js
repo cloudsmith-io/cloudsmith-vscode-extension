@@ -5,6 +5,8 @@ const apiURL = 'https://api.cloudsmith.io/v1/';
 const apiV2URL = 'https://api.cloudsmith.io/v2/';
 const ALLOWED_API_HOST = "api.cloudsmith.io";
 const { CredentialManager } = require('./credentialManager');
+const packageJson = require('../package.json');
+const vscodeVersion = require('vscode').version;
 
 class CloudsmithAPI {
     constructor(context){
@@ -217,14 +219,27 @@ class CloudsmithAPI {
                 return "Blocked non-Cloudsmith request target.";
             }
 
-            const response = await fetch(requestUrl, requestOptions);
+            // Add User-Agent header for usage attribution
+            if (requestOptions.headers) {
+                requestOptions.headers['User-Agent'] = `Cloudsmith-VSCode/${packageJson.version} (VS Code ${vscodeVersion})`;
+            }
 
-            // Verify the response was not redirected to an untrusted host
-            if (response.url) {
-                const responseUrl = new URL(response.url);
-                if (responseUrl.hostname !== ALLOWED_API_HOST) {
-                    return "Request was redirected to an untrusted host: " + responseUrl.hostname;
+            // Prevent automatic redirect following to avoid leaking API key
+            requestOptions.redirect = 'manual';
+
+            let response = await fetch(requestUrl, requestOptions);
+
+            // Handle 3xx redirects manually with host validation
+            if (response.status >= 300 && response.status < 400) {
+                const location = response.headers.get('Location');
+                if (!location) {
+                    return "Received redirect with no Location header.";
                 }
+                const redirectUrl = new URL(location, requestUrl);
+                if (redirectUrl.hostname !== ALLOWED_API_HOST) {
+                    return "Blocked redirect to untrusted host: " + redirectUrl.hostname;
+                }
+                response = await fetch(redirectUrl, requestOptions);
             }
 
             if (!response.ok) {

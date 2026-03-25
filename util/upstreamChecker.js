@@ -2,6 +2,7 @@
 // Provides a "what if I pull this?" dry run for packages that don't exist locally.
 
 const { CloudsmithAPI } = require("./cloudsmithAPI");
+const { SearchQueryBuilder } = require("./searchQueryBuilder");
 
 class UpstreamChecker {
   constructor(context) {
@@ -19,7 +20,8 @@ class UpstreamChecker {
    * @returns {Object|null}       Package object if found, null otherwise.
    */
   async existsLocally(workspace, repo, name, format) {
-    const query = encodeURIComponent(`name:^${name}$ AND format:${format}`);
+    const qb = new SearchQueryBuilder();
+    const query = encodeURIComponent(qb.name(name).format(format).build());
     const result = await this.api.get(
       `packages/${workspace}/${repo}/?query=${query}&page_size=1`
     );

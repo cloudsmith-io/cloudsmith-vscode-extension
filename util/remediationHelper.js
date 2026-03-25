@@ -1,5 +1,7 @@
 // Remediation helper - finds safe alternative versions of a package
 
+const { SearchQueryBuilder } = require('./searchQueryBuilder');
+
 class RemediationHelper {
   constructor(cloudsmithAPI) {
     this.api = cloudsmithAPI;
@@ -16,7 +18,8 @@ class RemediationHelper {
    * @returns {Array} Array of package objects.
    */
   async findSafeVersions(workspace, repo, packageName, format) {
-    const query = `name:^${packageName}$ AND format:${format} AND NOT status:quarantined AND deny_policy_violated:false`;
+    const qb = new SearchQueryBuilder();
+    const query = qb.name(packageName).format(format).raw('NOT status:quarantined').raw('deny_policy_violated:false').build();
     const endpoint = `packages/${workspace}/${repo}/?query=${encodeURIComponent(query)}&sort=-version&page_size=10`;
 
     const result = await this.api.get(endpoint);
@@ -40,7 +43,8 @@ class RemediationHelper {
    * @returns {Array} Array of package objects.
    */
   async findSafeVersionsAcrossRepos(workspace, packageName, format) {
-    const query = `name:^${packageName}$ AND format:${format} AND NOT status:quarantined AND deny_policy_violated:false`;
+    const qb = new SearchQueryBuilder();
+    const query = qb.name(packageName).format(format).raw('NOT status:quarantined').raw('deny_policy_violated:false').build();
     const endpoint = `packages/${workspace}/?query=${encodeURIComponent(query)}&sort=-version&page_size=10`;
 
     const result = await this.api.get(endpoint);

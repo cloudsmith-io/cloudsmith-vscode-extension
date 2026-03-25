@@ -77,10 +77,11 @@ class TransitiveResolver {
     }
 
     for (const [name, info] of Object.entries(dependencies)) {
-      if (visited.has(name)) {
+      const visitKey = `${name}@${info.version}`;
+      if (visited.has(visitKey)) {
         continue;
       }
-      visited.add(name);
+      visited.add(visitKey);
 
       result.push({
         name: name,
