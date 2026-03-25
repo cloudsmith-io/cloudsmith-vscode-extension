@@ -236,7 +236,7 @@ class CloudsmithAPI {
                     return "Received redirect with no Location header.";
                 }
                 const redirectUrl = new URL(location, requestUrl);
-                if (redirectUrl.hostname !== ALLOWED_API_HOST) {
+                if (redirectUrl.protocol !== "https:" || redirectUrl.hostname !== ALLOWED_API_HOST) {
                     return "Blocked redirect to untrusted host: " + redirectUrl.hostname;
                 }
                 response = await fetch(redirectUrl, requestOptions);
