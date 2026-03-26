@@ -225,7 +225,7 @@ class DependencyHealthNode {
       children.push(new VulnerabilitySummaryNode({
         namespace: match.namespace,
         repository: match.repository,
-        slug_perm_raw: match.slug_perm,
+        slug_perm: match.slug_perm,
         num_vulnerabilities: match.num_vulnerabilities,
         max_severity: match.max_severity,
       }, this.context));

@@ -11,7 +11,7 @@ class UpstreamIndicatorNode {
 
     getTreeItem() {
         const count = this.upstreams.length;
-        const active = this.upstreams.filter(u => u.is_active).length;
+        const active = this.upstreams.filter(u => u.is_active !== false).length;
 
         return {
             label: `Upstreams: ${active} active of ${count} configured`,

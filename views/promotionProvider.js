@@ -85,7 +85,7 @@ class PromotionProvider {
       return false;
     }
 
-    const tagPayload = JSON.stringify({ action: "Add", tags });
+    const tagPayload = JSON.stringify({ action: "add", tags });
     const tagResult = await this.api.post(
       `packages/${workspace}/${repo}/${identifier}/tag/`,
       tagPayload,
@@ -268,7 +268,7 @@ class PromotionProvider {
     // Step 1: Copy the package to the target repo
     const copyEndpoint = `packages/${workspace}/${sourceRepo}/${slugPerm}/copy/`;
     const copyPayload = JSON.stringify({
-      destination: targetRepo,
+      destination: `${workspace}/${targetRepo}`,
     });
 
     const copyResult = await this.api.post(copyEndpoint, copyPayload, apiKey);

@@ -220,9 +220,20 @@ class DependencyHealthProvider {
       return false;
     }
 
-    return String(pkg.name || "") === String(expected.name || "")
-      && String(pkg.version || "") === String(expected.version || "")
-      && String(pkg.format || "") === String(expected.format || "");
+    if (String(pkg.name || "") !== String(expected.name || "")) {
+      return false;
+    }
+    if (String(pkg.format || "") !== String(expected.format || "")) {
+      return false;
+    }
+    // When the declared version is empty/null/undefined, treat as a name-only
+    // match so we select the newest package from the query results.
+    if (expected.version) {
+      if (String(pkg.version || "") !== String(expected.version)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   _exactDependencyMatch(pkg, deps) {
@@ -391,8 +402,11 @@ class DependencyHealthProvider {
           if (Array.isArray(retry)) {
             for (const pkg of retry) {
               const matchingDep = this._exactDependencyMatch(pkg, batch);
-              if (matchingDep && (!allResults.has(matchingDep.name) || pkg.version > allResults.get(matchingDep.name).version)) {
-                allResults.set(matchingDep.name, pkg);
+              if (matchingDep) {
+                const mapKey = `${matchingDep.format}:${matchingDep.name}`;
+                if (!allResults.has(mapKey) || pkg.version > allResults.get(mapKey).version) {
+                  allResults.set(mapKey, pkg);
+                }
               }
             }
           }
@@ -401,14 +415,17 @@ class DependencyHealthProvider {
         } else if (Array.isArray(result)) {
           for (const pkg of result) {
             const matchingDep = this._exactDependencyMatch(pkg, batch);
-            if (matchingDep && (!allResults.has(matchingDep.name) || pkg.version > allResults.get(matchingDep.name).version)) {
-              allResults.set(matchingDep.name, pkg);
+            if (matchingDep) {
+              const mapKey = `${matchingDep.format}:${matchingDep.name}`;
+              if (!allResults.has(mapKey) || pkg.version > allResults.get(mapKey).version) {
+                allResults.set(mapKey, pkg);
+              }
             }
           }
         }
 
         for (const dep of batch) {
-          const match = allResults.get(dep.name) || null;
+          const match = allResults.get(`${dep.format}:${dep.name}`) || null;
           this.dependencies.push(
             new DependencyHealthNode(dep, match, this.context)
           );

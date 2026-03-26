@@ -200,16 +200,22 @@ class SSOAuthManager {
 
     // Listen for the terminal closing so we can auto-prompt import
     const closePromise = new Promise((resolve) => {
-      const listener = vscode.window.onDidCloseTerminal((closed) => {
-        if (closed === terminal) {
-          listener.dispose();
+      let done = false;
+      const disposable = vscode.window.onDidCloseTerminal((closed) => {
+        if (!done && closed === terminal) {
+          done = true;
+          disposable.dispose();
           resolve();
         }
       });
 
       // Also offer import after a delay in case the user doesn't close the terminal
       setTimeout(() => {
-        resolve();
+        if (!done) {
+          done = true;
+          disposable.dispose();
+          resolve();
+        }
       }, 10000);
     });
 
