@@ -14,6 +14,8 @@ const { DiagnosticsPublisher } = require("./util/diagnosticsPublisher");
 const { SSOAuthManager } = require("./util/ssoAuthManager");
 const { UpstreamChecker } = require("./util/upstreamChecker");
 const { UpstreamPreviewProvider } = require("./views/upstreamPreviewProvider");
+const { UpstreamDetailProvider } = require("./views/upstreamDetailProvider");
+const UpstreamIndicatorNode = require("./models/upstreamIndicatorNode");
 const { PromotionProvider } = require("./views/promotionProvider");
 const { SearchQueryBuilder } = require("./util/searchQueryBuilder");
 const { formatApiError } = require("./util/errorFormatter");
@@ -134,6 +136,30 @@ function getInstallOptions(item) {
   }
 
   return installOpts;
+}
+
+function attachRepositoryContextToChildren(parent, children) {
+  if (!parent || !Array.isArray(children)) {
+    return children;
+  }
+
+  const hasRepositoryContext = typeof parent.workspace === "string" &&
+    typeof parent.slug === "string" &&
+    typeof parent.name === "string";
+
+  if (!hasRepositoryContext) {
+    return children;
+  }
+
+  for (const child of children) {
+    if (child instanceof UpstreamIndicatorNode) {
+      child.workspace = parent.workspace;
+      child.slug = parent.slug;
+      child.name = parent.name;
+    }
+  }
+
+  return children;
 }
 
 async function pickInstallCommandVariant(result) {
@@ -296,6 +322,11 @@ async function activate(context) {
 
   // Define main view provider which populates with data
   const cloudsmithProvider = new CloudsmithProvider(context);
+  const originalCloudsmithGetChildren = cloudsmithProvider.getChildren.bind(cloudsmithProvider);
+  cloudsmithProvider.getChildren = async (element) => {
+    const children = await originalCloudsmithGetChildren(element);
+    return attachRepositoryContextToChildren(element, children);
+  };
   const treeView = vscode.window.createTreeView("cloudsmithView", {
     treeDataProvider: cloudsmithProvider,
     showCollapseAll: true,
@@ -359,6 +390,10 @@ async function activate(context) {
   // Create upstream preview WebView provider
   const upstreamPreviewProvider = new UpstreamPreviewProvider(context);
   context.subscriptions.push({ dispose: () => upstreamPreviewProvider.dispose() });
+
+  // Create upstream detail WebView provider
+  const upstreamDetailProvider = new UpstreamDetailProvider(context);
+  context.subscriptions.push({ dispose: () => upstreamDetailProvider.dispose() });
 
   // Create promotion provider
   const promotionProvider = new PromotionProvider(context);
@@ -1608,6 +1643,25 @@ async function activate(context) {
         content: content,
       });
       await vscode.window.showTextDocument(doc, { preview: true });
+    }),
+
+    // PR 6: Inspect repository upstreams
+    vscode.commands.registerCommand("cloudsmith-vsc.inspectUpstreams", async (item) => {
+      if (!item) {
+        vscode.window.showWarningMessage("No repository selected.");
+        return;
+      }
+
+      const workspace = item.workspace;
+      const repoSlug = item.slug;
+      const repoName = item.name;
+
+      if (!workspace || !repoSlug || !repoName) {
+        vscode.window.showWarningMessage("Could not determine repository details.");
+        return;
+      }
+
+      await upstreamDetailProvider.show(workspace, repoSlug, repoName);
     }),
 
     // Phase 9: Preview upstream resolution
