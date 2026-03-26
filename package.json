@@ -243,6 +243,12 @@
         "icon": "$(cloud)"
       },
       {
+        "command": "cloudsmith-vsc.inspectUpstreams",
+        "title": "View Upstreams",
+        "category": "Cloudsmith",
+        "icon": "$(cloud)"
+      },
+      {
         "command": "cloudsmith-vsc.showPromotionStatus",
         "title": "Show Promotion Status",
         "category": "Cloudsmith",
@@ -363,6 +369,16 @@
           "command": "cloudsmith-vsc.filterVulnerable",
           "when": "view == cloudsmithView && viewItem == repository",
           "group": "filter@3"
+        },
+        {
+          "command": "cloudsmith-vsc.inspectUpstreams",
+          "when": "view == cloudsmithView && viewItem == repository",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cloudsmith-vsc.inspectUpstreams",
+          "when": "view == cloudsmithView && viewItem == repositoryFiltered",
+          "group": "navigation@2"
         },
         {
           "command": "cloudsmith-vsc.filterVulnerable",
