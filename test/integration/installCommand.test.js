@@ -15,6 +15,8 @@ suite('Integration: Install Command Builder', function () {
     { format: 'conda', urlPart: 'conda.cloudsmith.io' },
     { format: 'composer', urlPart: 'composer' },
     { format: 'dart', urlPart: 'dart' },
+    { format: 'rpm', urlPart: 'dl.cloudsmith.io' },
+    { format: 'raw', urlPart: 'dl.cloudsmith.io' },
   ];
 
   for (const { format, urlPart } of formats) {

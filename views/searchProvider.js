@@ -17,6 +17,7 @@ class SearchProvider {
         this.pagination = null;
         this.currentWorkspace = null;
         this.currentQuery = null;
+        this.currentRepo = null;
         this.currentPage = 1;
         // Auto-refresh when connection status changes in secrets store.
         // This ensures the welcome/connected state updates without external refresh calls.
@@ -28,16 +29,18 @@ class SearchProvider {
     }
 
     /**
-     * Execute a search against a workspace.
+     * Execute a search against a workspace, optionally scoped to a single repo.
      *
      * @param   workspace  Workspace slug
      * @param   query      Cloudsmith search query string
      * @param   page       Page number (default 1)
+     * @param   repo       Optional repo slug for repo-scoped search
      */
-    async search(workspace, query, page = 1) {
+    async search(workspace, query, page = 1, repo = null) {
         this.currentWorkspace = workspace;
         this.currentQuery = query;
         this.currentPage = page;
+        this.currentRepo = repo ? repo : null;
 
         const cloudsmithAPI = new CloudsmithAPI(this.context);
         const paginatedFetch = new PaginatedFetch(cloudsmithAPI);
@@ -45,7 +48,9 @@ class SearchProvider {
         const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
         const pageSize = config.get("searchPageSize") || 50;
 
-        const endpoint = `packages/${workspace}/`;
+        const endpoint = repo
+            ? `packages/${workspace}/${repo}/`
+            : `packages/${workspace}/`;
         const result = await vscode.window.withProgress(
             { location: vscode.ProgressLocation.Notification, title: "Searching packages..." },
             () => paginatedFetch.fetchPage(endpoint, page, pageSize, query)
@@ -96,6 +101,7 @@ class SearchProvider {
         this.currentWorkspace = workspace;
         this.currentQuery = query;
         this.currentPage = 1;
+        this.currentRepo = null;
 
         const cloudsmithAPI = new CloudsmithAPI(this.context);
         const paginatedFetch = new PaginatedFetch(cloudsmithAPI);
@@ -146,7 +152,7 @@ class SearchProvider {
         if (this.pagination && this.currentPage >= this.pagination.pageTotal) {
             return;
         }
-        await this.search(this.currentWorkspace, this.currentQuery, this.currentPage + 1);
+        await this.search(this.currentWorkspace, this.currentQuery, this.currentPage + 1, this.currentRepo);
     }
 
     /** Clear all search results. */
@@ -156,6 +162,7 @@ class SearchProvider {
         this.currentWorkspace = null;
         this.currentQuery = null;
         this.currentPage = 1;
+        this.currentRepo = null;
         this.refresh();
     }
 
@@ -191,10 +198,13 @@ class SearchProvider {
             // Prepend a summary node if we have search results
             if (this.searchResults.length > 0 && this.currentQuery) {
                 const count = this.pagination ? this.pagination.count : this.searchResults.length;
+                const scopeLabel = this.currentRepo
+                    ? `${this.currentWorkspace}/${this.currentRepo}`
+                    : (this.currentWorkspace || "workspace");
                 const summaryNode = new InfoNode(
                     `Results for: ${this.currentQuery}`,
-                    `${count} package${count !== 1 ? "s" : ""} in ${this.currentWorkspace || "workspace"}`,
-                    `Query: ${this.currentQuery}\nWorkspace: ${this.currentWorkspace || ""}`,
+                    `${count} package${count !== 1 ? "s" : ""} in ${scopeLabel}`,
+                    `Query: ${this.currentQuery}\nWorkspace: ${this.currentWorkspace || ""}${this.currentRepo ? `\nRepository: ${this.currentRepo}` : ""}`,
                     "search",
                     "searchSummary"
                 );

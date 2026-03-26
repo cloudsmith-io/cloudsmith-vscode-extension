@@ -1,6 +1,8 @@
 // Install command builder - generates format-native install commands
 // with Cloudsmith registry URLs pre-filled.
 
+const VERIFICATION_BANNER = "# Verify package details before running";
+
 class InstallCommandBuilder {
   /**
    * Escape a string for safe single-quoted shell usage.
@@ -11,6 +13,110 @@ class InstallCommandBuilder {
   }
 
   /**
+   * Remove the display-only verification banner before copying to the clipboard.
+   * Unknown-format fallback comments are preserved.
+   *
+   * @param   {string} command
+   * @returns {string}
+   */
+  static toClipboardCommand(command) {
+    if (typeof command !== "string") {
+      return "";
+    }
+
+    const unixBanner = `${VERIFICATION_BANNER}\n`;
+    if (command.startsWith(unixBanner)) {
+      return command.slice(unixBanner.length);
+    }
+
+    const windowsBanner = `${VERIFICATION_BANNER}\r\n`;
+    if (command.startsWith(windowsBanner)) {
+      return command.slice(windowsBanner.length);
+    }
+
+    return command;
+  }
+
+  /**
+   * Extract a Docker image tag from package-like data.
+   * Cloudsmith may expose human-readable tags separately from the version/digest.
+   *
+   * @param   {object} pkgLike
+   * @returns {string|null}
+   */
+  static extractDockerTag(pkgLike) {
+    if (!pkgLike || typeof pkgLike !== "object") {
+      return null;
+    }
+
+    const candidates = [
+      pkgLike.tags && pkgLike.tags.version,
+      pkgLike.tags_raw && pkgLike.tags_raw.version,
+      pkgLike.cloudsmithMatch && pkgLike.cloudsmithMatch.tags && pkgLike.cloudsmithMatch.tags.version,
+    ];
+
+    for (const candidate of candidates) {
+      const tag = InstallCommandBuilder._normalizeDockerTag(candidate);
+      if (tag) {
+        return tag;
+      }
+    }
+
+    return null;
+  }
+
+  static _normalizeDockerTag(value) {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        const normalizedEntry = InstallCommandBuilder._normalizeDockerTag(entry);
+        if (normalizedEntry) {
+          return normalizedEntry;
+        }
+      }
+      return null;
+    }
+
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const normalized = InstallCommandBuilder._sanitizeDockerComponent(value);
+    return normalized || null;
+  }
+
+  static _sanitizeDockerComponent(value) {
+    return String(value).trim().replace(/^['"]+|['"]+$/g, "");
+  }
+
+  static _normalizeDockerDigest(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const normalized = InstallCommandBuilder._sanitizeDockerComponent(value).replace(/^sha256:/i, "");
+    return normalized || null;
+  }
+
+  static _resolveDockerTag(version, opts) {
+    const explicitTag = InstallCommandBuilder.extractDockerTag(opts);
+    if (explicitTag) {
+      return explicitTag;
+    }
+
+    const normalizedVersion = InstallCommandBuilder._normalizeDockerTag(version);
+    if (normalizedVersion) {
+      return normalizedVersion;
+    }
+
+    return "latest";
+  }
+
+  static _normalizeDockerName(name) {
+    const normalized = InstallCommandBuilder._sanitizeDockerComponent(name);
+    return normalized.endsWith(".sig") ? normalized.slice(0, -4) : normalized;
+  }
+
+  /**
    * Build a copy-paste-ready install command for a package.
    *
    * @param   {string} format    Package format (e.g., 'python', 'npm', 'maven').
@@ -18,9 +124,14 @@ class InstallCommandBuilder {
    * @param   {string} version   Package version.
    * @param   {string} workspace Cloudsmith workspace/owner slug.
    * @param   {string} repo      Cloudsmith repository slug.
-   * @returns {{ command: string, note: string|null }}
+   * @param   {object} [opts]    Extra package fields for format-specific handling.
+   * @param   {string} [opts.checksumSha256] Docker image digest for pinned pulls.
+   * @param   {string} [opts.cdnUrl]         Direct CDN download URL (raw/generic).
+   * @param   {string} [opts.filename]       Original filename (raw/generic).
+   * @returns {{ command: string, note: string|null, alternatives?: Array<{label: string, command: string}> }}
    */
-  static build(format, name, version, workspace, repo) {
+  static build(format, name, version, workspace, repo, opts) {
+    const options = opts || {};
     const safeName = InstallCommandBuilder.shellEscape(name);
     const safeVersion = InstallCommandBuilder.shellEscape(version);
     const commands = {
@@ -39,10 +150,6 @@ class InstallCommandBuilder {
       nuget: {
         command: `# Verify package details before running\ndotnet add package ${safeName} --version ${safeVersion} --source https://nuget.cloudsmith.io/${workspace}/${repo}/v3/index.json`,
         note: "For private repos, configure NuGet source credentials.",
-      },
-      docker: {
-        command: `# Verify package details before running\ndocker pull docker.cloudsmith.io/${workspace}/${repo}/${safeName}:${safeVersion}`,
-        note: "Run `docker login docker.cloudsmith.io` first for private repos.",
       },
       helm: {
         command: `# Verify package details before running\nhelm install ${safeName} --repo https://dl.cloudsmith.io/basic/${workspace}/${repo}/helm/charts/ --version ${safeVersion}`,
@@ -74,6 +181,17 @@ class InstallCommandBuilder {
       },
     };
 
+    // Formats with dedicated handlers
+    if (format === "docker") {
+      return InstallCommandBuilder._buildDocker(name, version, workspace, repo, options);
+    }
+    if (format === "rpm") {
+      return InstallCommandBuilder._buildRpm(name, version, workspace, repo);
+    }
+    if (format === "raw" || format === "generic") {
+      return InstallCommandBuilder._buildRaw(name, version, workspace, repo, options);
+    }
+
     const entry = commands[format];
     if (!entry) {
       return {
@@ -82,6 +200,63 @@ class InstallCommandBuilder {
       };
     }
     return entry;
+  }
+
+  /**
+   * Build Docker pull command — tag-first with optional digest alternative.
+   */
+  static _buildDocker(name, version, workspace, repo, opts) {
+    const registry = `docker.cloudsmith.io/${workspace}/${repo}`;
+    const imageName = InstallCommandBuilder._normalizeDockerName(name);
+    const tag = InstallCommandBuilder._resolveDockerTag(version, opts || {});
+    const result = {
+      command: `# Verify package details before running\ndocker pull ${registry}/${imageName}:${tag}`,
+      note: "Run `docker login docker.cloudsmith.io` first for private repos.",
+    };
+
+    const digest = InstallCommandBuilder._normalizeDockerDigest((opts || {}).checksumSha256 || (opts || {}).versionDigest);
+    if (digest) {
+      result.alternatives = [{
+        label: "Pull by digest (pinned)",
+        command: `# Verify package details before running\ndocker pull ${registry}/${imageName}@sha256:${digest}`,
+      }];
+    }
+
+    return result;
+  }
+
+  /**
+   * Build RPM install command — dnf primary, yum alternative.
+   */
+  static _buildRpm(name, version, workspace, repo) {
+    const safeName = InstallCommandBuilder.shellEscape(name);
+    const safeVersion = InstallCommandBuilder.shellEscape(version);
+    return {
+      command: `# Verify package details before running\ndnf install ${safeName}-${safeVersion}`,
+      note: `Requires Cloudsmith repo configured in /etc/yum.repos.d/.\nRepo URL: https://dl.cloudsmith.io/basic/${workspace}/${repo}/rpm/`,
+      alternatives: [{
+        label: "Install via yum",
+        command: `# Verify package details before running\nyum install ${safeName}-${safeVersion}`,
+      }],
+    };
+  }
+
+  /**
+   * Build Raw/Generic download command — curl primary, wget alternative.
+   */
+  static _buildRaw(name, version, workspace, repo, opts) {
+    const filename = opts.filename || `${name}-${version}`;
+    const cdnUrl = opts.cdnUrl ||
+      `https://dl.cloudsmith.io/basic/${workspace}/${repo}/raw/names/${encodeURIComponent(name)}/versions/${encodeURIComponent(version)}/${encodeURIComponent(filename)}`;
+
+    return {
+      command: `# Verify package details before running\ncurl -L -O "${cdnUrl}"`,
+      note: 'For private repos, replace "basic" with your entitlement token or use authentication headers.',
+      alternatives: [{
+        label: "Download via wget",
+        command: `# Verify package details before running\nwget "${cdnUrl}"`,
+      }],
+    };
   }
 
   /**

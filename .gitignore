@@ -6,3 +6,20 @@ node_modules
 .src/
 
 
+
+# Agent-specific reference files (not shipped with extension)
+AGENTS.md
+CLAUDE.md
+IMPLEMENTATION.md
+IMPLEMENTATION_V2.md
+IMPLEMENTATION_V3.md
+IMPLEMENTATION_V4.md
+API_REFERENCE.md
+API_REFERENCE_V2.md
+API_REFERENCE_V3.md
+ARCHITECTURE.md
+
+# MCP and agent configuration files
+.mcp.json
+mcp.json
+.claude/
