@@ -17,7 +17,6 @@ API_REFERENCE_V2.md
 API_REFERENCE_V3.md
 ARCHITECTURE.md
 
-<<<<<<< HEAD
 
 # Agent-specific reference files (not shipped with extension)
 AGENTS.md
@@ -31,8 +30,6 @@ API_REFERENCE_V2.md
 API_REFERENCE_V3.md
 ARCHITECTURE.md
 
-=======
->>>>>>> c80304c (chore: add user-agent attribution, gitignore, and code quality fixes)
 # MCP and agent configuration files
 .mcp.json
 mcp.json
