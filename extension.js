@@ -15,7 +15,6 @@ const { SSOAuthManager } = require("./util/ssoAuthManager");
 const { UpstreamChecker } = require("./util/upstreamChecker");
 const { UpstreamPreviewProvider } = require("./views/upstreamPreviewProvider");
 const { UpstreamDetailProvider } = require("./views/upstreamDetailProvider");
-const UpstreamIndicatorNode = require("./models/upstreamIndicatorNode");
 const { PromotionProvider } = require("./views/promotionProvider");
 const { SearchQueryBuilder } = require("./util/searchQueryBuilder");
 const { formatApiError } = require("./util/errorFormatter");
@@ -136,30 +135,6 @@ function getInstallOptions(item) {
   }
 
   return installOpts;
-}
-
-function attachRepositoryContextToChildren(parent, children) {
-  if (!parent || !Array.isArray(children)) {
-    return children;
-  }
-
-  const hasRepositoryContext = typeof parent.workspace === "string" &&
-    typeof parent.slug === "string" &&
-    typeof parent.name === "string";
-
-  if (!hasRepositoryContext) {
-    return children;
-  }
-
-  for (const child of children) {
-    if (child instanceof UpstreamIndicatorNode) {
-      child.workspace = parent.workspace;
-      child.slug = parent.slug;
-      child.name = parent.name;
-    }
-  }
-
-  return children;
 }
 
 async function pickInstallCommandVariant(result) {
@@ -322,11 +297,6 @@ async function activate(context) {
 
   // Define main view provider which populates with data
   const cloudsmithProvider = new CloudsmithProvider(context);
-  const originalCloudsmithGetChildren = cloudsmithProvider.getChildren.bind(cloudsmithProvider);
-  cloudsmithProvider.getChildren = async (element) => {
-    const children = await originalCloudsmithGetChildren(element);
-    return attachRepositoryContextToChildren(element, children);
-  };
   const treeView = vscode.window.createTreeView("cloudsmithView", {
     treeDataProvider: cloudsmithProvider,
     showCollapseAll: true,

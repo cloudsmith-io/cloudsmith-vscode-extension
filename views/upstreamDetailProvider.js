@@ -40,7 +40,7 @@ class UpstreamDetailProvider {
       panel.webview.html = this._getLoadingHtml(workspace, repoSlug, repoName);
 
       const cloudsmithAPI = new CloudsmithAPI(this.context);
-      const groupedUpstreams = await this._fetchGroupedUpstreams(
+      const fetchState = await this._fetchGroupedUpstreams(
         cloudsmithAPI,
         workspace,
         repoSlug,
@@ -52,7 +52,7 @@ class UpstreamDetailProvider {
       }
 
       panel.title = `Upstreams: ${repoName}`;
-      panel.webview.html = this._getHtmlContent(workspace, repoSlug, repoName, groupedUpstreams);
+      panel.webview.html = this._getHtmlContent(workspace, repoSlug, repoName, fetchState);
     } finally {
       if (this._abortController === abortController) {
         this._abortController = null;
@@ -89,12 +89,28 @@ class UpstreamDetailProvider {
 
   async _fetchGroupedUpstreams(cloudsmithAPI, workspace, repoSlug, signal) {
     const grouped = new Map();
-    const credentialManager = new CredentialManager(this.context);
-    const apiKey = await credentialManager.getApiKey();
+    const failedFormats = [];
+    let successfulFormats = 0;
+    let apiKey = null;
+
+    try {
+      const credentialManager = new CredentialManager(this.context);
+      apiKey = await credentialManager.getApiKey();
+    } catch (error) {
+      if (this._isAbortError(error) || signal.aborted) {
+        return { groupedUpstreams: grouped, failedFormats, successfulFormats };
+      }
+
+      return {
+        groupedUpstreams: grouped,
+        failedFormats: [...SUPPORTED_FORMATS],
+        successfulFormats,
+      };
+    }
 
     for (let index = 0; index < SUPPORTED_FORMATS.length; index += FETCH_BATCH_SIZE) {
       if (signal.aborted) {
-        return grouped;
+        return { groupedUpstreams: grouped, failedFormats, successfulFormats };
       }
 
       const batch = SUPPORTED_FORMATS.slice(index, index + FETCH_BATCH_SIZE);
@@ -110,14 +126,26 @@ class UpstreamDetailProvider {
       );
 
       if (signal.aborted) {
-        return grouped;
+        return { groupedUpstreams: grouped, failedFormats, successfulFormats };
       }
 
       for (const result of batchResults) {
-        if (result.length === 0) {
+        if (result.status === "failed") {
+          failedFormats.push(result.format);
           continue;
         }
-        grouped.set(result[0].format, result);
+
+        if (result.status !== "loaded") {
+          continue;
+        }
+
+        successfulFormats += 1;
+
+        if (result.upstreams.length === 0) {
+          continue;
+        }
+
+        grouped.set(result.format, result.upstreams);
       }
     }
 
@@ -129,13 +157,13 @@ class UpstreamDetailProvider {
       });
     }
 
-    return grouped;
+    return { groupedUpstreams: grouped, failedFormats, successfulFormats };
   }
 
   async _fetchFormatUpstreams(cloudsmithAPI, workspace, repoSlug, format, apiKey, signal) {
     try {
       if (signal.aborted) {
-        return [];
+        return { format, status: "aborted", upstreams: [] };
       }
 
       const result = await cloudsmithAPI.makeRequest(
@@ -143,16 +171,28 @@ class UpstreamDetailProvider {
         this._getRequestOptions(apiKey, signal)
       );
 
-      if (signal.aborted || !Array.isArray(result) || result.length === 0) {
-        return [];
+      if (signal.aborted) {
+        return { format, status: "aborted", upstreams: [] };
       }
 
-      return result.map((upstream) => ({ ...upstream, format }));
+      if (typeof result === "string" || !Array.isArray(result)) {
+        return { format, status: "failed", upstreams: [] };
+      }
+
+      if (result.length === 0) {
+        return { format, status: "loaded", upstreams: [] };
+      }
+
+      return {
+        format,
+        status: "loaded",
+        upstreams: result.map((upstream) => ({ ...upstream, format })),
+      };
     } catch (error) {
       if (this._isAbortError(error) || signal.aborted) {
-        return [];
+        return { format, status: "aborted", upstreams: [] };
       }
-      return [];
+      return { format, status: "failed", upstreams: [] };
     }
   }
 
@@ -230,8 +270,11 @@ class UpstreamDetailProvider {
 </html>`;
   }
 
-  _getHtmlContent(workspace, repoSlug, repoName, groupedUpstreams) {
+  _getHtmlContent(workspace, repoSlug, repoName, fetchState) {
+    const { groupedUpstreams, failedFormats, successfulFormats } = fetchState;
     const formatSections = [];
+    const hasFailures = failedFormats.length > 0;
+    const hasLoadedUpstreams = groupedUpstreams.size > 0;
 
     for (const format of SUPPORTED_FORMATS) {
       const upstreams = groupedUpstreams.get(format);
@@ -248,9 +291,12 @@ class UpstreamDetailProvider {
 </section>`);
     }
 
-    const contentHtml = formatSections.length > 0
+    const contentHtml = hasLoadedUpstreams
       ? formatSections.join("\n")
-      : `<p class="empty-state">No upstream sources configured for this repository.</p>`;
+      : this._getEmptyOrErrorState(hasFailures, successfulFormats);
+    const warningHtml = hasFailures && hasLoadedUpstreams
+      ? `<div class="warning-banner">Some upstream formats could not be loaded.</div>`
+      : "";
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -277,6 +323,30 @@ class UpstreamDetailProvider {
       color: var(--vscode-descriptionForeground);
       font-size: 0.95em;
       line-height: 1.35;
+    }
+    .warning-banner {
+      margin: 0 0 12px 0;
+      padding: 8px 10px;
+      border: 1px solid var(--vscode-inputValidation-warningBorder);
+      border-radius: 6px;
+      background: var(--vscode-inputValidation-warningBackground);
+      color: var(--vscode-foreground);
+      line-height: 1.4;
+    }
+    .error-state {
+      margin-top: 8px;
+      padding: 12px 14px;
+      border: 1px solid var(--vscode-inputValidation-errorBorder);
+      border-radius: 6px;
+      background: var(--vscode-inputValidation-errorBackground);
+      color: var(--vscode-foreground);
+      line-height: 1.4;
+    }
+    .error-state-title {
+      display: block;
+      margin-bottom: 3px;
+      font-weight: 600;
+      color: var(--vscode-errorForeground);
     }
     .format-group + .format-group {
       margin-top: 20px;
@@ -384,9 +454,25 @@ class UpstreamDetailProvider {
 <body>
   <h1>${this._escape(repoName)}</h1>
   <p class="repo-meta">${this._escape(workspace)}/${this._escape(repoSlug)}</p>
+  ${warningHtml}
   ${contentHtml}
 </body>
 </html>`;
+  }
+
+  _getEmptyOrErrorState(hasFailures, successfulFormats) {
+    if (!hasFailures) {
+      return `<p class="empty-state">No upstream sources configured for this repository.</p>`;
+    }
+
+    const detail = successfulFormats > 0
+      ? "Some upstream formats could not be loaded, so the upstream configuration could not be determined."
+      : "The upstream configuration could not be loaded for this repository.";
+
+    return `<div class="error-state">
+  <span class="error-state-title">Could not load upstream sources.</span>
+  ${this._escape(detail)}
+</div>`;
   }
 
   _renderUpstreamCard(upstream) {

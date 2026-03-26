@@ -219,7 +219,15 @@ class RepositoryNode {
     if (packages.length > 0) {
       const upstreams = await this.getUpstreams(packages);
       if (upstreams.length > 0) {
-        children.push(new UpstreamIndicatorNode(upstreams, this.context));
+        children.push(new UpstreamIndicatorNode(
+          upstreams,
+          {
+            workspace: this.workspace,
+            slug: this.slug,
+            name: this.name,
+          },
+          this.context
+        ));
       }
     }
 
