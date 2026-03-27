@@ -18,6 +18,7 @@ const { UpstreamDetailProvider } = require("./views/upstreamDetailProvider");
 const { PromotionProvider } = require("./views/promotionProvider");
 const { SearchQueryBuilder } = require("./util/searchQueryBuilder");
 const { formatApiError } = require("./util/errorFormatter");
+const { buildPackageGroupUrl, buildPackageUrl } = require("./util/webAppUrls");
 const recentPackages = require("./util/recentPackages");
 
 /**
@@ -673,21 +674,9 @@ async function activate(context) {
       const version = unwrapValue(item.version);
       const identifier = unwrapValue(item.slug_perm);
 
-      //need to replace '/' in name as UI URL replaces these with _
-      const pkg = name.replaceAll("/", "_");
-
-      const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
-      const useLegacyApp = await config.get("useLegacyWebApp");
-
-
-      if (identifier) {
-        if (useLegacyApp) {
-          const url = `https://cloudsmith.io/~${workspace}/repos/${repo}/packages/detail/${format}/${pkg}/${version}`;
-          vscode.env.openExternal(vscode.Uri.parse(url));
-        } else {
-          const url = `https://app.cloudsmith.com/${workspace}/${repo}/${format}/${pkg}/${version}/${identifier}`;
-          vscode.env.openExternal(vscode.Uri.parse(url));
-        }
+      const url = buildPackageUrl(workspace, repo, format, name, version, identifier);
+      if (url) {
+        vscode.env.openExternal(vscode.Uri.parse(url));
       } else {
         vscode.window.showWarningMessage("Please use this command from the package context menu.");
       }
@@ -704,10 +693,12 @@ async function activate(context) {
       const name = typeof item === "string" ? item : item.name;
 
       if (name) {
-        // Encode special characters for URL
-        const encodedName = name.replaceAll("/", "%2F").replaceAll(":", "%3A");
-        const url = `https://app.cloudsmith.com/${workspace}/${repo}?page=1&query=name:${encodedName}&sort=name`;
-        vscode.env.openExternal(vscode.Uri.parse(url));
+        const url = buildPackageGroupUrl(workspace, repo, name);
+        if (url) {
+          vscode.env.openExternal(vscode.Uri.parse(url));
+          return;
+        }
+        vscode.window.showWarningMessage("Please use this command from the package context menu.");
       } else {
         vscode.window.showWarningMessage("Please use this command from the package context menu.");
       }
@@ -1200,11 +1191,19 @@ async function activate(context) {
           };
           vscode.commands.executeCommand("cloudsmith-vsc.showVulnerabilities", vulnItem);
         } else if (action.id === "open") {
-          if (pkg.self_webapp_url) {
-            vscode.env.openExternal(vscode.Uri.parse(pkg.self_webapp_url));
-          } else {
+          const packageUrl = buildPackageUrl(
+            workspace,
+            pkgRepo,
+            format,
+            name,
+            pkg.version,
+            pkg.slug_perm
+          );
+          if (!packageUrl) {
             vscode.window.showInformationMessage("No web URL available for this package.");
+            return;
           }
+          vscode.env.openExternal(vscode.Uri.parse(packageUrl));
         } else if (action.id === "inspect") {
           const inspectItem = {
             name: name,

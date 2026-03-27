@@ -562,11 +562,6 @@
     "configuration": {
       "title": "Cloudsmith",
       "properties": {
-        "cloudsmith-vsc.useLegacyWebApp": {
-          "type": "boolean",
-          "default": false,
-          "description": "If enabled, the extension will use the legacy webapp 'cloudsmith.io' for platform links."
-        },
         "cloudsmith-vsc.inspectOutput": {
           "type": "boolean",
           "default": false,
