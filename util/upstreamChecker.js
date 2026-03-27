@@ -6,6 +6,7 @@ const { CredentialManager } = require("./credentialManager");
 const { SearchQueryBuilder } = require("./searchQueryBuilder");
 
 const SUPPORTED_UPSTREAM_FORMATS = [
+<<<<<<< HEAD
   "deb", "docker", "maven", "npm", "python",
   "ruby", "dart", "helm", "nuget", "cargo",
   "rpm", "cran", "swift", "go", "hex",
@@ -15,6 +16,157 @@ const SUPPORTED_UPSTREAM_FORMATS = [
 const UPSTREAM_FETCH_BATCH_SIZE = 5;
 const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const REPOSITORY_UPSTREAM_CACHE_KEY_PREFIX = "cloudsmith-upstreams:v2";
+=======
+  "alpine",
+  "cargo",
+  "cocoapods",
+  "composer",
+  "conda",
+  "cran",
+  "dart",
+  "deb",
+  "docker",
+  "generic",
+  "go",
+  "helm",
+  "hex",
+  "huggingface",
+  "luarocks",
+  "maven",
+  "npm",
+  "nuget",
+  "python",
+  "rpm",
+  "ruby",
+  "swift",
+  "vagrant",
+];
+const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000;
+const UPSTREAM_FETCH_BATCH_SIZE = 5;
+
+function getUpstreamCacheKey(workspace, repo) {
+  return `cloudsmith-upstreams:all:${workspace}:${repo}`;
+}
+
+function isBenignUpstreamFormatError(message) {
+  const normalized = typeof message === "string" ? message.toLowerCase() : "";
+  if (!normalized) {
+    return false;
+  }
+
+  const benignKeywords = [
+    "response status: 404",
+    "not found",
+    "unsupported",
+    "not applicable",
+    "unknown format",
+    "no upstream",
+    "does not exist",
+  ];
+
+  if (benignKeywords.some((keyword) => normalized.includes(keyword))) {
+    return true;
+  }
+
+  // Treat all 4xx client errors as benign for format-specific upstream
+  // endpoints. A 400/405/422 means the format does not support upstream
+  // configurations, not that the API is down.
+  const statusMatch = normalized.match(/response status:\s*(\d{3})/);
+  if (statusMatch) {
+    const statusCode = Number(statusMatch[1]);
+    if (statusCode >= 400 && statusCode < 500) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isWarningWorthyUpstreamFormatError(message) {
+  const normalized = typeof message === "string" ? message.toLowerCase() : "";
+  if (!normalized) {
+    return true;
+  }
+
+  return !isBenignUpstreamFormatError(normalized);
+}
+
+function getUpstreamRequestOptions(apiKey, signal) {
+  const headers = {
+    accept: "application/json",
+    "content-type": "application/json",
+  };
+
+  if (apiKey) {
+    headers["X-Api-Key"] = apiKey;
+  }
+
+  return {
+    method: "GET",
+    headers,
+    signal,
+  };
+}
+
+function sortUpstreams(left, right) {
+  const leftName = typeof left.name === "string" ? left.name : "";
+  const rightName = typeof right.name === "string" ? right.name : "";
+  if (leftName !== rightName) {
+    return leftName.localeCompare(rightName, undefined, { sensitivity: "base" });
+  }
+
+  const leftFormat = typeof left._format === "string"
+    ? left._format
+    : (typeof left.format === "string" ? left.format : "");
+  const rightFormat = typeof right._format === "string"
+    ? right._format
+    : (typeof right.format === "string" ? right.format : "");
+
+  return leftFormat.localeCompare(rightFormat, undefined, { sensitivity: "base" });
+}
+
+async function fetchFormatUpstreams(api, workspace, repo, format, apiKey, signal) {
+  if (signal && signal.aborted) {
+    return { format, status: "aborted", upstreams: [] };
+  }
+
+  const result = await api.makeRequest(
+    `repos/${workspace}/${repo}/upstream/${format}/`,
+    getUpstreamRequestOptions(apiKey, signal)
+  );
+
+  if (signal && signal.aborted) {
+    return { format, status: "aborted", upstreams: [] };
+  }
+
+  if (typeof result === "string") {
+    if (isWarningWorthyUpstreamFormatError(result)) {
+      return { format, status: "failed", error: result, upstreams: [] };
+    }
+
+    return { format, status: "loaded", upstreams: [] };
+  }
+
+  if (!Array.isArray(result)) {
+    return {
+      format,
+      status: "failed",
+      error: `Unexpected upstream response for format "${format}".`,
+      upstreams: [],
+    };
+  }
+
+  return {
+    format,
+    status: "loaded",
+    upstreams: result.map((upstream) => ({
+      ...upstream,
+      _format: format,
+      format,
+    })),
+  };
+}
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
 
 class UpstreamChecker {
   constructor(context) {
@@ -63,6 +215,127 @@ class UpstreamChecker {
       return { data: [], error: null };
     }
     return { data: result, error: null };
+  }
+
+  async getAllUpstreamData(workspace, repo, options = {}) {
+    const { signal } = options;
+
+    if (signal && signal.aborted) {
+      return null;
+    }
+
+    const cacheKey = getUpstreamCacheKey(workspace, repo);
+    const cached = this.context && this.context.globalState
+      ? this.context.globalState.get(cacheKey)
+      : null;
+
+    if (
+      cached &&
+      Array.isArray(cached.upstreams) &&
+      typeof cached.active === "number" &&
+      typeof cached.total === "number" &&
+      Array.isArray(cached.failedFormats) &&
+      typeof cached.successfulFormats === "number" &&
+      cached.timestamp &&
+      (Date.now() - cached.timestamp) < UPSTREAM_CACHE_TTL_MS
+    ) {
+      return {
+        upstreams: cached.upstreams,
+        active: cached.active,
+        total: cached.total,
+        failedFormats: cached.failedFormats,
+        successfulFormats: cached.successfulFormats,
+      };
+    }
+
+    let apiKey = null;
+    try {
+      const credentialManager = new CredentialManager(this.context);
+      apiKey = await credentialManager.getApiKey();
+    } catch {
+      apiKey = null;
+    }
+
+    if (signal && signal.aborted) {
+      return null;
+    }
+
+    const upstreams = [];
+    const failedFormats = [];
+    let successfulFormats = 0;
+
+    for (let index = 0; index < SUPPORTED_UPSTREAM_FORMATS.length; index += UPSTREAM_FETCH_BATCH_SIZE) {
+      if (signal && signal.aborted) {
+        return null;
+      }
+
+      const batch = SUPPORTED_UPSTREAM_FORMATS.slice(index, index + UPSTREAM_FETCH_BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map((format) => fetchFormatUpstreams(this.api, workspace, repo, format, apiKey, signal))
+      );
+
+      if (signal && signal.aborted) {
+        return null;
+      }
+
+      for (const result of batchResults) {
+        if (result.status === "aborted") {
+          return null;
+        }
+
+        if (result.status === "failed") {
+          failedFormats.push(result.format);
+          continue;
+        }
+
+        if (result.status !== "loaded") {
+          continue;
+        }
+
+        successfulFormats += 1;
+        upstreams.push(...result.upstreams);
+      }
+    }
+
+    upstreams.sort(sortUpstreams);
+    const active = upstreams.filter((upstream) => upstream.is_active !== false).length;
+    const response = {
+      upstreams,
+      active,
+      total: upstreams.length,
+      failedFormats,
+      successfulFormats,
+    };
+
+    if (
+      !signal?.aborted &&
+      failedFormats.length === 0 &&
+      this.context &&
+      this.context.globalState
+    ) {
+      await this.context.globalState.update(cacheKey, {
+        timestamp: Date.now(),
+        ...response,
+      });
+    }
+
+    return response;
+  }
+
+  async getAllUpstreams(workspace, repo, options = {}) {
+    const result = await this.getAllUpstreamData(workspace, repo, options);
+    if (result === null) {
+      return { data: [], error: null, aborted: true };
+    }
+
+    if (result.failedFormats.length > 0 && result.upstreams.length === 0) {
+      return {
+        data: result.upstreams,
+        error: `Could not load upstream data for: ${result.failedFormats.join(", ")}`,
+      };
+    }
+
+    return { data: result.upstreams, error: null };
   }
 
   /**
@@ -518,9 +791,21 @@ class UpstreamChecker {
   }
 }
 
+<<<<<<< HEAD
 module.exports = {
   UpstreamChecker,
   SUPPORTED_UPSTREAM_FORMATS,
   UPSTREAM_FETCH_BATCH_SIZE,
   UPSTREAM_CACHE_TTL_MS,
+=======
+async function getAllUpstreamData(context, workspace, repo, options = {}) {
+  const checker = new UpstreamChecker(context);
+  return checker.getAllUpstreamData(workspace, repo, options);
+}
+
+module.exports = {
+  SUPPORTED_UPSTREAM_FORMATS,
+  getAllUpstreamData,
+  UpstreamChecker,
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
 };

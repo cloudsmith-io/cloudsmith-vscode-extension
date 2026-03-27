@@ -2,7 +2,11 @@
 
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
+<<<<<<< HEAD
 const { UpstreamChecker } = require("../util/upstreamChecker");
+=======
+const { getAllUpstreamData } = require("../util/upstreamChecker");
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
 const UpstreamIndicatorNode = require("./upstreamIndicatorNode");
 const { activeFilters } = require("../util/filterState");
 const InfoNode = require("./infoNode");
@@ -160,6 +164,7 @@ class RepositoryNode {
   }
 
   /**
+<<<<<<< HEAD
    * Fetch upstream configs for this repo across every supported format.
    * Results are cached by UpstreamChecker for 10 minutes.
    *
@@ -167,6 +172,20 @@ class RepositoryNode {
    */
   async getUpstreams() {
     return this.upstreamChecker.getRepositoryUpstreams(this.workspace, this.slug);
+=======
+   * Fetch upstream configs for this repo across all supported format endpoints.
+   * Delegates to the shared helper in upstreamChecker.js, which handles batching,
+   * error classification, and caching.
+   *
+   * @returns {Array} Array of upstream config objects (may be empty).
+   */
+  async getUpstreams() {
+    const result = await getAllUpstreamData(this.context, this.workspace, this.slug);
+    if (!result || !Array.isArray(result.upstreams)) {
+      return [];
+    }
+    return result.upstreams;
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
   }
 
   /**
@@ -191,7 +210,11 @@ class RepositoryNode {
 
     const children = [];
 
+<<<<<<< HEAD
     // Fetch upstreams lazily only when the repository is expanded.
+=======
+    // Fetch upstreams lazily (only when repo is expanded)
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
     if (packages.length > 0) {
       const upstreams = await this.getUpstreams();
       if (upstreams.length > 0) {

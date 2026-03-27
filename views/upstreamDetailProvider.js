@@ -1,8 +1,14 @@
 const vscode = require("vscode");
+<<<<<<< HEAD
 const {
   UpstreamChecker,
   SUPPORTED_UPSTREAM_FORMATS,
 } = require("../util/upstreamChecker");
+=======
+const { SUPPORTED_UPSTREAM_FORMATS, getAllUpstreamData } = require("../util/upstreamChecker");
+
+const SUPPORTED_FORMATS = SUPPORTED_UPSTREAM_FORMATS;
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
 
 class UpstreamDetailProvider {
   constructor(context) {
@@ -33,11 +39,19 @@ class UpstreamDetailProvider {
       panel.title = `Upstreams: ${repoName}`;
       panel.webview.html = this._getLoadingHtml(workspace, repoSlug, repoName);
 
+<<<<<<< HEAD
       const fetchState = await this.upstreamChecker.getRepositoryUpstreamState(
         workspace,
         repoSlug,
         { signal: abortController.signal }
       );
+=======
+      const fetchState = await this._fetchGroupedUpstreams(workspace, repoSlug, abortController.signal);
+
+      if (!fetchState) {
+        return;
+      }
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
 
       if (!this._canRender(panel, requestId) || abortController.signal.aborted) {
         return;
@@ -79,6 +93,50 @@ class UpstreamDetailProvider {
     return panel;
   }
 
+<<<<<<< HEAD
+=======
+  async _fetchGroupedUpstreams(workspace, repoSlug, signal) {
+    const upstreamData = await getAllUpstreamData(this.context, workspace, repoSlug, { signal });
+    if (upstreamData === null || signal.aborted) {
+      return null;
+    }
+
+    const grouped = new Map();
+
+    for (const upstream of upstreamData.upstreams) {
+      const format = typeof upstream._format === "string"
+        ? upstream._format
+        : (typeof upstream.format === "string" ? upstream.format : "");
+
+      if (!format) {
+        continue;
+      }
+
+      if (!grouped.has(format)) {
+        grouped.set(format, []);
+      }
+
+      grouped.get(format).push(upstream);
+    }
+
+    for (const upstreams of grouped.values()) {
+      upstreams.sort((left, right) => {
+        const leftName = typeof left.name === "string" ? left.name : "";
+        const rightName = typeof right.name === "string" ? right.name : "";
+        return leftName.localeCompare(rightName, undefined, { sensitivity: "base" });
+      });
+    }
+
+    return {
+      groupedUpstreams: grouped,
+      failedFormats: Array.isArray(upstreamData.failedFormats) ? upstreamData.failedFormats : [],
+      successfulFormats: typeof upstreamData.successfulFormats === "number"
+        ? upstreamData.successfulFormats
+        : 0,
+    };
+  }
+
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
   _abortInFlightRequest() {
     if (this._abortController) {
       this._abortController.abort();
@@ -135,8 +193,8 @@ class UpstreamDetailProvider {
   _getHtmlContent(workspace, repoSlug, repoName, fetchState) {
     const { groupedUpstreams, failedFormats, successfulFormats } = fetchState;
     const formatSections = [];
-    const hasFailures = failedFormats.length > 0;
     const hasLoadedUpstreams = groupedUpstreams.size > 0;
+    const hasFailures = failedFormats.length > 0 && !hasLoadedUpstreams;
 
     for (const format of SUPPORTED_UPSTREAM_FORMATS) {
       const upstreams = groupedUpstreams.get(format);
@@ -156,9 +214,13 @@ class UpstreamDetailProvider {
     const contentHtml = hasLoadedUpstreams
       ? formatSections.join("\n")
       : this._getEmptyOrErrorState(hasFailures, successfulFormats);
+<<<<<<< HEAD
     const warningHtml = hasFailures && hasLoadedUpstreams
       ? `<div class="warning-banner">Some upstream data could not be loaded.</div>`
       : "";
+=======
+    const warningHtml = "";
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
 
     return `<!DOCTYPE html>
 <html lang="en">
