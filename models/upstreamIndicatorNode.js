@@ -4,9 +4,12 @@
 const vscode = require("vscode");
 
 class UpstreamIndicatorNode {
-    constructor(upstreams, context) {
+    constructor(upstreams, repositoryContext = {}, context) {
         this.context = context;
         this.upstreams = upstreams;
+        this.workspace = repositoryContext.workspace || null;
+        this.slug = repositoryContext.slug || null;
+        this.name = repositoryContext.name || null;
     }
 
     getTreeItem() {

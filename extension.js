@@ -14,6 +14,7 @@ const { DiagnosticsPublisher } = require("./util/diagnosticsPublisher");
 const { SSOAuthManager } = require("./util/ssoAuthManager");
 const { UpstreamChecker } = require("./util/upstreamChecker");
 const { UpstreamPreviewProvider } = require("./views/upstreamPreviewProvider");
+const { UpstreamDetailProvider } = require("./views/upstreamDetailProvider");
 const { PromotionProvider } = require("./views/promotionProvider");
 const { SearchQueryBuilder } = require("./util/searchQueryBuilder");
 const { formatApiError } = require("./util/errorFormatter");
@@ -359,6 +360,10 @@ async function activate(context) {
   // Create upstream preview WebView provider
   const upstreamPreviewProvider = new UpstreamPreviewProvider(context);
   context.subscriptions.push({ dispose: () => upstreamPreviewProvider.dispose() });
+
+  // Create upstream detail WebView provider
+  const upstreamDetailProvider = new UpstreamDetailProvider(context);
+  context.subscriptions.push({ dispose: () => upstreamDetailProvider.dispose() });
 
   // Create promotion provider
   const promotionProvider = new PromotionProvider(context);
@@ -1608,6 +1613,25 @@ async function activate(context) {
         content: content,
       });
       await vscode.window.showTextDocument(doc, { preview: true });
+    }),
+
+    // PR 6: Inspect repository upstreams
+    vscode.commands.registerCommand("cloudsmith-vsc.inspectUpstreams", async (item) => {
+      if (!item) {
+        vscode.window.showWarningMessage("No repository selected.");
+        return;
+      }
+
+      const workspace = item.workspace;
+      const repoSlug = item.slug;
+      const repoName = item.name;
+
+      if (!workspace || !repoSlug || !repoName) {
+        vscode.window.showWarningMessage("Could not determine repository details.");
+        return;
+      }
+
+      await upstreamDetailProvider.show(workspace, repoSlug, repoName);
     }),
 
     // Phase 9: Preview upstream resolution

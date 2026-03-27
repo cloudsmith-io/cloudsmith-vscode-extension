@@ -1,39 +1,19 @@
-node_modules
+node_modules/
 .vscode-test/
 *.vsix
 .env
 .DS_Store
 .src/
+.npmrc
 
-# Agent-specific reference files (not shipped with extension)
-AGENTS.md
-CLAUDE.md
-IMPLEMENTATION.md
-IMPLEMENTATION_V2.md
-IMPLEMENTATION_V3.md
-IMPLEMENTATION_V4.md
-API_REFERENCE.md
-API_REFERENCE_V2.md
-API_REFERENCE_V3.md
-ARCHITECTURE.md
+# Local planning / agent reference docs
+AGENTS*.md
+CLAUDE*.md
+IMPLEMENTATION*.md
+API_REFERENCE*.md
+ARCHITECTURE*.md
 
-<<<<<<< HEAD
-
-# Agent-specific reference files (not shipped with extension)
-AGENTS.md
-CLAUDE.md
-IMPLEMENTATION.md
-IMPLEMENTATION_V2.md
-IMPLEMENTATION_V3.md
-IMPLEMENTATION_V4.md
-API_REFERENCE.md
-API_REFERENCE_V2.md
-API_REFERENCE_V3.md
-ARCHITECTURE.md
-
-=======
->>>>>>> c80304c (chore: add user-agent attribution, gitignore, and code quality fixes)
-# MCP and agent configuration files
+# Local agent / MCP config
 .mcp.json
 mcp.json
 .claude/
