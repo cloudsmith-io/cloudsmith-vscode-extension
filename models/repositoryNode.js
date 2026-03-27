@@ -6,11 +6,8 @@ const UpstreamIndicatorNode = require("./upstreamIndicatorNode");
 const { activeFilters } = require("../util/filterState");
 const InfoNode = require("./infoNode");
 const { EntitlementSummaryNode } = require("./entitlementNode");
-const RepoMetricsNode = require("./repoMetricsNode");
 
 const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const QUOTA_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-
 
 class RepositoryNode {
   constructor(repo, workspace, context) {
@@ -19,11 +16,73 @@ class RepositoryNode {
     this.slug_perm = repo.slug_perm;
     this.name = repo.name;
     this.workspace = workspace;
+    this.storageRegion = repo.storage_region || repo.region || null;
   }
 
   /** Get the active filter from the module-level singleton Map. */
   _getActiveFilter() {
     return activeFilters.get(`${this.workspace}/${this.slug}`) || null;
+  }
+
+  _getStorageRegionLabel(region, depth = 0) {
+    if (region == null) {
+      return null;
+    }
+
+    if (
+      typeof region === "string" ||
+      typeof region === "number" ||
+      typeof region === "boolean"
+    ) {
+      return String(region);
+    }
+
+    if (typeof region !== "object") {
+      return null;
+    }
+
+    if (depth >= 3) {
+      try {
+        return JSON.stringify(region);
+      } catch {
+        return "Unknown";
+      }
+    }
+
+    const directKeys = ["name", "label", "slug", "value"];
+    for (const key of directKeys) {
+      if (region[key] != null) {
+        const directLabel = this._getStorageRegionLabel(region[key], depth + 1);
+        if (directLabel) {
+          return directLabel;
+        }
+      }
+    }
+
+    const nestedKeys = ["region", "storage_region", "details", "location"];
+    for (const key of nestedKeys) {
+      if (region[key] != null) {
+        const nestedLabel = this._getStorageRegionLabel(region[key], depth + 1);
+        if (nestedLabel) {
+          return nestedLabel;
+        }
+      }
+    }
+
+    for (const value of Object.values(region)) {
+      if (value != null && typeof value === "object") {
+        const nestedLabel = this._getStorageRegionLabel(value, depth + 1);
+        if (nestedLabel) {
+          return nestedLabel;
+        }
+      }
+    }
+
+    try {
+      return JSON.stringify(region);
+    } catch {
+      return "Unknown";
+    }
   }
 
   getTreeItem() {
@@ -163,55 +222,10 @@ class RepositoryNode {
     return result;
   }
 
-  /**
-   * Fetch workspace quota (cached for 30 minutes since it's workspace-level).
-   * @returns {Object|null} Quota data or null on error.
-   */
-  async getQuota() {
-    const cacheKey = `cloudsmith-quota:${this.workspace}`;
-    const cached = this.context.globalState.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < QUOTA_CACHE_TTL_MS) {
-      return cached.data;
-    }
-
-    const cloudsmithAPI = new CloudsmithAPI(this.context);
-    const endpoint = `quota/${this.workspace}/`;
-    const result = await cloudsmithAPI.get(endpoint);
-    if (typeof result === "string" || !result) {
-      return null;
-    }
-
-    this.context.globalState.update(cacheKey, {
-      timestamp: Date.now(),
-      data: result,
-    });
-    return result;
-  }
-
-  /**
-   * Fetch per-repo package metrics (aggregate download count).
-   * @returns {Object} Metrics object with downloads count.
-   */
-  async getRepoMetrics() {
-    const cloudsmithAPI = new CloudsmithAPI(this.context);
-    const result = await cloudsmithAPI.get(
-      `metrics/packages/${this.workspace}/${this.slug}/?page_size=1`
-    );
-    if (typeof result === "string" || !result) {
-      return {};
-    }
-    // The metrics endpoint may return an object or array
-    if (Array.isArray(result) && result.length > 0) {
-      return result[0];
-    }
-    return result;
-  }
-
   async getChildren() {
     const packages = await this.getPackages();
     const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
     const showEntitlements = config.get("showEntitlements");
-    const showRepoMetrics = config.get("showRepoMetrics");
 
     const children = [];
 
@@ -221,6 +235,21 @@ class RepositoryNode {
       if (upstreams.length > 0) {
         children.push(new UpstreamIndicatorNode(upstreams, this.context));
       }
+    }
+
+    if (this.storageRegion) {
+      const regionLabel = this._getStorageRegionLabel(this.storageRegion);
+
+      children.push({
+        getTreeItem: () => ({
+          label: "Storage Region",
+          description: regionLabel,
+          collapsibleState: vscode.TreeItemCollapsibleState.None,
+          contextValue: "repoDetail",
+          iconPath: new vscode.ThemeIcon("globe"),
+        }),
+        getChildren: () => [],
+      });
     }
 
     // Entitlement tokens (Phase 12)
@@ -235,27 +264,6 @@ class RepositoryNode {
           "Entitlements: failed to load",
           "",
           e.message || "An error occurred loading entitlement tokens.",
-          "warning"
-        ));
-      }
-    }
-
-    // Repository metrics (Phase 13)
-    if (showRepoMetrics) {
-      try {
-        const [quota, metrics] = await Promise.all([
-          this.getQuota(),
-          this.getRepoMetrics(),
-        ]);
-        if (quota) {
-          children.push(new RepoMetricsNode(quota, metrics, this.context));
-        }
-      } catch (e) {
-        console.warn(`[RepoMetrics] Error loading metrics:`, e.message);
-        children.push(new InfoNode(
-          "Metrics: failed to load",
-          "",
-          e.message || "An error occurred loading repository metrics.",
           "warning"
         ));
       }

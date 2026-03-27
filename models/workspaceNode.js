@@ -4,12 +4,14 @@ const vscode = require("vscode");
 const path = require("path");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
 const repositoryNode = require("./repositoryNode");
+const { WorkspaceInfoNode } = require("./workspaceInfoNode");
 
 class WorkspaceNode {
   constructor(item, context) {
     this.context = context;
     this.name = item.name;
     this.slug = item.slug;
+    this.workspace = item.slug;
     this.repos = [];
   }
 
@@ -29,7 +31,7 @@ class WorkspaceNode {
 
   async getRepositories() {
     const context = this.context;
-    const workspace = this.slug;
+    const workspace = this.workspace;
     const cloudsmithAPI = new CloudsmithAPI(context);
     const repositories = await cloudsmithAPI.get(
       "repos/" + workspace + "/?sort=name"
@@ -65,8 +67,26 @@ class WorkspaceNode {
   }
 
   async getChildren() {
-    // getRepositories() already returns RepositoryNode instances — return directly
-    return this.getRepositories();
+    let quotaData = null;
+
+    try {
+      const cloudsmithAPI = new CloudsmithAPI(this.context);
+      const result = await cloudsmithAPI.get(`quota/${this.workspace}/`);
+
+      if (typeof result !== "string" && result && result.usage) {
+        quotaData = result;
+      }
+    } catch {
+      // Quota access is optional for this node.
+    }
+
+    const children = [];
+    children.push(new WorkspaceInfoNode(this.name || this.workspace, quotaData));
+
+    const repos = await this.getRepositories();
+    children.push(...repos);
+
+    return children;
   }
 }
 

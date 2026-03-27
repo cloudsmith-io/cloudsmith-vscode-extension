@@ -5,6 +5,7 @@ const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
 const { ConnectionManager } = require("../util/connectionManager");
 const InfoNode = require("../models/infoNode");
+const { WorkspaceInfoNode } = require("../models/workspaceInfoNode");
 
 class CloudsmithProvider {
   constructor(context) {
@@ -152,7 +153,21 @@ class CloudsmithProvider {
     }
 
     const RepositoryNode = require("../models/repositoryNode");
-    const RepositoryNodes = [];
+    let quotaData = null;
+
+    try {
+      const quotaResult = await cloudsmithAPI.get(`quota/${workspaceSlug}/`);
+      if (typeof quotaResult !== "string" && quotaResult && quotaResult.usage) {
+        quotaData = quotaResult;
+      }
+    } catch {
+      // Quota access is optional for the workspace summary row.
+    }
+
+    const RepositoryNodes = [
+      new WorkspaceInfoNode(workspaceSlug, quotaData),
+    ];
+
     for (const repo of repos) {
       // Pass workspaceSlug as the workspace parameter so downstream calls work
       const repoNode = new RepositoryNode(repo, workspaceSlug, context);
