@@ -79,11 +79,10 @@ The right-click menu provides access to the following commands, varying dependin
 ##### Package Commands
 
 - **Inspect package** — View the full raw JSON API response for the package.
-- **Open in Cloudsmith** — Open the package page in the Cloudsmith web UI.
 - **Copy Install Command** — Copy the installation command for the package to the clipboard.
 - **Show Install Command** - Show the installation command for the package. 
 - **Show vulnerabilities** - Open a webview showing the vulnerabilities report for a package. 
-- **View package in Cloudsmith** - Open web browser and display the package within the configured Cloudmsith workspace. 
+- **View package in Cloudsmith** - Open the package page in the Cloudsmith web UI for the configured workspace. 
 - **Promote Package** - Promote the package between configured repositories. 
 - **Show Promotion Status** - Show the current status of the package promotion request. 
 - **Find safe version** - Show possible safe versions of the package within Cloudsmith for quick remediation. 
