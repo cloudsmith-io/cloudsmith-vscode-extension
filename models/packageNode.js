@@ -7,13 +7,13 @@ class PackageNode {
   constructor(pkg, context) {
     this.context = context;
     this.slug = { id: "Slug", value: pkg.slug };
-    this.slug_perm = { id: "Slug Perm", value: pkg.slug_perm };
+    this.slug_perm = { id: "Slug", value: pkg.slug_perm };
     this.name = pkg.name;
     this.status_str = { id: "Status", value: pkg.status_str };
     this.downloads = { id: "Downloads", value: String(pkg.downloads) };
     this.version = { id: "Version", value: pkg.version };
     this.format = pkg.format;
-    this.uploaded_at = { id: "Uploaded At", value: pkg.uploaded_at };
+    this.uploaded_at = { id: "Uploaded at", value: pkg.uploaded_at };
     this.repository = pkg.repository;
     this.namespace = pkg.namespace;
     this.status_reason = pkg.status_reason || null;
@@ -32,10 +32,10 @@ class PackageNode {
     this.vulnerability_policy_violated = pkg.vulnerability_policy_violated || false;
 
     // Structured policy detail entries with human-readable labels and Yes/No values
-    this.policy_violated_detail = { id: "Policy Violated", value: this.policy_violated ? "Yes" : "No" };
-    this.deny_policy_violated_detail = { id: "Deny Policy Violated (Legacy)", value: this.deny_policy_violated ? "Yes" : "No" };
-    this.license_policy_violated_detail = { id: "License Policy Violated (Legacy)", value: this.license_policy_violated ? "Yes" : "No" };
-    this.vulnerability_policy_violated_detail = { id: "Vulnerability Policy Violated (Legacy)", value: this.vulnerability_policy_violated ? "Yes" : "No" };
+    this.policy_violated_detail = { id: "Policy violated", value: this.policy_violated ? "Yes" : "No" };
+    this.deny_policy_violated_detail = { id: "Deny policy violated (legacy)", value: this.deny_policy_violated ? "Yes" : "No" };
+    this.license_policy_violated_detail = { id: "License policy violated (legacy)", value: this.license_policy_violated ? "Yes" : "No" };
+    this.vulnerability_policy_violated_detail = { id: "Vulnerability policy violated (legacy)", value: this.vulnerability_policy_violated ? "Yes" : "No" };
 
     // Vulnerability fields from API response
     // slug_perm_raw must be a plain string for API URLs.
@@ -138,7 +138,7 @@ class PackageNode {
       parts.push("Vulnerability policy violated");
     }
     if (this.status_str_raw === "Quarantined" || this.policy_violated || this.deny_policy_violated) {
-      parts.push("Right-click \u2192 Explain Quarantine or Find Safe Version");
+      parts.push("Right-click \u2192 Explain quarantine or find safe version");
     }
     return parts.join(" — ");
   }
@@ -170,7 +170,7 @@ class PackageNode {
     // Build description: combine quarantine and upstream origin info
     const descParts = [];
     if (status === "Quarantined") {
-      descParts.push("⛔ Quarantined \u2014 right-click for details");
+      descParts.push("Quarantined \u2014 right-click for details");
     }
     if (this.upstreamSource) {
       descParts.push("(via upstream)");
@@ -225,7 +225,7 @@ class PackageNode {
       const truncated = this.status_reason.length > 80
         ? this.status_reason.substring(0, 80) + "..."
         : this.status_reason;
-      children.push(new PackageDetailsNode({ id: "Quarantine Reason", value: truncated }, this.context));
+      children.push(new PackageDetailsNode({ id: "Quarantine reason", value: truncated }, this.context));
     }
 
     // 6. Policy Violated

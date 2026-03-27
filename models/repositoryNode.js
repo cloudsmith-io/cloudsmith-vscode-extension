@@ -89,7 +89,7 @@ class RepositoryNode {
     const repo = this.name;
     const activeFilter = this._getActiveFilter();
     const filterLabel = activeFilter
-      ? `filtered: ${activeFilter.label || activeFilter}`
+      ? `Filter: ${activeFilter.label || activeFilter}`
       : undefined;
 
     return {
@@ -250,7 +250,7 @@ class RepositoryNode {
 
       children.push({
         getTreeItem: () => ({
-          label: "Storage Region",
+          label: "Storage region",
           description: regionLabel,
           collapsibleState: vscode.TreeItemCollapsibleState.None,
           contextValue: "repoDetail",
@@ -269,9 +269,9 @@ class RepositoryNode {
         }
       } catch (e) {
         children.push(new InfoNode(
-          "Entitlements: failed to load",
+          "Could not load entitlement tokens",
           "",
-          e.message || "An error occurred loading entitlement tokens.",
+          e.message || "Could not load entitlement tokens.",
           "warning"
         ));
       }
@@ -283,7 +283,7 @@ class RepositoryNode {
       if (this._lastApiFailed) {
         placeholderNode = new InfoNode(
           "Failed to load packages",
-          "Check your connection and try refreshing",
+          "Check the connection and refresh.",
           "The Cloudsmith API returned an error when loading packages for this repository.",
           "warning"
         );
@@ -292,16 +292,16 @@ class RepositoryNode {
         placeholderNode = new InfoNode(
           "No packages match filter",
           filterLabel,
-          "Click to change or clear the filter",
+          "Select to change or clear the filter.",
           "filter",
           undefined,
-          { command: "cloudsmith-vsc.changeFilter", title: "Change Filter", arguments: [this] }
+          { command: "cloudsmith-vsc.changeFilter", title: "Change filter", arguments: [this] }
         );
       } else {
         placeholderNode = new InfoNode(
-          "Repository is empty",
+          "No packages",
           "",
-          "This repository does not contain any packages.",
+          "Create or push a package to get started.",
           "info"
         );
       }
