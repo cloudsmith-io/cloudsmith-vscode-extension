@@ -129,16 +129,13 @@ All commands are available via the Command Palette (`Cmd+Shift+P`):
 
 | Command | Description |
 |---|---|
-| `Cloudsmith: Set API Key` | Set or update your Cloudsmith API key. |
-| `Cloudsmith: Set Service Account Token` | Set or update your service account token. |
+| `Cloudsmith: Set Up Cloudsmith Authentication` | Configure Cloudsmith authentication using an API key, service account token, or imported credentials. |
 | `Cloudsmith: Import CLI Credentials` | Import credentials from the Cloudsmith CLI config. |
 | `Cloudsmith: Sign in with SSO` | Authenticate using SSO (experimental). |
-| `Cloudsmith: Sign Out` | Remove stored credentials and sign out. |
 | `Cloudsmith: Inspect Package` | View the full raw JSON for a package. |
 | `Cloudsmith: Open in Cloudsmith` | Open the selected item in the Cloudsmith web UI. |
-| `Cloudsmith: Delete Package` | Delete the selected package from Cloudsmith. |
-| `Cloudsmith: Copy Value` | Copy a package detail value to the clipboard. |
-| `Cloudsmith: Refresh` | Refresh the explorer tree. |
+| `Cloudsmith: Copy to Clipboard` | Copy a package detail value to the clipboard. |
+| `Cloudsmith: Refresh Packages` | Refresh the Cloudsmith explorer tree. |
 | `Cloudsmith: Search Packages` | Search for packages within a repository. |
 
 
