@@ -4,6 +4,15 @@
 
 This release transforms the extension from a basic package explorer into a full package intelligence platform with security remediation, dependency health scanning, license compliance, and cross-repository promotion workflows.
 
+#### Terraform Export
+- "Export as Terraform" context menu command on repository nodes generates a complete HCL configuration file using the Cloudsmith Terraform provider.
+- Exports the repository resource with all non-default settings including permissions, format-specific options, broadcast state, and storage region.
+- Exports all configured upstreams as `cloudsmith_repository_upstream` resources across all package formats, with correct `upstream_type` derived from the format endpoint.
+- Exports retention rules as `cloudsmith_repository_retention_rule` when configured.
+- All resource references use Terraform interpolation (`data.cloudsmith_namespace`, `cloudsmith_repository`) for portable, import-ready configurations.
+- Upstream auth secrets are never exported as plaintext. Sensitive values use Terraform variable placeholders with `sensitive = true`.
+- Generated HCL opens in a new editor tab for review before saving.
+
 #### Package Search
 - Full-text package search across workspaces and repositories with Cloudsmith query syntax support.
 - Guided multi-step search with filter presets for quarantined packages, policy violations, vulnerability violations, and license violations.

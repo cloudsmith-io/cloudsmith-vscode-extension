@@ -2,12 +2,11 @@
 
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
+const { getAllUpstreamData } = require("../util/upstreamChecker");
 const UpstreamIndicatorNode = require("./upstreamIndicatorNode");
 const { activeFilters } = require("../util/filterState");
 const InfoNode = require("./infoNode");
 const { EntitlementSummaryNode } = require("./entitlementNode");
-
-const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 class RepositoryNode {
   constructor(repo, workspace, context) {
@@ -160,51 +159,18 @@ class RepositoryNode {
   }
 
   /**
-   * Fetch upstream configs for this repo by inferring formats from loaded packages.
-   * Results are cached in globalState for 10 minutes.
+   * Fetch upstream configs for this repo across all supported format endpoints.
+   * Delegates to the shared helper in upstreamChecker.js, which handles batching,
+   * error classification, and caching.
    *
-   * @param   packageNodes  Array of PackageNode instances to infer formats from.
-   * @returns Array of upstream config objects (may be empty).
+   * @returns {Array} Array of upstream config objects (may be empty).
    */
-  async getUpstreams(packageNodes) {
-    const workspace = this.workspace;
-    const repo = this.slug;
-    const cacheKey = `cloudsmith-upstreams:${workspace}:${repo}`;
-
-    // Check cache
-    const cached = this.context.globalState.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < UPSTREAM_CACHE_TTL_MS) {
-      return cached.upstreams;
-    }
-
-    // Infer unique formats from loaded packages
-    const formats = new Set();
-    for (const node of packageNodes) {
-      const format = node.format || (node.pkgDetails && node.pkgDetails.format);
-      if (format) {
-        formats.add(format);
-      }
-    }
-
-    if (formats.size === 0) {
+  async getUpstreams() {
+    const result = await getAllUpstreamData(this.context, this.workspace, this.slug);
+    if (!result || !Array.isArray(result.upstreams)) {
       return [];
     }
-
-    // Fetch upstream configs for each format in parallel
-    const cloudsmithAPI = new CloudsmithAPI(this.context);
-    const promises = Array.from(formats).map(format =>
-      cloudsmithAPI.getUpstreams(workspace, repo, format)
-    );
-    const results = await Promise.all(promises);
-    const allUpstreams = results.flat();
-
-    // Cache the results
-    this.context.globalState.update(cacheKey, {
-      timestamp: Date.now(),
-      upstreams: allUpstreams,
-    });
-
-    return allUpstreams;
+    return result.upstreams;
   }
 
   /**
@@ -229,9 +195,9 @@ class RepositoryNode {
 
     const children = [];
 
-    // Fetch upstreams lazily (only when repo is expanded) using loaded packages
+    // Fetch upstreams lazily (only when repo is expanded)
     if (packages.length > 0) {
-      const upstreams = await this.getUpstreams(packages);
+      const upstreams = await this.getUpstreams();
       if (upstreams.length > 0) {
         children.push(new UpstreamIndicatorNode(
           upstreams,

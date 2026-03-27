@@ -18,7 +18,10 @@ const { UpstreamDetailProvider } = require("./views/upstreamDetailProvider");
 const { PromotionProvider } = require("./views/promotionProvider");
 const { SearchQueryBuilder } = require("./util/searchQueryBuilder");
 const { formatApiError } = require("./util/errorFormatter");
+const { fetchRepositoryUpstreams, generateTerraformConfig } = require("./util/terraformExporter");
 const recentPackages = require("./util/recentPackages");
+
+let exportTerraformAbortController = null;
 
 /**
  * Helper: unwrap a property that may be stored as:
@@ -265,6 +268,17 @@ async function getWorkspaces(context) {
         return [];
     }
     return result;
+}
+
+async function getPreferredTextDocumentLanguage() {
+  const availableLanguages = new Set(await vscode.languages.getLanguages());
+  if (availableLanguages.has("terraform")) {
+    return "terraform";
+  }
+  if (availableLanguages.has("hcl")) {
+    return "hcl";
+  }
+  return "plaintext";
 }
 
 function buildRawSearchQuery(query) {
@@ -1632,6 +1646,101 @@ async function activate(context) {
       }
 
       await upstreamDetailProvider.show(workspace, repoSlug, repoName);
+    }),
+
+    vscode.commands.registerCommand("cloudsmith-vsc.exportTerraform", async (item) => {
+      if (!item) {
+        vscode.window.showWarningMessage("No repository selected.");
+        return;
+      }
+
+      const workspace = item.workspace;
+      const repoSlug = item.slug || item.slug_perm;
+      const repoName = item.name;
+
+      if (!workspace || !repoSlug || !repoName) {
+        vscode.window.showWarningMessage("Could not determine repository details.");
+        return;
+      }
+
+      if (exportTerraformAbortController) {
+        exportTerraformAbortController.abort();
+      }
+
+      const abortController = new AbortController();
+      exportTerraformAbortController = abortController;
+      const cloudsmithAPI = new CloudsmithAPI(context);
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Generating Terraform configuration...",
+        },
+        async () => {
+          try {
+            const [repoResult, retentionResult, upstreamResult] = await Promise.all([
+              cloudsmithAPI.get(`repos/${workspace}/${repoSlug}`),
+              cloudsmithAPI.get(`repos/${workspace}/${repoSlug}/retention`),
+              fetchRepositoryUpstreams(context, workspace, repoSlug, {
+                signal: abortController.signal,
+              }),
+            ]);
+
+            if (abortController.signal.aborted || upstreamResult === null) {
+              return;
+            }
+
+            if (typeof repoResult === "string") {
+              vscode.window.showErrorMessage(
+                `Could not export repository. ${formatApiError(repoResult)}`
+              );
+              return;
+            }
+
+            const upstreamLoadFailed = Boolean(upstreamResult && upstreamResult.error);
+            const retentionRules = (
+              typeof retentionResult === "string" ||
+              !retentionResult ||
+              typeof retentionResult !== "object"
+            )
+              ? null
+              : retentionResult;
+
+            const hclContent = generateTerraformConfig({
+              repo: repoResult,
+              workspace,
+              upstreams: upstreamLoadFailed ? [] : upstreamResult.data,
+              retention: retentionRules,
+              exportedAt: new Date().toISOString(),
+              upstreamLoadFailed,
+            });
+
+            const doc = await vscode.workspace.openTextDocument({
+              content: hclContent,
+              language: await getPreferredTextDocumentLanguage(),
+            });
+
+            if (abortController.signal.aborted) {
+              return;
+            }
+
+            await vscode.window.showTextDocument(doc);
+          } catch (error) {
+            if (abortController.signal.aborted) {
+              return;
+            }
+
+            const message = error && error.message ? error.message : String(error);
+            vscode.window.showErrorMessage(
+              `Could not export repository. ${formatApiError(message)}`
+            );
+          } finally {
+            if (exportTerraformAbortController === abortController) {
+              exportTerraformAbortController = null;
+            }
+          }
+        }
+      );
     }),
 
     // Phase 9: Preview upstream resolution
