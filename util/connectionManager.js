@@ -27,9 +27,11 @@ class ConnectionManager {
         checkPassed = "false";
       }
       await this.context.secrets.store("cloudsmith-vsc.isConnected", checkPassed);
+      await vscode.commands.executeCommand("setContext", "cloudsmith.connected", false);
     } else {
       checkPassed = "true";
       await this.context.secrets.store("cloudsmith-vsc.isConnected", checkPassed);
+      await vscode.commands.executeCommand("setContext", "cloudsmith.connected", true);
     }
 
     return checkPassed;
@@ -53,6 +55,7 @@ class ConnectionManager {
     const apiKey = await credentialManager.getApiKey();
 
     checkCreds: if (!apiKey) {
+      await vscode.commands.executeCommand("setContext", "cloudsmith.connected", false);
       vscode.window
         .showWarningMessage("No credentials configured!", "Configure", "Cancel")
         .then((selection) => {
