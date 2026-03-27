@@ -340,7 +340,7 @@ class UpstreamDetailProvider {
 <body>
   <h2>${this._escape(repoName)}</h2>
   <p class="subtle">${this._escape(workspace)}/${this._escape(repoSlug)}</p>
-  <p class="loading-copy">Loading upstream sources...</p>
+  <p class="loading-copy">Loading upstreams...</p>
 </body>
 </html>`;
   }
@@ -370,7 +370,7 @@ class UpstreamDetailProvider {
       ? formatSections.join("\n")
       : this._getEmptyOrErrorState(hasFailures, successfulFormats);
     const warningHtml = hasFailures && hasLoadedUpstreams
-      ? `<div class="warning-banner">Some upstream formats could not be loaded.</div>`
+      ? `<div class="warning-banner">Some upstream data could not be loaded.</div>`
       : "";
 
     return `<!DOCTYPE html>
@@ -537,7 +537,7 @@ class UpstreamDetailProvider {
 
   _getEmptyOrErrorState(hasFailures, successfulFormats) {
     if (!hasFailures) {
-      return `<p class="empty-state">No upstream sources configured for this repository.</p>`;
+      return `<p class="empty-state">No upstreams configured for this repository.</p>`;
     }
 
     const detail = successfulFormats > 0
@@ -545,7 +545,7 @@ class UpstreamDetailProvider {
       : "The upstream configuration could not be loaded for this repository.";
 
     return `<div class="error-state">
-  <span class="error-state-title">Could not load upstream sources.</span>
+  <span class="error-state-title">Could not load upstreams.</span>
   ${this._escape(detail)}
 </div>`;
   }
@@ -559,11 +559,11 @@ class UpstreamDetailProvider {
       this._renderDetail("URL", upstream.upstream_url, "mono"),
       this._renderDetail("Mode", typeof upstream.mode === "string" ? upstream.mode : "", ""),
       this._renderDetail("Priority", this._getPriority(upstream), ""),
-      this._renderDetail("SSL Verification", this._getSslVerification(upstream), ""),
+      this._renderDetail("SSL verification", this._getSslVerification(upstream), ""),
       this._renderTrustDetail(upstream),
       this._renderDetail("Indexing", this._getIndexingDisplay(upstream), ""),
       this._renderDetail("Distribution", this._getDistribution(upstream), ""),
-      this._renderDetail("Created Date", this._formatCreatedAt(upstream.created_at), ""),
+      this._renderDetail("Created", this._formatCreatedAt(upstream.created_at), ""),
     ].filter(Boolean).join("\n");
 
     const trustCallout = this._renderTrustCallout(upstream);
@@ -591,10 +591,10 @@ class UpstreamDetailProvider {
 
   _renderTrustDetail(upstream) {
     if (upstream.trust_level === "Trusted") {
-      return `<div class="detail-label">Trust Level</div><div class="detail-value trust-value-trusted">${this._escape(upstream.trust_level)}</div>`;
+      return `<div class="detail-label">Trust level</div><div class="detail-value trust-value-trusted">${this._escape(upstream.trust_level)}</div>`;
     }
     if (upstream.trust_level === "Untrusted") {
-      return `<div class="detail-label">Trust Level</div><div class="detail-value trust-value-untrusted">${this._escape(upstream.trust_level)}</div>`;
+      return `<div class="detail-label">Trust level</div><div class="detail-value trust-value-untrusted">${this._escape(upstream.trust_level)}</div>`;
     }
     return "";
   }
@@ -603,14 +603,14 @@ class UpstreamDetailProvider {
     if (upstream.trust_level === "Trusted") {
       return `<div class="trust-callout">
   <span class="trust-callout-title">Trusted upstream:</span>
-  ${this._escape("This source can serve any package, including versions of packages that exist in your private repository. Packages from this upstream will not be blocked by dependency confusion protections.")}
+  ${this._escape("This source can serve any package, including versions of packages that exist in a private repository. Packages from this upstream are not blocked by dependency confusion protections.")}
 </div>`;
     }
 
     if (upstream.trust_level === "Untrusted") {
       return `<div class="trust-callout">
   <span class="trust-callout-title">Untrusted upstream (recommended):</span>
-  ${this._escape("If a package name exists in your private repository or another trusted source, this upstream will be blocked from serving versions of that package. This protects against namesquatting and dependency confusion attacks.")}
+  ${this._escape("If a package name exists in a private repository or another trusted source, this upstream is blocked from serving versions of that package. This protects against namesquatting and dependency confusion attacks.")}
 </div>`;
     }
 

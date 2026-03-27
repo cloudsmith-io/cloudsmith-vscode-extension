@@ -96,7 +96,7 @@ class QuarantineExplainProvider {
       } else if (message.command === "copyReport") {
         const report = this._buildPlainTextReport(name, version, statusReason, policyTrace);
         await vscode.env.clipboard.writeText(report);
-        vscode.window.showInformationMessage("Quarantine report copied to clipboard.");
+        vscode.window.showInformationMessage("Quarantine report copied.");
       }
     });
   }
@@ -186,7 +186,7 @@ class QuarantineExplainProvider {
     let policyInfoHtml = "";
     if (statusReason) {
       policyInfoHtml += `<div class="status-reason-box">
-        <h3>Quarantine Reason</h3>
+        <h3>Quarantine reason</h3>
         <p class="status-reason">${this._esc(statusReason)}</p>
       </div>`;
     }
@@ -202,7 +202,7 @@ class QuarantineExplainProvider {
     // Show the full policy description from the EPM policy object if available
     if (policyTrace.policyDetail && policyTrace.policyDetail.description) {
       policyInfoHtml += `<div class="policy-description">
-        <h4>Policy Description</h4>
+        <h4>Policy description</h4>
         <p>${this._esc(policyTrace.policyDetail.description)}</p>
       </div>`;
     }
@@ -211,7 +211,7 @@ class QuarantineExplainProvider {
     let decisionLogsHtml = "";
     if (policyTrace.decisionLogs.length > 0) {
       decisionLogsHtml = `<div class="decision-logs">
-        <h3>Decision Log Entries</h3>
+        <h3>Decision log entries</h3>
         <table class="decision-log-table">
           <thead><tr><th>Policy</th><th>Matched</th><th>Action</th><th>Reason</th></tr></thead>
           <tbody>`;
@@ -322,10 +322,10 @@ class QuarantineExplainProvider {
   ${decisionLogsHtml}
 
   <div class="actions">
-    <button data-command="findSafeVersion">Find Safe Version</button>
+    <button data-command="findSafeVersion">Find safe version</button>
     ${selfUrl ? `<button data-command="openInCloudsmith">View in Cloudsmith</button>` : ""}
-    ${hasCVEs ? `<button data-command="showVulnerabilities">Show Vulnerabilities</button>` : ""}
-    <button data-command="copyReport">Copy Quarantine Report</button>
+    ${hasCVEs ? `<button data-command="showVulnerabilities">Show vulnerabilities</button>` : ""}
+    <button data-command="copyReport">Copy quarantine report</button>
   </div>
 
   <script nonce="${nonce}">
@@ -342,7 +342,7 @@ class QuarantineExplainProvider {
 
   _buildPlainTextReport(name, version, statusReason, policyTrace) {
     const lines = [];
-    lines.push(`Quarantine Report: ${name || ""} ${version || ""}`);
+    lines.push(`Quarantine report: ${name || ""} ${version || ""}`);
     lines.push("=".repeat(60));
     lines.push("");
     if (statusReason) {
@@ -357,11 +357,11 @@ class QuarantineExplainProvider {
       lines.push("");
     }
     if (policyTrace.policyDetail && policyTrace.policyDetail.description) {
-      lines.push(`Policy Description: ${policyTrace.policyDetail.description}`);
+      lines.push(`Policy description: ${policyTrace.policyDetail.description}`);
       lines.push("");
     }
     if (policyTrace.decisionLogs.length > 0) {
-      lines.push("Decision Log:");
+      lines.push("Decision log:");
       for (const entry of policyTrace.decisionLogs) {
         lines.push(`  - ${entry.policy_name || entry.name || "Unknown"}: ${entry.reason || entry.action || "\u2014"}`);
       }

@@ -40,7 +40,7 @@ class WorkspaceNode {
     const RepositoryNodes = [];
     if (typeof repositories === "string") {
       vscode.window.showErrorMessage(
-        `Failed to load repositories for ${workspace}: ${repositories}`
+        `Could not load repositories for ${workspace}. ${repositories}`
       );
       return RepositoryNodes;
     }

@@ -57,7 +57,7 @@ class SearchProvider {
         );
 
         if (result.error) {
-            vscode.window.showErrorMessage(`Search failed: ${formatApiError(result.error)}`);
+            vscode.window.showErrorMessage(`Could not search packages. ${formatApiError(result.error)}`);
             return;
         }
 
@@ -83,7 +83,7 @@ class SearchProvider {
         }
 
         if (newNodes.length === 0 && page === 1) {
-            vscode.window.showInformationMessage(`No packages found matching '${query}'`);
+            vscode.window.showInformationMessage(`No packages found for "${query}".`);
         }
 
         this.refresh();
@@ -134,11 +134,11 @@ class SearchProvider {
         this.pagination = null; // No unified pagination for multi-repo search
 
         if (failedRepos.length > 0) {
-            vscode.window.showWarningMessage(`Search failed for repos: ${failedRepos.join(", ")}`);
+            vscode.window.showWarningMessage(`Could not search some repositories: ${failedRepos.join(", ")}.`);
         }
 
         if (allNodes.length === 0 && failedRepos.length === 0) {
-            vscode.window.showInformationMessage(`No packages found matching '${query}'`);
+            vscode.window.showInformationMessage(`No packages found for "${query}".`);
         }
 
         this.refresh();
@@ -180,18 +180,18 @@ class SearchProvider {
                 if (isConnected !== "true") {
                     return [new InfoNode(
                         "Connect to Cloudsmith",
-                        "Use the key icon above to set up API key, Service Account Token, CLI import, or SSO",
-                        "Set up your Cloudsmith authentication to get started",
+                        "Use the key icon above to set up a personal or service account API key, CLI import, or SSO.",
+                        "Set up Cloudsmith authentication to get started.",
                         "plug",
                         undefined,
-                        { command: "cloudsmith-vsc.configureCredentials", title: "Set Up Authentication" }
+                        { command: "cloudsmith-vsc.configureCredentials", title: "Set up authentication" }
                     )];
                 }
                 // Connected but no search run yet
                 return [new InfoNode(
-                    "Search packages across your Cloudsmith workspace",
-                    "Use the search icon above or Ctrl+Shift+P \u2192 Search Packages",
-                    "Search by name, format, version, license, or policy status across all repositories in your workspace.",
+                    "Search packages across a Cloudsmith workspace",
+                    "Use the search icon above or Ctrl+Shift+P \u2192 Search packages.",
+                    "Search by name, format, version, license, or policy status across repositories in a workspace.",
                     "search"
                 )];
             }

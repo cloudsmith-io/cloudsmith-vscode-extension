@@ -120,7 +120,7 @@ class TransitiveResolver {
       }));
     } catch (e) {
       throw TransitiveResolver._wrapError(e, "python (pip)",
-        "Ensure pip is installed and accessible in your PATH.");
+        "Ensure pip is installed and accessible in PATH.");
     }
   }
 

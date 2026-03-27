@@ -28,10 +28,10 @@ class LicenseNode {
 
   _getDescription() {
     const tierLabel = {
-      "restrictive": "\u26D4 Restrictive",
-      "cautious": "\u26A0 Review required",
-      "permissive": "\u2713 Permissive",
-      "unknown": "? Unknown license",
+      "restrictive": "Restrictive",
+      "cautious": "Cautious",
+      "permissive": "Permissive",
+      "unknown": "Unknown license",
     };
     return tierLabel[this.classification.tier] || tierLabel["unknown"];
   }
@@ -48,7 +48,7 @@ class LicenseNode {
   }
 
   getTreeItem() {
-    const licenseLabel = this.license || "Not specified";
+    const licenseLabel = this.license || "No license specified";
 
     const treeItem = {
       label: `License: ${licenseLabel}`,
@@ -63,7 +63,7 @@ class LicenseNode {
     if (this.licenseUrl) {
       treeItem.command = {
         command: "cloudsmith-vsc.openLicenseUrl",
-        title: "View License",
+        title: "View license",
         arguments: [this],
       };
     }
