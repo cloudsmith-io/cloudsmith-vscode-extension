@@ -1,11 +1,16 @@
+// Copyright 2026 Cloudsmith Ltd. All rights reserved.
 const WEB_APP_BASE_URL = "https://app.cloudsmith.com";
+
+function encodePathSegment(value) {
+  return encodeURIComponent(String(value));
+}
 
 function buildRepositoryUrl(workspace, repo) {
   if (!workspace || !repo) {
     return null;
   }
 
-  return `${WEB_APP_BASE_URL}/${workspace}/${repo}`;
+  return `${WEB_APP_BASE_URL}/${encodePathSegment(workspace)}/${encodePathSegment(repo)}`;
 }
 
 function buildPackageUrl(workspace, repo, format, name, version, identifier) {
@@ -14,7 +19,8 @@ function buildPackageUrl(workspace, repo, format, name, version, identifier) {
   }
 
   const packageName = String(name).replaceAll("/", "_");
-  return `${WEB_APP_BASE_URL}/${workspace}/${repo}/${format}/${packageName}/${version}/${identifier}`;
+  const encodedPackageName = encodePathSegment(packageName).replaceAll("%40", "@");
+  return `${WEB_APP_BASE_URL}/${encodePathSegment(workspace)}/${encodePathSegment(repo)}/${encodePathSegment(format)}/${encodedPackageName}/${encodePathSegment(version)}/${encodePathSegment(identifier)}`;
 }
 
 function buildPackageGroupUrl(workspace, repo, name) {
@@ -23,8 +29,8 @@ function buildPackageGroupUrl(workspace, repo, name) {
     return null;
   }
 
-  const encodedName = String(name).replaceAll("/", "%2F").replaceAll(":", "%3A");
-  return `${repositoryUrl}?page=1&query=name:${encodedName}&sort=name`;
+  const query = encodePathSegment(name);
+  return `${repositoryUrl}?page=1&query=name:${query}&sort=name`;
 }
 
 module.exports = {

@@ -66,14 +66,13 @@ class DiagnosticsPublisher {
             dep.cloudsmithMatch.namespace,
             dep.cloudsmithMatch.repository
           );
+          const vulnerabilityCode = `${dep.cloudsmithMatch.num_vulnerabilities} vulnerabilities`;
           diagnostic.code = repositoryUrl
             ? {
-              value: `${dep.cloudsmithMatch.num_vulnerabilities} vulnerabilities`,
+              value: vulnerabilityCode,
               target: vscode.Uri.parse(repositoryUrl),
             }
-            : {
-              value: `${dep.cloudsmithMatch.num_vulnerabilities} vulnerabilities`,
-            };
+            : vulnerabilityCode;
         }
 
         diagnostics.push(diagnostic);
