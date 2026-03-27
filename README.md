@@ -111,17 +111,25 @@ View vulnerability data associated with packages directly in the explorer, inclu
 
 ### Configuration & Settings
 
-The extension exposes several settings under `cloudsmith.*`:
+The extension exposes several settings under `cloudsmith-vsc.*`:
 
 | Setting | Description |
 |---|---|
-| `cloudsmith.apiKey` | Your Cloudsmith API key for authentication. |
-| `cloudsmith.serviceAccountToken` | Service account token for authentication. |
-| `cloudsmith.apiHost` | Custom API host URL (for on-premises installations). |
-| `cloudsmith.webHost` | Custom web host URL (for on-premises installations). |
-| `cloudsmith.showPackageGroups` | Display packages as package groups instead of individual packages. |
-| `cloudsmith.inspectOutputTarget` | Where to send inspect output — `output` window or `document`. |
-| `cloudsmith.experimentalSSOBrowser` | Enable the experimental browser-based SSO authentication flow. |
+| `cloudsmith-vsc.groupByPackageGroups` | Display packages as package groups instead of individual packages. Default: `false`. |
+| `cloudsmith-vsc.inspectOutput` | When enabled, inspect output opens in a new text document instead of the Output tab. Default: `false`. |
+| `cloudsmith-vsc.showMaxPackages` | Maximum number of packages returned per repository (1–30). Default: `30`. |
+| `cloudsmith-vsc.defaultWorkspace` | Cloudsmith workspace slug to load by default. Leave empty to show all accessible workspaces. |
+| `cloudsmith-vsc.showPermissibilityIndicators` | Show visual indicators for quarantined packages and policy violations. Default: `true`. |
+| `cloudsmith-vsc.showLicenseIndicators` | Show license risk classification on packages. Default: `true`. |
+| `cloudsmith-vsc.showDockerDigestCommand` | Show an additional "Pull by digest" option for Docker install commands. Default: `false`. |
+| `cloudsmith-vsc.experimentalSSOBrowser` | Enable experimental browser-based SSO authentication. Default: `false`. |
+| `cloudsmith-vsc.useLegacyWebApp` | Use the legacy `cloudsmith.io` webapp for platform links. Default: `false`. |
+| `cloudsmith-vsc.autoScanOnOpen` | Automatically scan project dependencies against Cloudsmith when a workspace is opened. Default: `false`. |
+| `cloudsmith-vsc.dependencyScanWorkspace` | Cloudsmith workspace slug to use for dependency health scanning. |
+| `cloudsmith-vsc.dependencyScanRepo` | Cloudsmith repository slug to use for dependency health scanning. |
+| `cloudsmith-vsc.resolveTransitiveDependencies` | Resolve transitive (indirect) dependencies using the package manager CLI. Default: `false`. |
+| `cloudsmith-vsc.searchPageSize` | Number of results per page when searching packages (10–100). Default: `50`. |
+| `cloudsmith-vsc.recentSearches` | Number of recent searches to remember (0–50). Default: `10`. |
 
 ### Commands
 
