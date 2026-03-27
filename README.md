@@ -1,5 +1,3 @@
-
-
 <img src="media/readme/brand-banner.png" alt="banner" />
 
 # Cloudsmith Visual Studio Code Extension
@@ -10,139 +8,140 @@
 
 ## Installation
 
-To install the extension, open the Extensions view, search for `cloudsmith` to filter results and select the Cloudsmith extension authorised by Cloudsmith. 
+To install the extension, we recommend installing directly from the Visual Studio Code or OpenVSX marketplaces. Open the Extensions view, search for `cloudsmith` to filter results and select the Cloudsmith extension authored by Cloudsmith.
 
-* Entitlement tokens are not supported. 
+### Connect to Cloudsmith
 
-* Personal API Keys provide support for accessing mulitple Cloudsmith Workspaces if access is granted. A Service Account Token will provide access to a specific Workspace only. 
+After installing, to connect to your Cloudsmith instance, you can utilize an API Key, Service Account Token, import from a local Cloudsmith CLI, or Sign in with SSO.
 
-Alternatively, you can install it via the .vsix file located on the repo releases. ( We recommend installing via the Marketplace. )
-
-From the Extensions view in VS Code:
-
-* Go to the Extensions view.
-* Select Views and More Actions...
-* Select Install from VSIX...
-
-From the command line:
-
-### if you use VS Code
-code --install-extension cloudsmith-x.x.x.vsix
-
-### if you use VS Code Insiders
-code-insiders --install-extension cloudsmith-x-x-x.vsix
-
-### Connect
-After installing, to connect to your Cloudsmith instance, you need to configure either your Personal API Key or a Service Account Token. Click on the `key` icon from the view menu and enter your credential into the input box. To connect press the `connect` or `refresh` icons. 
-
-<img src="media/readme/configure.gif" alt="configure" width="1000"/>
-
-### Settings
-
-A range of settings are configurable for the extension. See Overview for usage of these. 
-
-* Show Packages via individual Package or Package Group
-* Inspect Output - choose where you want to send inspect output
-* Maximum packages to show per repository. Max is limited to 30. 
-* Use Legacy Web App - URLs to Cloudsmith packages will use the legacy Web App instead. 
+- **API Key** — Enter your API key directly in the extension settings.
+- **Service Account Token** — Use a service account token for non-interactive authentication.
+- **CLI Credential Import** — Reads API keys from `~/.cloudsmith/config.ini` with cross-platform path detection. Auto-detects CLI credentials on extension activation with a prompt to import.
+- **SSO Sign-in (Experimental)** — Browser-based SSO flow gated behind the `experimentalSSOBrowser` setting.
+  - SSO terminal flow opens an integrated terminal to run `cloudsmith auth -o {workspace}` for interactive SAML/2FA authentication.
 
 
-<img src="media/readme/settings.gif" alt="settings" width="1000"/>
-
-
-## Overview
+## Features
 
 ### Package Explorer
 
-The Cloudsmith extension contributes a Cloudsmith view to VS Code. The Cloudsmith Explorer lets you examine packages stored within your Cloudsmith assets: workspaces, repositories, packages. 
+The Cloudsmith extension contributes a dedicated Cloudsmith view to VS Code. The Cloudsmith Explorer lets you browse and manage packages stored within your Cloudsmith assets: **workspaces**, **repositories**, and **packages**.
 
 #### Show Packages or Package Groups
 
-By default the extension returns individual packages. You can display them as [package groups](https://help.cloudsmith.io/docs/package-groups) instead. 
+By default the extension returns individual packages. You can display them as [package groups](https://help.cloudsmith.io/docs/package-groups) instead.
 
-
-<img src="media/readme/package_view_type.gif" alt="groupBySetting" width="1000"/>
 
 #### Package Details
 
-A selection of important fields are available directly under a package. This will vary depending on package vs package group. This is a subset of the full api response schema for [packages](https://help.cloudsmith.io/reference/packages_list) and [groups](https://help.cloudsmith.io/reference/packages_groups_list). You can inspect the package to obtain the full response. 
+A selection of important fields are available directly under a package. This varies depending on whether you are viewing packages or package groups. This is a subset of the full API response schema for [packages](https://help.cloudsmith.io/reference/packages_list) and [groups](https://help.cloudsmith.io/reference/packages_groups_list). You can inspect a package to obtain the full response.
 
-You can right-click on each detail and copy the value to the clipboard.  
+You can right-click on each detail and copy the value to the clipboard.
 
-##### Package
+##### Package Fields
 
 - Status
+- Format
 - Name
 - Slug
 - Slug Perm
-- Number of downloads
 - Version
-- Tags
-- Uploaded at date/time
-
-##### Package Group
-
-- Count of packages in group
+- Description
+- License
 - Size
 - Number of downloads
+- Tags
+- Uploaded at date/time
+- Checksum (SHA256)
+- Repository
+- Namespace
+
+##### Package Group Fields
+
+- Count of packages in group
+- Format
+- Name
+- Version
+- Description
+- License
+- Size
+- Number of downloads
+- Tags
 - Last pushed date/time
+- Namespace
 
 
-<img src="media/readme/package_details.gif" alt="packageDetails" width="350"/>
 
 #### Package Context Menus
 
-The right-click menu provides access to the following commands varying depending on whether you have enabled the package groups setting. 
+The right-click menu provides access to the following commands, varying depending on whether you have enabled the package groups setting.
 
-<img src="media/readme/package_context_menu.gif" alt="contextMenu" width="400"/>
+##### Package Commands
 
-#### Package Inspect
+- **Inspect package** — View the full raw JSON API response for the package.
+- **Open in Cloudsmith** — Open the package page in the Cloudsmith web UI.
+- **Copy Install Command** — Copy the installation command for the package to the clipboard.
+- **Show Install Command** - Show the installation command for the package. 
+- **Show vulnerabilities** - Open a webview showing the vulnerabilities report for a package. 
+- **View package in Cloudsmith** - Open web browser and display the package within the configured Cloudmsith workspace. 
+- **Promote Package** - Promote the package between configured repositories. 
+- **Show Promotion Status** - Show the current status of the package promotion request. 
+- **Find safe version** - Show possible safe versions of the package within Cloudsmith for quick remediation. 
 
-Selecting inspect will return the raw JSON data for the selected item. By default it will send the output to the `Output` window. You can configure for output to be sent to a new text document instead. 
-
-<img src="media/readme/package_inspect.gif" alt="inspectPackage"/>
-
-#### Open Package in Cloudsmith
-
-You can open the package directly in your Cloudsmith Web App.
+<img src="media/readme/packagegroup_context_menu.jpg" alt="contextMenu" width="400"/>
 
 
-<img src="media/readme/package_open_browser.gif" alt="openPackage" width="1000"/>
 
+### Repository Explorer
 
-## Testing
+Browse all repositories within a workspace. Repositories are displayed as children of their parent workspace. Each repository shows its packages (or package groups) as children.
 
-### Unit Tests
+### Workspace Switching
 
-```bash
-npm test
-```
+If you have access to multiple workspaces, the explorer lets you switch between them to browse different sets of repositories and packages.
 
-Runs lint followed by all unit tests via `@vscode/test-cli`.
+### Search & Filtering
 
-### Integration Tests
+- **Search packages** — Search for packages within a repository using a search query.
+- **Filter by format** — Filter packages by their format type.
+- Pagination support for large result sets.
 
-Integration tests run against the live Cloudsmith API and require an API key:
+### Vulnerability Information
 
-```bash
-CLOUDSMITH_TEST_API_KEY=your_key_here npm test
-```
+View vulnerability data associated with packages directly in the explorer, including security scan results when available.
 
-Integration tests are automatically skipped when `CLOUDSMITH_TEST_API_KEY` is not set, so `npm test` always passes in CI without credentials. They use the `dl-technology-consulting` workspace with known test fixtures.
+### Configuration & Settings
 
-## Limitations & known issues
+The extension exposes several settings under `cloudsmith.*`:
 
-* The number of returned packages is restricted to max 30 per repository. This can be configured to between 1-30 in the settings. Packages are sorted by last pushed in descending order. 
-* Authentication is currently restricted to API Key or Service Account Tokens. 
+| Setting | Description |
+|---|---|
+| `cloudsmith.apiKey` | Your Cloudsmith API key for authentication. |
+| `cloudsmith.serviceAccountToken` | Service account token for authentication. |
+| `cloudsmith.apiHost` | Custom API host URL (for on-premises installations). |
+| `cloudsmith.webHost` | Custom web host URL (for on-premises installations). |
+| `cloudsmith.showPackageGroups` | Display packages as package groups instead of individual packages. |
+| `cloudsmith.inspectOutputTarget` | Where to send inspect output — `output` window or `document`. |
+| `cloudsmith.experimentalSSOBrowser` | Enable the experimental browser-based SSO authentication flow. |
 
-## Release Notes
+### Commands
 
-### 1.0.0 - July 2025
+All commands are available via the Command Palette (`Cmd+Shift+P`):
 
-* Initial release of the Cloudsmith extension. The extension provides a package explorer view into your Cloudsmith instance. 
-* Future releases will continue to build upon this with futher capabilities and features to closely match the [Cloudsmith CLI](https://help.cloudsmith.io/docs/cli). 
+| Command | Description |
+|---|---|
+| `Cloudsmith: Set API Key` | Set or update your Cloudsmith API key. |
+| `Cloudsmith: Set Service Account Token` | Set or update your service account token. |
+| `Cloudsmith: Import CLI Credentials` | Import credentials from the Cloudsmith CLI config. |
+| `Cloudsmith: Sign in with SSO` | Authenticate using SSO (experimental). |
+| `Cloudsmith: Sign Out` | Remove stored credentials and sign out. |
+| `Cloudsmith: Inspect Package` | View the full raw JSON for a package. |
+| `Cloudsmith: Open in Cloudsmith` | Open the selected item in the Cloudsmith web UI. |
+| `Cloudsmith: Delete Package` | Delete the selected package from Cloudsmith. |
+| `Cloudsmith: Copy Value` | Copy a package detail value to the clipboard. |
+| `Cloudsmith: Refresh` | Refresh the explorer tree. |
+| `Cloudsmith: Search Packages` | Search for packages within a repository. |
 
----
 
 ## License
 
