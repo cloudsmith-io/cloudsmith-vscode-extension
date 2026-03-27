@@ -221,12 +221,12 @@ class PackageNode {
     }
 
     // 5. Quarantine Reason (if quarantined)
-        if (this.status_str_raw === "Quarantined" && this.status_reason) {
-            const truncated = this.status_reason.length > 80
-                ? this.status_reason.substring(0, 80) + "..."
-                : this.status_reason;
-            children.push(new PackageDetailsNode({ id: "Quarantine reason", value: truncated }, this.context));
-        }
+    if (this.status_str_raw === "Quarantined" && this.status_reason) {
+      const truncated = this.status_reason.length > 80
+        ? this.status_reason.substring(0, 80) + "..."
+        : this.status_reason;
+      children.push(new PackageDetailsNode({ id: "Quarantine reason", value: truncated }, this.context));
+    }
 
     // 6. Policy Violated
     children.push(new PackageDetailsNode(this.policy_violated_detail, this.context));
