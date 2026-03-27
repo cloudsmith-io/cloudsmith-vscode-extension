@@ -77,30 +77,37 @@
       {
         "command": "cloudsmith-vsc.clearCredentials",
         "title": "Clear stored credentials",
+        "category": "Cloudsmith",
         "icon": "$(notebook-delete-cell)"
       },
       {
         "command": "cloudsmith-vsc.copySelected",
-        "title": "Copy"
+        "title": "Copy value",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.inspectPackage",
-        "title": "Inspect package"
+        "title": "Inspect package",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.inspectPackageGroup",
-        "title": "Inspect package group"
+        "title": "Inspect package group",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.openPackage",
-        "title": "View package in Cloudsmith"
+        "title": "View package in Cloudsmith",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.openPackageGroup",
-        "title": "View package group in Cloudsmith"
+        "title": "View package group in Cloudsmith",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.refreshView",
+        "category": "Cloudsmith",
         "title": "Refresh packages",
         "icon": "$(refresh)"
       },
