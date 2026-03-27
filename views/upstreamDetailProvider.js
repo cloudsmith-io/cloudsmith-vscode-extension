@@ -175,7 +175,14 @@ class UpstreamDetailProvider {
         return { format, status: "aborted", upstreams: [] };
       }
 
-      if (typeof result === "string" || !Array.isArray(result)) {
+      if (typeof result === "string") {
+        if (this._isWarningWorthyFormatError(result)) {
+          return { format, status: "failed", upstreams: [] };
+        }
+        return { format, status: "loaded", upstreams: [] };
+      }
+
+      if (!Array.isArray(result)) {
         return { format, status: "failed", upstreams: [] };
       }
 
@@ -192,6 +199,11 @@ class UpstreamDetailProvider {
       if (this._isAbortError(error) || signal.aborted) {
         return { format, status: "aborted", upstreams: [] };
       }
+
+      if (!this._isWarningWorthyFormatError(error && error.message ? error.message : "")) {
+        return { format, status: "loaded", upstreams: [] };
+      }
+
       return { format, status: "failed", upstreams: [] };
     }
   }
@@ -226,6 +238,69 @@ class UpstreamDetailProvider {
 
   _isAbortError(error) {
     return error && (error.name === "AbortError" || error.code === "ABORT_ERR");
+  }
+
+  _isWarningWorthyFormatError(message) {
+    const normalized = typeof message === "string" ? message.toLowerCase() : "";
+    if (!normalized) {
+      return true;
+    }
+
+    const benignKeywords = [
+      "response status: 404",
+      "not found",
+      "unsupported",
+      "not applicable",
+      "unknown format",
+      "no upstream",
+      "does not exist",
+    ];
+    if (benignKeywords.some((keyword) => normalized.includes(keyword))) {
+      return false;
+    }
+
+    const statusMatch = normalized.match(/response status:\s*(\d{3})/);
+    if (statusMatch) {
+      const statusCode = Number(statusMatch[1]);
+      if (statusCode === 401 || statusCode === 403 || statusCode === 407 || statusCode === 408 || statusCode === 429) {
+        return true;
+      }
+      if (statusCode >= 500) {
+        return true;
+      }
+      if (statusCode >= 400) {
+        return true;
+      }
+    }
+
+    const warningKeywords = [
+      "blocked ",
+      "redirect",
+      "fetch failed",
+      "network",
+      "timed out",
+      "timeout",
+      "unauthorized",
+      "forbidden",
+      "permission",
+      "access denied",
+      "server error",
+      "bad gateway",
+      "service unavailable",
+      "gateway timeout",
+      "econn",
+      "enotfound",
+      "eai_again",
+      "socket",
+      "tls",
+      "certificate",
+    ];
+
+    if (warningKeywords.some((keyword) => normalized.includes(keyword))) {
+      return true;
+    }
+
+    return true;
   }
 
   _getLoadingHtml(workspace, repoSlug, repoName) {
@@ -483,9 +558,10 @@ class UpstreamDetailProvider {
     const details = [
       this._renderDetail("URL", upstream.upstream_url, "mono"),
       this._renderDetail("Mode", typeof upstream.mode === "string" ? upstream.mode : "", ""),
+      this._renderDetail("Priority", this._getPriority(upstream), ""),
       this._renderDetail("SSL Verification", this._getSslVerification(upstream), ""),
       this._renderTrustDetail(upstream),
-      this._renderDetail("Validation Status", this._getValidationStatus(upstream), ""),
+      this._renderDetail("Indexing", this._getIndexingDisplay(upstream), ""),
       this._renderDetail("Distribution", this._getDistribution(upstream), ""),
       this._renderDetail("Created Date", this._formatCreatedAt(upstream.created_at), ""),
     ].filter(Boolean).join("\n");
@@ -548,15 +624,60 @@ class UpstreamDetailProvider {
     return upstream.verify_ssl ? "Enabled" : "Disabled";
   }
 
-  _getValidationStatus(upstream) {
-    if (upstream.pending_validation === true) {
-      return "Pending Validation";
+  _getIndexingDisplay(upstream) {
+    const indexStatus = typeof upstream.index_status === "string" ? upstream.index_status : "";
+    const packageCount = this._formatIndexPackageCount(upstream.index_package_count);
+
+    if (!indexStatus && !packageCount) {
+      return "";
     }
-    if (typeof upstream.verification_status === "string" && upstream.verification_status) {
-      return upstream.verification_status;
+
+    const indicator = this._getIndexingIndicator(indexStatus);
+    const statusText = indicator ? `${indicator} ${indexStatus}` : indexStatus;
+
+    if (!statusText) {
+      return packageCount;
     }
-    if (upstream.pending_validation === false) {
-      return "Not Pending";
+
+    if (!packageCount) {
+      return statusText;
+    }
+
+    return `${statusText} - ${packageCount}`;
+  }
+
+  _getIndexingIndicator(indexStatus) {
+    const normalized = typeof indexStatus === "string" ? indexStatus.toLowerCase() : "";
+    if (normalized.includes("in progress")) {
+      return "↻";
+    }
+    if (normalized.includes("up-to-date")) {
+      return "✓";
+    }
+    return "";
+  }
+
+  _formatIndexPackageCount(indexPackageCount) {
+    if (typeof indexPackageCount === "number" && Number.isFinite(indexPackageCount)) {
+      const label = indexPackageCount === 1 ? "package" : "packages";
+      return `${indexPackageCount.toLocaleString()} ${label}`;
+    }
+    if (typeof indexPackageCount === "string" && indexPackageCount.trim()) {
+      const numericValue = Number(indexPackageCount);
+      if (Number.isFinite(numericValue)) {
+        const label = numericValue === 1 ? "package" : "packages";
+        return `${numericValue.toLocaleString()} ${label}`;
+      }
+    }
+    return "";
+  }
+
+  _getPriority(upstream) {
+    if (typeof upstream.priority === "number" && Number.isFinite(upstream.priority)) {
+      return String(upstream.priority);
+    }
+    if (typeof upstream.priority === "string" && upstream.priority.trim()) {
+      return upstream.priority;
     }
     return "";
   }
