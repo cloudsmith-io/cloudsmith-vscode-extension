@@ -391,7 +391,7 @@ async function activate(context) {
       await context.secrets.store("cloudsmith-vsc.isConnected", "false");
       await setConnectedContext(false);
       await setHasMultipleWorkspacesContext(false);
-      cloudsmithProvider.refresh();
+      cloudsmithProvider.refresh({ suppressMissingCredentialsWarning: true });
       searchProvider.refresh();
       dependencyHealthProvider.refresh();
     })

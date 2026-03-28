@@ -45,8 +45,9 @@ class ConnectionManager {
   }
 
   // Connect to Cloudsmith
-  async connect() {
+  async connect(options = {}) {
     const context = this.context;
+    const { promptOnMissingCredentials = true } = options;
     let showConnectMsg = true; // controls whether to show connected notification. Used for refresh.
     let currentConnectionStatus = await this.isConnected();
     let connectionStatus = "";
@@ -56,14 +57,16 @@ class ConnectionManager {
 
     checkCreds: if (!apiKey) {
       await vscode.commands.executeCommand("setContext", "cloudsmith.connected", false);
-      vscode.window
-        .showWarningMessage("No credentials configured!", "Configure", "Cancel")
-        .then((selection) => {
-          select: if (selection === "Configure") {
-            vscode.commands.executeCommand("cloudsmith-vsc.configureCredentials");
-            break select;
-          }
-        });
+      if (promptOnMissingCredentials) {
+        vscode.window
+          .showWarningMessage("No credentials configured!", "Configure", "Cancel")
+          .then((selection) => {
+            select: if (selection === "Configure") {
+              vscode.commands.executeCommand("cloudsmith-vsc.configureCredentials");
+              break select;
+            }
+          });
+      }
       return "false";
     } else {
       connectionStatus = await this.checkConnectivity(apiKey);
