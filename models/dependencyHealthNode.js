@@ -2,6 +2,7 @@
 // cross-referenced against Cloudsmith
 
 const vscode = require("vscode");
+const { LicenseClassifier } = require("../util/licenseClassifier");
 
 class DependencyHealthNode {
   /**
@@ -40,6 +41,11 @@ class DependencyHealthNode {
       this.num_vulnerabilities = cloudsmithMatch.num_vulnerabilities || 0;
       this.max_severity = cloudsmithMatch.max_severity || null;
       this.status_reason = cloudsmithMatch.status_reason || null;
+      this.licenseInfo = LicenseClassifier.inspect(cloudsmithMatch);
+      this.spdx_license = this.licenseInfo.spdxLicense;
+      this.raw_license = this.licenseInfo.rawLicense;
+      this.license = this.licenseInfo.displayValue;
+      this.license_url = this.licenseInfo.licenseUrl;
     }
   }
 
@@ -132,16 +138,15 @@ class DependencyHealthNode {
       if (match.num_vulnerabilities > 0) {
         lines.push(`Vulnerabilities: ${match.num_vulnerabilities} (${match.max_severity || "Unknown"})`);
       }
-      if (match.license) {
-        const { LicenseClassifier } = require("../util/licenseClassifier");
-        const classification = LicenseClassifier.classify(match.license);
-        const tierLabels = {
-          "restrictive": "Restrictive",
-          "cautious": "Review required",
-          "permissive": "Permissive",
-          "unknown": "Unknown",
-        };
-        lines.push(`License: ${match.license} (${tierLabels[classification.tier] || "Unknown"})`);
+      const classification = this.licenseInfo || LicenseClassifier.inspect(match);
+      if (classification.displayValue) {
+        lines.push(`License: ${classification.label} (${classification.metadata.label})`);
+        if (classification.spdxLicense && classification.spdxLicense !== classification.label) {
+          lines.push(`Canonical SPDX: ${classification.spdxLicense}`);
+        }
+        if (classification.overrideApplied) {
+          lines.push("License classification includes a local restrictive override.");
+        }
       }
 
       if (this.state === "quarantined" || this.state === "violated") {
@@ -214,9 +219,9 @@ class DependencyHealthNode {
 
     // License with classification
     const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
-    if (config.get("showLicenseIndicators") !== false && match.license) {
+    if (config.get("showLicenseIndicators") !== false && this.licenseInfo && this.licenseInfo.displayValue) {
       const LicenseNode = require("./licenseNode");
-      children.push(new LicenseNode(match.license, match.license_url || null, this.context));
+      children.push(new LicenseNode(this.licenseInfo, this.context));
     }
 
     // Vulnerability summary
