@@ -4,18 +4,33 @@ const { PaginatedFetch } = require("../util/paginatedFetch");
 const workspaceRepositoryFetcher = require("../util/workspaceRepositoryFetcher");
 
 suite("WorkspaceRepositoryFetcher Test Suite", () => {
+  let originalConsole;
   let originalWithProgress;
   let originalFetchPage;
-  let originalWarn;
   let progressOptions;
   let progressReports;
+  let warnCalls;
 
   setup(() => {
+    originalConsole = global.console;
     originalWithProgress = vscode.window.withProgress;
     originalFetchPage = PaginatedFetch.prototype.fetchPage;
-    originalWarn = console.warn;
     progressOptions = null;
     progressReports = [];
+    warnCalls = [];
+
+    global.console = new Proxy(originalConsole, {
+      get(target, property) {
+        if (property === "warn") {
+          return (...args) => {
+            warnCalls.push(args);
+          };
+        }
+
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
 
     vscode.window.withProgress = async (options, task) => {
       progressOptions = options;
@@ -29,9 +44,9 @@ suite("WorkspaceRepositoryFetcher Test Suite", () => {
   });
 
   teardown(() => {
+    global.console = originalConsole;
     vscode.window.withProgress = originalWithProgress;
     PaginatedFetch.prototype.fetchPage = originalFetchPage;
-    console.warn = originalWarn;
   });
 
   function buildRepositories(start, end) {
@@ -47,6 +62,12 @@ suite("WorkspaceRepositoryFetcher Test Suite", () => {
 
     return repositories;
   }
+
+  test("stubs console.warn during test setup", () => {
+    console.warn("warning-path");
+
+    assert.deepStrictEqual(warnCalls, [["warning-path"]]);
+  });
 
   test("fetches and sorts repositories across multiple pages", async () => {
     const calls = [];
@@ -91,6 +112,85 @@ suite("WorkspaceRepositoryFetcher Test Suite", () => {
     assert.strictEqual(result.repositories[0].name, "repo-000");
     assert.strictEqual(result.repositories[1].name, "repo-001");
     assert.strictEqual(result.repositories[500].name, "repo-500");
+  });
+
+  test("continues fetching when the API caps page size below the requested size", async () => {
+    const calls = [];
+    const firstPageData = buildRepositories(250, 1);
+    const secondPageData = buildRepositories(500, 251);
+
+    PaginatedFetch.prototype.fetchPage = async (endpoint, page, pageSize) => {
+      calls.push({ endpoint, page, pageSize });
+
+      if (page === 1) {
+        return {
+          data: firstPageData,
+          pagination: { page: 1, pageTotal: 2, count: 500, pageSize: 250 },
+        };
+      }
+
+      return {
+        data: secondPageData,
+        pagination: { page: 2, pageTotal: 2, count: 500, pageSize: 250 },
+      };
+    };
+
+    const result = await workspaceRepositoryFetcher.fetchWorkspaceRepositories(
+      {},
+      "workspace-a"
+    );
+
+    assert.deepStrictEqual(
+      calls,
+      [
+        { endpoint: "repos/workspace-a/?sort=name", page: 1, pageSize: 500 },
+        { endpoint: "repos/workspace-a/?sort=name", page: 2, pageSize: 500 },
+      ]
+    );
+    assert.strictEqual(result.error, null);
+    assert.strictEqual(result.partial, false);
+    assert.strictEqual(result.repositories.length, 500);
+    assert.strictEqual(result.repositories[0].name, "repo-001");
+    assert.strictEqual(result.repositories[499].name, "repo-500");
+  });
+
+  test("stops when the current page reaches pageTotal even if the page is full", async () => {
+    const calls = [];
+
+    PaginatedFetch.prototype.fetchPage = async (_endpoint, page) => {
+      calls.push(page);
+
+      if (page === 1) {
+        return {
+          data: [
+            { name: "repo-d", slug: "repo-d" },
+            { name: "repo-c", slug: "repo-c" },
+          ],
+          pagination: { page: 1, pageTotal: 2, count: 4, pageSize: 2 },
+        };
+      }
+
+      return {
+        data: [
+          { name: "repo-b", slug: "repo-b" },
+          { name: "repo-a", slug: "repo-a" },
+        ],
+        pagination: { page: 2, pageTotal: 2, count: 4, pageSize: 2 },
+      };
+    };
+
+    const result = await workspaceRepositoryFetcher.fetchWorkspaceRepositories(
+      {},
+      "workspace-a"
+    );
+
+    assert.deepStrictEqual(calls, [1, 2]);
+    assert.strictEqual(result.error, null);
+    assert.strictEqual(result.partial, false);
+    assert.deepStrictEqual(
+      result.repositories.map(repository => repository.name),
+      ["repo-a", "repo-b", "repo-c", "repo-d"]
+    );
   });
 
   test("returns an error when the first page fails", async () => {
@@ -139,5 +239,71 @@ suite("WorkspaceRepositoryFetcher Test Suite", () => {
     assert.strictEqual(result.repositories.length, 500);
     assert.strictEqual(result.repositories[0].name, "repo-001");
     assert.strictEqual(result.repositories[499].name, "repo-500");
+    assert.deepStrictEqual(warnCalls, [
+      [
+        "[WorkspaceRepositories] Failed to load additional repositories for workspace-a on page 2: Response status: 502",
+      ],
+    ]);
+  });
+
+  test("returns an error when the first page has a non-array repository payload", async () => {
+    PaginatedFetch.prototype.fetchPage = async () => ({
+      data: { items: [] },
+      pagination: { page: 1, pageTotal: 1, count: 0, pageSize: 500 },
+    });
+
+    const result = await workspaceRepositoryFetcher.fetchWorkspaceRepositories(
+      {},
+      "workspace-a"
+    );
+
+    assert.strictEqual(
+      result.error,
+      workspaceRepositoryFetcher.UNEXPECTED_RESPONSE_FORMAT_ERROR
+    );
+    assert.strictEqual(result.warning, null);
+    assert.strictEqual(result.partial, false);
+    assert.deepStrictEqual(result.repositories, []);
+    assert.deepStrictEqual(warnCalls, []);
+  });
+
+  test("returns partial repositories when a later page has a non-array repository payload", async () => {
+    PaginatedFetch.prototype.fetchPage = async (_endpoint, page) => {
+      if (page === 1) {
+        return {
+          data: [
+            { name: "repo-c", slug: "repo-c" },
+            { name: "repo-a", slug: "repo-a" },
+          ],
+          pagination: { page: 1, pageTotal: 3, count: 6, pageSize: 2 },
+        };
+      }
+
+      return {
+        data: { items: [] },
+        pagination: { page: 2, pageTotal: 3, count: 6, pageSize: 2 },
+      };
+    };
+
+    const result = await workspaceRepositoryFetcher.fetchWorkspaceRepositories(
+      {},
+      "workspace-a"
+    );
+
+    assert.strictEqual(result.error, null);
+    assert.strictEqual(
+      result.warning,
+      workspaceRepositoryFetcher.UNEXPECTED_RESPONSE_FORMAT_ERROR
+    );
+    assert.strictEqual(result.partial, true);
+    assert.deepStrictEqual(
+      result.repositories.map(repository => repository.name),
+      ["repo-a", "repo-c"]
+    );
+    assert.deepStrictEqual(warnCalls, [
+      [
+        "[WorkspaceRepositories] Failed to load additional repositories for workspace-a on page 2: Unexpected repository response format",
+      ],
+    ]);
   });
 });

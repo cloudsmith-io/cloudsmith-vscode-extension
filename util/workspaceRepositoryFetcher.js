@@ -3,6 +3,7 @@ const { CloudsmithAPI } = require("./cloudsmithAPI");
 const { PaginatedFetch } = require("./paginatedFetch");
 
 const WORKSPACE_REPOSITORY_PAGE_SIZE = 500;
+const UNEXPECTED_RESPONSE_FORMAT_ERROR = "Unexpected repository response format";
 
 function sortRepositories(repositories) {
   return [...repositories].sort((left, right) => {
@@ -63,14 +64,37 @@ async function fetchWorkspaceRepositories(context, workspace) {
           };
         }
 
-        const pageData = Array.isArray(result.data) ? result.data : [];
+        if (!Array.isArray(result.data)) {
+          if (page === 1) {
+            return {
+              repositories: [],
+              error: UNEXPECTED_RESPONSE_FORMAT_ERROR,
+              warning: null,
+              partial: false,
+            };
+          }
+
+          console.warn(
+            `[WorkspaceRepositories] Failed to load additional repositories for ${workspace} on page ${page}: ${UNEXPECTED_RESPONSE_FORMAT_ERROR}`
+          );
+
+          return {
+            repositories: sortRepositories(repositories),
+            error: null,
+            warning: UNEXPECTED_RESPONSE_FORMAT_ERROR,
+            partial: true,
+          };
+        }
+
+        const pageData = result.data;
         const currentPage = result.pagination?.page || page;
         const pageTotal = result.pagination?.pageTotal || currentPage;
+        const actualPageSize = result.pagination?.pageSize || WORKSPACE_REPOSITORY_PAGE_SIZE;
 
         knownPageTotal = pageTotal;
         repositories.push(...pageData);
 
-        if (pageData.length < WORKSPACE_REPOSITORY_PAGE_SIZE || currentPage >= pageTotal) {
+        if (pageData.length < actualPageSize || currentPage >= pageTotal) {
           break;
         }
 
@@ -88,6 +112,7 @@ async function fetchWorkspaceRepositories(context, workspace) {
 }
 
 module.exports = {
+  UNEXPECTED_RESPONSE_FORMAT_ERROR,
   WORKSPACE_REPOSITORY_PAGE_SIZE,
   fetchWorkspaceRepositories,
 };
