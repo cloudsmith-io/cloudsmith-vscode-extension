@@ -1,7 +1,12 @@
 const assert = require("assert");
-const { UpstreamDetailProvider } = require("../views/upstreamDetailProvider");
+const { UpstreamDetailProvider, SUPPORTED_FORMATS } = require("../views/upstreamDetailProvider");
+const { SUPPORTED_UPSTREAM_FORMATS } = require("../util/upstreamFormats");
 
 suite("UpstreamDetailProvider Test Suite", () => {
+  test("uses the shared upstream format list", () => {
+    assert.strictEqual(SUPPORTED_FORMATS, SUPPORTED_UPSTREAM_FORMATS);
+  });
+
   test("does not show a warning banner when upstreams are available", () => {
     const provider = new UpstreamDetailProvider({});
     const groupedUpstreams = new Map([

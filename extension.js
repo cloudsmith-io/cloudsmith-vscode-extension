@@ -22,7 +22,11 @@ const { formatApiError } = require("./util/errorFormatter");
 const { LicenseClassifier } = require("./util/licenseClassifier");
 =======
 const { fetchRepositoryUpstreams, generateTerraformConfig } = require("./util/terraformExporter");
+<<<<<<< HEAD
 >>>>>>> 52ddc2b (feat: export repository as Terraform)
+=======
+const { SUPPORTED_UPSTREAM_FORMATS } = require("./util/upstreamFormats");
+>>>>>>> 50c8bac (fix: consolidate upstream fetch and fix WebView/Terraform export consumers)
 const recentPackages = require("./util/recentPackages");
 
 let exportTerraformAbortController = null;
@@ -234,11 +238,7 @@ const FILTER_PRESETS = [
     },
 ];
 
-const FORMAT_OPTIONS = [
-    "alpine", "cargo", "composer", "conan", "conda", "cran", "dart", "deb",
-    "docker", "go", "helm", "hex", "maven", "npm", "nuget", "python",
-    "rpm", "ruby", "swift", "terraform", "raw",
-];
+const FORMAT_OPTIONS = SUPPORTED_UPSTREAM_FORMATS;
 
 /**
  * Helper: get workspaces from cache or fetch fresh.
@@ -1826,11 +1826,6 @@ async function activate(context) {
         });
         if (!pkgName) return;
 
-        const FORMAT_OPTIONS = [
-          "alpine", "cargo", "composer", "conan", "conda", "cran", "dart", "deb",
-          "docker", "go", "helm", "hex", "maven", "npm", "nuget", "python",
-          "rpm", "ruby", "swift", "terraform", "raw",
-        ];
         const formatPick = await vscode.window.showQuickPick(
           FORMAT_OPTIONS.map(f => ({ label: f })),
           { placeHolder: "Select a package format" }
@@ -2099,4 +2094,5 @@ function deactivate() {}
 module.exports = {
   activate,
   deactivate,
+  FORMAT_OPTIONS,
 };

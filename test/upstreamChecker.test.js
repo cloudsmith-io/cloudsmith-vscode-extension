@@ -1,5 +1,6 @@
 const assert = require("assert");
 <<<<<<< HEAD
+<<<<<<< HEAD
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
 const { CredentialManager } = require("../util/credentialManager");
 const {
@@ -238,14 +239,26 @@ suite("UpstreamChecker Test Suite", () => {
     }
 =======
 const { SUPPORTED_UPSTREAM_FORMATS, UpstreamChecker } = require("../util/upstreamChecker");
+=======
+const {
+  isBenignUpstreamFormatError,
+  SUPPORTED_UPSTREAM_FORMATS,
+  UpstreamChecker,
+} = require("../util/upstreamChecker");
+const {
+  SUPPORTED_UPSTREAM_FORMATS: SHARED_SUPPORTED_UPSTREAM_FORMATS,
+} = require("../util/upstreamFormats");
+>>>>>>> 50c8bac (fix: consolidate upstream fetch and fix WebView/Terraform export consumers)
 
 suite("UpstreamChecker Test Suite", () => {
-  test("uses the canonical upstream format list for all-format fetches", () => {
+  test("uses the shared canonical upstream format list for all-format fetches", () => {
+    assert.strictEqual(SUPPORTED_UPSTREAM_FORMATS, SHARED_SUPPORTED_UPSTREAM_FORMATS);
     assert.deepStrictEqual(SUPPORTED_UPSTREAM_FORMATS, [
       "alpine",
       "cargo",
       "cocoapods",
       "composer",
+      "conan",
       "conda",
       "cran",
       "dart",
@@ -261,11 +274,31 @@ suite("UpstreamChecker Test Suite", () => {
       "npm",
       "nuget",
       "python",
+      "raw",
       "rpm",
       "ruby",
       "swift",
+      "terraform",
       "vagrant",
     ]);
+  });
+
+  [400, 404, 405, 422].forEach((statusCode) => {
+    test(`${statusCode} is classified as a benign upstream format error`, () => {
+      assert.strictEqual(
+        isBenignUpstreamFormatError(`Response status: ${statusCode}`),
+        true
+      );
+    });
+  });
+
+  [401, 403, 407, 408, 429].forEach((statusCode) => {
+    test(`${statusCode} is classified as a non-benign upstream format error`, () => {
+      assert.strictEqual(
+        isBenignUpstreamFormatError(`Response status: ${statusCode}`),
+        false
+      );
+    });
   });
 
   test("returns upstream data without an error when partial failures still yield upstreams", async () => {
@@ -300,5 +333,27 @@ suite("UpstreamChecker Test Suite", () => {
     assert.strictEqual(result.data.length, 0);
     assert.ok(result.error.includes("python"));
 >>>>>>> 52ddc2b (feat: export repository as Terraform)
+  });
+
+  test("does not cache non-benign empty upstream results", async () => {
+    const cacheUpdates = [];
+    const checker = new UpstreamChecker({
+      globalState: {
+        get() {
+          return undefined;
+        },
+        async update(key, value) {
+          cacheUpdates.push({ key, value });
+        },
+      },
+    });
+
+    checker.api.makeRequest = async () => "Response status: 401";
+
+    const result = await checker.getUpstreamDataForFormats("acme", "example-repo", ["python"]);
+
+    assert.deepStrictEqual(result.failedFormats, ["python"]);
+    assert.strictEqual(result.upstreams.length, 0);
+    assert.strictEqual(cacheUpdates.length, 0);
   });
 });

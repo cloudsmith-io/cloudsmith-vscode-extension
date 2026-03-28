@@ -1,11 +1,16 @@
 const vscode = require("vscode");
 <<<<<<< HEAD
+<<<<<<< HEAD
 const {
   UpstreamChecker,
   SUPPORTED_UPSTREAM_FORMATS,
 } = require("../util/upstreamChecker");
 =======
 const { SUPPORTED_UPSTREAM_FORMATS, getAllUpstreamData } = require("../util/upstreamChecker");
+=======
+const { getAllUpstreamData } = require("../util/upstreamChecker");
+const { SUPPORTED_UPSTREAM_FORMATS } = require("../util/upstreamFormats");
+>>>>>>> 50c8bac (fix: consolidate upstream fetch and fix WebView/Terraform export consumers)
 
 const SUPPORTED_FORMATS = SUPPORTED_UPSTREAM_FORMATS;
 >>>>>>> 52ddc2b (feat: export repository as Terraform)
@@ -580,4 +585,4 @@ class UpstreamDetailProvider {
   }
 }
 
-module.exports = { UpstreamDetailProvider };
+module.exports = { UpstreamDetailProvider, SUPPORTED_FORMATS };
