@@ -2,7 +2,11 @@
 
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
-const { getAllUpstreamData } = require("../util/upstreamChecker");
+const upstreamChecker = require("../util/upstreamChecker");
+const {
+  normalizeUpstreamFormat,
+  SUPPORTED_UPSTREAM_FORMATS,
+} = require("../util/upstreamFormats");
 const UpstreamIndicatorNode = require("./upstreamIndicatorNode");
 const { activeFilters } = require("../util/filterState");
 const InfoNode = require("./infoNode");
@@ -159,18 +163,73 @@ class RepositoryNode {
   }
 
   /**
-   * Fetch upstream configs for this repo across all supported format endpoints.
-   * Delegates to the shared helper in upstreamChecker.js, which handles batching,
-   * error classification, and caching.
+   * Infer relevant formats from the loaded package list and fetch upstream configs
+   * only for those formats as a hint. Repository-level configured upstream
+   * counts must reconcile against the full all-format path unless the inferred
+   * set is known to cover every supported upstream format.
    *
    * @returns {Array} Array of upstream config objects (may be empty).
    */
-  async getUpstreams() {
-    const result = await getAllUpstreamData(this.context, this.workspace, this.slug);
+  async getUpstreams(packageNodes = []) {
+    const inferredFormats = this._inferUpstreamFormats(packageNodes);
+    if (inferredFormats.length === 0) {
+      return this._getUpstreamList(
+        await upstreamChecker.getAllUpstreamData(this.context, this.workspace, this.slug)
+      );
+    }
+
+    const hintedResult = await upstreamChecker.getUpstreamDataForFormats(
+      this.context,
+      this.workspace,
+      this.slug,
+      inferredFormats
+    );
+
+    if (this._hasCompleteUpstreamCoverage(inferredFormats)) {
+      return this._getUpstreamList(hintedResult);
+    }
+
+    return this._getUpstreamList(
+      await upstreamChecker.getAllUpstreamData(this.context, this.workspace, this.slug)
+    );
+  }
+
+  _getUpstreamList(result) {
     if (!result || !Array.isArray(result.upstreams)) {
       return [];
     }
+
     return result.upstreams;
+  }
+
+  _hasCompleteUpstreamCoverage(formats) {
+    return Array.isArray(formats) && formats.length === SUPPORTED_UPSTREAM_FORMATS.length;
+  }
+
+  _inferUpstreamFormats(packageNodes) {
+    if (!Array.isArray(packageNodes) || packageNodes.length === 0) {
+      return [];
+    }
+
+    const formats = new Set();
+    for (const node of packageNodes) {
+      this._addInferredFormat(formats, node && node.format);
+
+      if (Array.isArray(node && node.formats)) {
+        for (const format of node.formats) {
+          this._addInferredFormat(formats, format);
+        }
+      }
+    }
+
+    return SUPPORTED_UPSTREAM_FORMATS.filter((format) => formats.has(format));
+  }
+
+  _addInferredFormat(target, value) {
+    const normalized = normalizeUpstreamFormat(value);
+    if (normalized) {
+      target.add(normalized);
+    }
   }
 
   /**
@@ -197,7 +256,7 @@ class RepositoryNode {
 
     // Fetch upstreams lazily (only when repo is expanded)
     if (packages.length > 0) {
-      const upstreams = await this.getUpstreams();
+      const upstreams = await this.getUpstreams(packages);
       if (upstreams.length > 0) {
         children.push(new UpstreamIndicatorNode(
           upstreams,
