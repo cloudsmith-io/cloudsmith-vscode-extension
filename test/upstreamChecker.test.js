@@ -26,6 +26,10 @@ suite("UpstreamChecker Test Suite", () => {
           return store.get(key);
         },
         async update(key, value) {
+          if (value === undefined) {
+            store.delete(key);
+            return;
+          }
           store.set(key, value);
         },
       },
@@ -58,6 +62,32 @@ suite("UpstreamChecker Test Suite", () => {
     CloudsmithAPI.prototype.makeRequest = originalMakeRequest;
     CredentialManager.prototype.getApiKey = originalGetApiKey;
   });
+
+  function createCachedEntry(overrides = {}) {
+    return {
+      timestamp: Date.now(),
+      successfulFormats: 1,
+      groupedUpstreams: {
+        python: [
+          { name: "PyPI", upstream_url: "https://pypi.org/simple/" },
+        ],
+      },
+      ...overrides,
+    };
+  }
+
+  async function assertInvalidCachedEntry(entry) {
+    const checker = new UpstreamChecker(context);
+    const cacheKey = checker._getRepositoryUpstreamCacheKey("workspace-a", "repo-a");
+    store.set(cacheKey, entry);
+
+    const cachedState = checker._getCachedRepositoryUpstreamState("workspace-a", "repo-a");
+
+    await Promise.resolve();
+
+    assert.strictEqual(cachedState, null);
+    assert.strictEqual(store.has(cacheKey), false);
+  }
 
   test("aggregates repository upstreams across formats and reuses the shared cache", async () => {
     formatResponses = {
@@ -119,5 +149,91 @@ suite("UpstreamChecker Test Suite", () => {
 
     assert.strictEqual(requestCount, SUPPORTED_UPSTREAM_FORMATS.length * 2);
     assert.strictEqual(store.size, 0);
+  });
+
+  test("treats missing timestamp as an invalid cached repository upstream state", async () => {
+    const entry = createCachedEntry();
+    delete entry.timestamp;
+    await assertInvalidCachedEntry(entry);
+  });
+
+  test("treats non-number timestamp as an invalid cached repository upstream state", async () => {
+    await assertInvalidCachedEntry(createCachedEntry({ timestamp: "123" }));
+  });
+
+  test("treats non-finite timestamp as an invalid cached repository upstream state", async () => {
+    await assertInvalidCachedEntry(createCachedEntry({ timestamp: Number.NaN }));
+  });
+
+  test("treats missing groupedUpstreams as an invalid cached repository upstream state", async () => {
+    const entry = createCachedEntry();
+    delete entry.groupedUpstreams;
+    await assertInvalidCachedEntry(entry);
+  });
+
+  test("treats non-object groupedUpstreams as an invalid cached repository upstream state", async () => {
+    await assertInvalidCachedEntry(createCachedEntry({ groupedUpstreams: [] }));
+  });
+
+  test("treats expired cached repository upstream state as invalid", () => {
+    const checker = new UpstreamChecker(context);
+    const cacheKey = checker._getRepositoryUpstreamCacheKey("workspace-a", "repo-a");
+    store.set(cacheKey, createCachedEntry({ timestamp: Date.now() - (11 * 60 * 1000) }));
+
+    const cachedState = checker._getCachedRepositoryUpstreamState("workspace-a", "repo-a");
+
+    assert.strictEqual(cachedState, null);
+  });
+
+  test("accepts a valid cached repository upstream state", () => {
+    const checker = new UpstreamChecker(context);
+    const cacheKey = checker._getRepositoryUpstreamCacheKey("workspace-a", "repo-a");
+    store.set(cacheKey, createCachedEntry({ successfulFormats: 7 }));
+
+    const cachedState = checker._getCachedRepositoryUpstreamState("workspace-a", "repo-a");
+
+    assert.ok(cachedState);
+    assert.strictEqual(cachedState.successfulFormats, 7);
+    assert.strictEqual(cachedState.total, 1);
+    assert.strictEqual(cachedState.active, 1);
+    assert.strictEqual(cachedState.groupedUpstreams.get("python").length, 1);
+  });
+
+  test("returns computed upstream state when repository cache persistence fails", async () => {
+    formatResponses = {
+      python: [
+        { name: "PyPI", upstream_url: "https://pypi.org/simple/" },
+      ],
+      npm: [
+        { name: "npmjs", upstream_url: "https://registry.npmjs.org/" },
+      ],
+    };
+
+    const originalUpdate = context.globalState.update;
+    const logCalls = [];
+
+    context.globalState.update = async () => {
+      throw new Error("quota exceeded");
+    };
+
+    try {
+      const checker = new UpstreamChecker(context);
+      checker._logRepositoryUpstreamCacheError = (...args) => logCalls.push(args);
+      const state = await checker.getRepositoryUpstreamState("workspace-a", "repo-a");
+
+      assert.strictEqual(state.total, 2);
+      assert.strictEqual(state.active, 2);
+      assert.deepStrictEqual(state.failedFormats, []);
+      assert.strictEqual(store.size, 0);
+      assert.strictEqual(logCalls.length, 1);
+      assert.deepStrictEqual(logCalls[0].slice(0, 3), [
+        "persist",
+        "workspace-a",
+        "repo-a",
+      ]);
+      assert.strictEqual(logCalls[0][3].message, "quota exceeded");
+    } finally {
+      context.globalState.update = originalUpdate;
+    }
   });
 });

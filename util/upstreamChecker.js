@@ -165,6 +165,38 @@ class UpstreamChecker {
     return `${REPOSITORY_UPSTREAM_CACHE_KEY_PREFIX}:${workspace}:${repo}`;
   }
 
+  _isCacheObjectRecord(value) {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  }
+
+  _logRepositoryUpstreamCacheError(action, workspace, repo, error) {
+    const message = error && error.message ? error.message : String(error);
+    console.warn(
+      `[UpstreamChecker] Failed to ${action} repository upstream cache for ${workspace}/${repo}: ${message}`
+    );
+  }
+
+  _evictInvalidRepositoryUpstreamCacheEntry(workspace, repo, globalState) {
+    if (!globalState || typeof globalState.update !== "function") {
+      return;
+    }
+
+    try {
+      const updateResult = globalState.update(
+        this._getRepositoryUpstreamCacheKey(workspace, repo),
+        undefined
+      );
+
+      if (updateResult && typeof updateResult.catch === "function") {
+        updateResult.catch((error) => {
+          this._logRepositoryUpstreamCacheError("evict invalid entry from", workspace, repo, error);
+        });
+      }
+    } catch (error) {
+      this._logRepositoryUpstreamCacheError("evict invalid entry from", workspace, repo, error);
+    }
+  }
+
   _getCachedRepositoryUpstreamState(workspace, repo) {
     const globalState = this.context && this.context.globalState;
     if (!globalState || typeof globalState.get !== "function") {
@@ -172,12 +204,23 @@ class UpstreamChecker {
     }
 
     const cached = globalState.get(this._getRepositoryUpstreamCacheKey(workspace, repo));
-    if (!cached || (Date.now() - cached.timestamp) >= UPSTREAM_CACHE_TTL_MS) {
+    const isValidCacheEntry = this._isCacheObjectRecord(cached)
+      && Number.isFinite(cached.timestamp)
+      && this._isCacheObjectRecord(cached.groupedUpstreams);
+
+    if (!isValidCacheEntry) {
+      if (cached !== undefined) {
+        this._evictInvalidRepositoryUpstreamCacheEntry(workspace, repo, globalState);
+      }
+      return null;
+    }
+
+    if ((Date.now() - cached.timestamp) >= UPSTREAM_CACHE_TTL_MS) {
       return null;
     }
 
     const groupedUpstreams = this._deserializeGroupedUpstreams(cached.groupedUpstreams);
-    const successfulFormats = typeof cached.successfulFormats === "number"
+    const successfulFormats = Number.isFinite(cached.successfulFormats)
       ? cached.successfulFormats
       : SUPPORTED_UPSTREAM_FORMATS.length;
 
@@ -198,11 +241,15 @@ class UpstreamChecker {
       }
     }
 
-    await globalState.update(this._getRepositoryUpstreamCacheKey(workspace, repo), {
-      timestamp: Date.now(),
-      successfulFormats: state.successfulFormats,
-      groupedUpstreams,
-    });
+    try {
+      await globalState.update(this._getRepositoryUpstreamCacheKey(workspace, repo), {
+        timestamp: Date.now(),
+        successfulFormats: state.successfulFormats,
+        groupedUpstreams,
+      });
+    } catch (error) {
+      this._logRepositoryUpstreamCacheError("persist", workspace, repo, error);
+    }
   }
 
   async _fetchRepositoryUpstreamState(workspace, repo, signal) {
