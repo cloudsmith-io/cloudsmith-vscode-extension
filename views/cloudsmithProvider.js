@@ -6,6 +6,7 @@ const { CloudsmithAPI } = require("../util/cloudsmithAPI");
 const { ConnectionManager } = require("../util/connectionManager");
 const InfoNode = require("../models/infoNode");
 const { WorkspaceInfoNode } = require("../models/workspaceInfoNode");
+const workspaceRepositoryFetcher = require("../util/workspaceRepositoryFetcher");
 
 class CloudsmithProvider {
   constructor(context) {
@@ -134,13 +135,16 @@ class CloudsmithProvider {
       )];
     }
 
-    const repos = await cloudsmithAPI.get(`repos/${workspaceSlug}/?sort=name`);
+    const result = await workspaceRepositoryFetcher.fetchWorkspaceRepositories(
+      context,
+      workspaceSlug
+    );
 
     if (this._treeView) {
       this._treeView.message = undefined;
     }
 
-    if (typeof repos === 'string' || !repos || !Array.isArray(repos)) {
+    if (result.error) {
       if (this._defaultWorkspaceFallbackHandler) {
         this._defaultWorkspaceFallbackHandler(workspaceSlug);
       } else {
@@ -151,6 +155,8 @@ class CloudsmithProvider {
       // Fall back to full workspace tree
       return this.getWorkspaces();
     }
+
+    const repos = result.repositories;
 
     const RepositoryNode = require("../models/repositoryNode");
     let quotaData = null;
