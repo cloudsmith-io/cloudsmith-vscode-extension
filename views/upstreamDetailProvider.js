@@ -1,5 +1,6 @@
 const vscode = require("vscode");
-const { SUPPORTED_UPSTREAM_FORMATS, getAllUpstreamData } = require("../util/upstreamChecker");
+const { getAllUpstreamData } = require("../util/upstreamChecker");
+const { SUPPORTED_UPSTREAM_FORMATS } = require("../util/upstreamFormats");
 
 const SUPPORTED_FORMATS = SUPPORTED_UPSTREAM_FORMATS;
 
@@ -555,4 +556,4 @@ class UpstreamDetailProvider {
   }
 }
 
-module.exports = { UpstreamDetailProvider };
+module.exports = { UpstreamDetailProvider, SUPPORTED_FORMATS };

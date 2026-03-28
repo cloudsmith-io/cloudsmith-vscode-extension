@@ -17,6 +17,10 @@ class PackageGroupsNode {
       this.last_push,
     ];
     this.name = pkg.name;
+    this.format = pkg.format || pkg.package_format || pkg.packageFormat || null;
+    this.formats = Array.isArray(pkg.formats)
+      ? pkg.formats
+      : (Array.isArray(pkg.package_formats) ? pkg.package_formats : []);
     this.repo = pkg.repo;
     this.workspace = pkg.workspace;
   }

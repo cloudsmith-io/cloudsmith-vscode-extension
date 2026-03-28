@@ -1,3 +1,5 @@
+// Copyright 2026 Cloudsmith Ltd.
+
 const { getAllUpstreamData } = require("./upstreamChecker");
 
 const REPOSITORY_OPTIONAL_FIELDS = [

@@ -4,37 +4,35 @@
 const { CloudsmithAPI } = require("./cloudsmithAPI");
 const { CredentialManager } = require("./credentialManager");
 const { SearchQueryBuilder } = require("./searchQueryBuilder");
-
-const SUPPORTED_UPSTREAM_FORMATS = [
-  "alpine",
-  "cargo",
-  "cocoapods",
-  "composer",
-  "conda",
-  "cran",
-  "dart",
-  "deb",
-  "docker",
-  "generic",
-  "go",
-  "helm",
-  "hex",
-  "huggingface",
-  "luarocks",
-  "maven",
-  "npm",
-  "nuget",
-  "python",
-  "rpm",
-  "ruby",
-  "swift",
-  "vagrant",
-];
+const {
+  getSupportedUpstreamFormats,
+  SUPPORTED_UPSTREAM_FORMATS,
+} = require("./upstreamFormats");
 const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000;
 const UPSTREAM_FETCH_BATCH_SIZE = 5;
+const BENIGN_UPSTREAM_FORMAT_STATUS_CODES = new Set([400, 404, 405, 422]);
 
-function getUpstreamCacheKey(workspace, repo) {
-  return `cloudsmith-upstreams:all:${workspace}:${repo}`;
+function getUpstreamCacheKey(workspace, repo, formats = SUPPORTED_UPSTREAM_FORMATS) {
+  const normalizedFormats = getSupportedUpstreamFormats(formats);
+  const isAllFormats =
+    normalizedFormats.length === SUPPORTED_UPSTREAM_FORMATS.length &&
+    normalizedFormats.every((format, index) => format === SUPPORTED_UPSTREAM_FORMATS[index]);
+
+  if (isAllFormats) {
+    return `cloudsmith-upstreams:all:${workspace}:${repo}`;
+  }
+
+  return `cloudsmith-upstreams:formats:${workspace}:${repo}:${normalizedFormats.join(",")}`;
+}
+
+function getUpstreamErrorStatusCode(message) {
+  const normalized = typeof message === "string" ? message.toLowerCase() : "";
+  const statusMatch = normalized.match(/response status:\s*(\d{3})/);
+  if (!statusMatch) {
+    return null;
+  }
+
+  return Number(statusMatch[1]);
 }
 
 function isBenignUpstreamFormatError(message) {
@@ -43,8 +41,12 @@ function isBenignUpstreamFormatError(message) {
     return false;
   }
 
+  const statusCode = getUpstreamErrorStatusCode(normalized);
+  if (statusCode !== null) {
+    return BENIGN_UPSTREAM_FORMAT_STATUS_CODES.has(statusCode);
+  }
+
   const benignKeywords = [
-    "response status: 404",
     "not found",
     "unsupported",
     "not applicable",
@@ -55,17 +57,6 @@ function isBenignUpstreamFormatError(message) {
 
   if (benignKeywords.some((keyword) => normalized.includes(keyword))) {
     return true;
-  }
-
-  // Treat all 4xx client errors as benign for format-specific upstream
-  // endpoints. A 400/405/422 means the format does not support upstream
-  // configurations, not that the API is down.
-  const statusMatch = normalized.match(/response status:\s*(\d{3})/);
-  if (statusMatch) {
-    const statusCode = Number(statusMatch[1]);
-    if (statusCode >= 400 && statusCode < 500) {
-      return true;
-    }
   }
 
   return false;
@@ -205,14 +196,25 @@ class UpstreamChecker {
     return { data: result, error: null };
   }
 
-  async getAllUpstreamData(workspace, repo, options = {}) {
+  async getUpstreamDataForFormats(workspace, repo, formats, options = {}) {
     const { signal } = options;
+    const requestedFormats = getSupportedUpstreamFormats(formats);
 
     if (signal && signal.aborted) {
       return null;
     }
 
-    const cacheKey = getUpstreamCacheKey(workspace, repo);
+    if (requestedFormats.length === 0) {
+      return {
+        upstreams: [],
+        active: 0,
+        total: 0,
+        failedFormats: [],
+        successfulFormats: 0,
+      };
+    }
+
+    const cacheKey = getUpstreamCacheKey(workspace, repo, requestedFormats);
     const cached = this.context && this.context.globalState
       ? this.context.globalState.get(cacheKey)
       : null;
@@ -252,12 +254,12 @@ class UpstreamChecker {
     const failedFormats = [];
     let successfulFormats = 0;
 
-    for (let index = 0; index < SUPPORTED_UPSTREAM_FORMATS.length; index += UPSTREAM_FETCH_BATCH_SIZE) {
+    for (let index = 0; index < requestedFormats.length; index += UPSTREAM_FETCH_BATCH_SIZE) {
       if (signal && signal.aborted) {
         return null;
       }
 
-      const batch = SUPPORTED_UPSTREAM_FORMATS.slice(index, index + UPSTREAM_FETCH_BATCH_SIZE);
+      const batch = requestedFormats.slice(index, index + UPSTREAM_FETCH_BATCH_SIZE);
       const batchResults = await Promise.all(
         batch.map((format) => fetchFormatUpstreams(this.api, workspace, repo, format, apiKey, signal))
       );
@@ -308,6 +310,10 @@ class UpstreamChecker {
     }
 
     return response;
+  }
+
+  async getAllUpstreamData(workspace, repo, options = {}) {
+    return this.getUpstreamDataForFormats(workspace, repo, SUPPORTED_UPSTREAM_FORMATS, options);
   }
 
   async getAllUpstreams(workspace, repo, options = {}) {
@@ -390,8 +396,15 @@ async function getAllUpstreamData(context, workspace, repo, options = {}) {
   return checker.getAllUpstreamData(workspace, repo, options);
 }
 
+async function getUpstreamDataForFormats(context, workspace, repo, formats, options = {}) {
+  const checker = new UpstreamChecker(context);
+  return checker.getUpstreamDataForFormats(workspace, repo, formats, options);
+}
+
 module.exports = {
-  SUPPORTED_UPSTREAM_FORMATS,
   getAllUpstreamData,
+  getUpstreamDataForFormats,
+  isBenignUpstreamFormatError,
+  SUPPORTED_UPSTREAM_FORMATS,
   UpstreamChecker,
 };
