@@ -18,6 +18,7 @@ const { UpstreamDetailProvider } = require("./views/upstreamDetailProvider");
 const { PromotionProvider } = require("./views/promotionProvider");
 const { SearchQueryBuilder } = require("./util/searchQueryBuilder");
 const { formatApiError } = require("./util/errorFormatter");
+const { LicenseClassifier } = require("./util/licenseClassifier");
 const recentPackages = require("./util/recentPackages");
 
 /**
@@ -218,8 +219,8 @@ const FILTER_PRESETS = [
       applyBuilder: (builder) => builder.raw("license_policy_violated:true"),
     },
     {
-      label: "Packages with restrictive licenses (AGPL, GPL, SSPL)",
-      applyBuilder: (builder) => builder.raw("(license:AGPL OR license:GPL OR license:SSPL)"),
+      label: "Packages with restrictive licenses",
+      applyBuilder: (builder) => builder.raw(LicenseClassifier.buildRestrictiveQuery()),
     },
     {
       label: "Custom query...",
@@ -1492,21 +1493,7 @@ async function activate(context) {
       }
 
       // Select license tier/type
-      const licenseItems = [
-        { label: "Restrictive", kind: vscode.QuickPickItemKind.Separator },
-        { label: "AGPL-3.0", description: "Strong copyleft" },
-        { label: "GPL-3.0", description: "Strong copyleft" },
-        { label: "GPL-2.0", description: "Strong copyleft" },
-        { label: "SSPL-1.0", description: "Server-side copyleft" },
-        { label: "Cautious", kind: vscode.QuickPickItemKind.Separator },
-        { label: "LGPL-3.0", description: "Weak copyleft" },
-        { label: "MPL-2.0", description: "Weak copyleft" },
-        { label: "EPL-2.0", description: "Weak copyleft" },
-        { label: "Permissive", kind: vscode.QuickPickItemKind.Separator },
-        { label: "MIT", description: "Permissive" },
-        { label: "Apache-2.0", description: "Permissive" },
-        { label: "BSD-3-Clause", description: "Permissive" },
-      ];
+      const licenseItems = LicenseClassifier.getSearchQuickPickItems();
 
       const selectedLicense = await vscode.window.showQuickPick(licenseItems, {
         placeHolder: "Select a license to search for",
@@ -1515,7 +1502,7 @@ async function activate(context) {
         return;
       }
 
-      const query = `license:${selectedLicense.label}`;
+      const query = selectedLicense.query || LicenseClassifier.buildLicenseQuery(selectedLicense.label);
       const recentSearches = new RecentSearches(context, workspaceSlug);
       recentSearches.add({ workspace: workspaceSlug, query: query, scope: "workspace" });
       await searchProvider.search(workspaceSlug, query);
@@ -1523,13 +1510,16 @@ async function activate(context) {
 
     // Register open license URL command
     vscode.commands.registerCommand("cloudsmith-vsc.openLicenseUrl", async (item) => {
-      if (!item || !item.licenseUrl) {
+      const licenseInfo = item && item.licenseInfo ? item.licenseInfo : LicenseClassifier.inspect(item);
+      const licenseUrl = licenseInfo ? (licenseInfo.licenseUrl || (item && item.licenseUrl) || null) : null;
+
+      if (!item || !licenseUrl) {
         vscode.window.showWarningMessage("No license URL available.");
         return;
       }
       let parsedUrl;
       try {
-        parsedUrl = new URL(item.licenseUrl);
+        parsedUrl = new URL(licenseUrl);
       } catch (err) { // eslint-disable-line no-unused-vars
         vscode.window.showWarningMessage("License URL is not valid.");
         return;
