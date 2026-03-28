@@ -7,6 +7,11 @@ suite("LicenseClassifier Test Suite", () => {
 
   setup(() => {
     originalGetConfiguration = vscode.workspace.getConfiguration;
+    vscode.workspace.getConfiguration = () => ({
+      get() {
+        return undefined;
+      },
+    });
   });
 
   teardown(() => {
@@ -180,11 +185,109 @@ suite("LicenseClassifier Test Suite", () => {
       assert.ok(query.includes("license:EUPL\\-1.2"));
     });
 
-    test("search quick-pick items reuse the shared query builder", () => {
-      const quickPickItems = LicenseClassifier.getSearchQuickPickItems();
-      const gplItem = quickPickItems.find((item) => item.label === "GPL-3.0");
-      assert.ok(gplItem);
-      assert.strictEqual(gplItem.query, LicenseClassifier.buildLicenseQuery("GPL-3.0"));
+    test("search quick-pick items reuse a precomputed searchQuery when present", () => {
+      const originalGetSearchableLicensesByTier = LicenseClassifier.getSearchableLicensesByTier;
+      const originalBuildLicenseQuery = LicenseClassifier.buildLicenseQuery;
+
+      try {
+        LicenseClassifier.getSearchableLicensesByTier = () => ({
+          restrictive: [{
+            license: "GPL-3.0",
+            description: "Restrictive",
+            overrideApplied: false,
+            searchQuery: "license:precomputed-search-query",
+          }],
+          cautious: [],
+          permissive: [],
+        });
+
+        let buildCalls = 0;
+        LicenseClassifier.buildLicenseQuery = () => {
+          buildCalls += 1;
+          return "license:rebuilt";
+        };
+
+        const quickPickItems = LicenseClassifier.getSearchQuickPickItems();
+        const gplItem = quickPickItems.find((item) => item.label === "GPL-3.0");
+        assert.ok(gplItem);
+        assert.strictEqual(gplItem.query, "license:precomputed-search-query");
+        assert.strictEqual(buildCalls, 0);
+      } finally {
+        LicenseClassifier.getSearchableLicensesByTier = originalGetSearchableLicensesByTier;
+        LicenseClassifier.buildLicenseQuery = originalBuildLicenseQuery;
+      }
+    });
+
+    test("search quick-pick items fall back to item.query when searchQuery is absent", () => {
+      const originalGetSearchableLicensesByTier = LicenseClassifier.getSearchableLicensesByTier;
+      const originalBuildLicenseQuery = LicenseClassifier.buildLicenseQuery;
+
+      try {
+        LicenseClassifier.getSearchableLicensesByTier = () => ({
+          restrictive: [{
+            license: "GPL-3.0",
+            description: "Restrictive",
+            overrideApplied: false,
+            query: "license:legacy-query",
+          }],
+          cautious: [],
+          permissive: [],
+        });
+
+        let buildCalls = 0;
+        LicenseClassifier.buildLicenseQuery = () => {
+          buildCalls += 1;
+          return "license:rebuilt";
+        };
+
+        const quickPickItems = LicenseClassifier.getSearchQuickPickItems();
+        const gplItem = quickPickItems.find((item) => item.label === "GPL-3.0");
+        assert.ok(gplItem);
+        assert.strictEqual(gplItem.query, "license:legacy-query");
+        assert.strictEqual(buildCalls, 0);
+      } finally {
+        LicenseClassifier.getSearchableLicensesByTier = originalGetSearchableLicensesByTier;
+        LicenseClassifier.buildLicenseQuery = originalBuildLicenseQuery;
+      }
+    });
+
+    test("search quick-pick items rebuild a query only when no precomputed query is available", () => {
+      const originalGetSearchableLicensesByTier = LicenseClassifier.getSearchableLicensesByTier;
+      const originalBuildLicenseQuery = LicenseClassifier.buildLicenseQuery;
+
+      try {
+        LicenseClassifier.getSearchableLicensesByTier = () => ({
+          restrictive: [{
+            license: "GPL-3.0",
+            description: "Restrictive",
+            overrideApplied: false,
+          }],
+          cautious: [],
+          permissive: [],
+        });
+
+        const calls = [];
+        LicenseClassifier.buildLicenseQuery = (license) => {
+          calls.push(license);
+          return "license:rebuilt";
+        };
+
+        const quickPickItems = LicenseClassifier.getSearchQuickPickItems();
+        const gplItem = quickPickItems.find((item) => item.label === "GPL-3.0");
+        assert.ok(gplItem);
+        assert.strictEqual(gplItem.query, "license:rebuilt");
+        assert.deepStrictEqual(calls, ["GPL-3.0"]);
+      } finally {
+        LicenseClassifier.getSearchableLicensesByTier = originalGetSearchableLicensesByTier;
+        LicenseClassifier.buildLicenseQuery = originalBuildLicenseQuery;
+      }
+    });
+
+    test("default test configuration applies no restrictive license overrides", () => {
+      const inspection = LicenseClassifier.inspect("MIT");
+      assert.strictEqual(inspection.baseTier, "permissive");
+      assert.strictEqual(inspection.tier, "permissive");
+      assert.strictEqual(inspection.overrideApplied, false);
     });
 
     test("spdx-only package metadata uses spdx as canonical input and resolves a license URL", () => {

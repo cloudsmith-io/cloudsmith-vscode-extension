@@ -246,7 +246,16 @@ class LicenseClassifier {
    *   isRestrictive: boolean,
    *   overrideApplied: boolean,
    *   overrideMatches: string[],
-   *   metadata: { icon: string, label: string, description: string, tooltip: string, quickPickDescription: string }
+   *   metadata: { icon: string, label: string, description: string, tooltip: string, quickPickDescription: string },
+   *   displayValue: string|null,
+   *   displaySourceField: string|null,
+   *   canonicalValue: string|null,
+   *   canonicalSourceField: string|null,
+   *   spdxLicense: string|null,
+   *   licenseValue: string|null,
+   *   rawLicense: string|null,
+   *   spdxIdentifier: string|null,
+   *   licenseUrl: string|null
    * }}
    */
   static _inspectStringLicense(license, details = {}) {
@@ -423,7 +432,7 @@ class LicenseClassifier {
   /**
    * Return all searchable licenses grouped by their effective tier.
    *
-   * @returns {{ restrictive: Array<{ license: string, description: string, overrideApplied: boolean }>, cautious: Array<{ license: string, description: string, overrideApplied: boolean }>, permissive: Array<{ license: string, description: string, overrideApplied: boolean }> }}
+   * @returns {{ restrictive: Array<{ license: string, description: string, overrideApplied: boolean, searchQuery: string }>, cautious: Array<{ license: string, description: string, overrideApplied: boolean, searchQuery: string }>, permissive: Array<{ license: string, description: string, overrideApplied: boolean, searchQuery: string }> }}
    */
   static getSearchableLicensesByTier() {
     const allIdentifiers = new Set([
@@ -451,6 +460,7 @@ class LicenseClassifier {
           ? "Restrictive override"
           : inspection.metadata.quickPickDescription,
         overrideApplied: inspection.overrideApplied,
+        searchQuery: inspection.searchQuery,
       });
     }
 
@@ -482,7 +492,7 @@ class LicenseClassifier {
         quickPickItems.push({
           label: item.license,
           description: item.description,
-          query: LicenseClassifier.buildLicenseQuery(item.license),
+          query: item.searchQuery || item.query || LicenseClassifier.buildLicenseQuery(item.license),
         });
       }
     }
