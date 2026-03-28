@@ -81,4 +81,23 @@ suite("SearchProvider Test Suite", () => {
     await provider.searchRepos("workspace-a", ["repo-a", "repo-b"], "vulnerabilities:>0");
     assert.strictEqual(provider.currentRepo, null);
   });
+
+  test("getChildren() shows the signed-out state when disconnected and idle", async () => {
+    provider = new SearchProvider({
+      secrets: {
+        onDidChange() {},
+        async get(key) {
+          if (key === "cloudsmith-vsc.isConnected") {
+            return "false";
+          }
+          return null;
+        },
+      },
+    });
+
+    const nodes = await provider.getChildren();
+
+    assert.strictEqual(nodes.length, 1);
+    assert.strictEqual(nodes[0].getTreeItem().label, "Connect to Cloudsmith");
+  });
 });

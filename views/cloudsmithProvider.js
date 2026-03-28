@@ -14,6 +14,7 @@ class CloudsmithProvider {
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     this._defaultWorkspaceFallbackHandler = null;
     this._treeView = null;
+    this._suppressMissingCredentialsWarningOnce = false;
   }
 
   getTreeItem(element) {
@@ -34,8 +35,17 @@ class CloudsmithProvider {
     return element.getChildren();
   }
 
-  refresh() {
+  refresh(options = {}) {
+    if (options.suppressMissingCredentialsWarning) {
+      this._suppressMissingCredentialsWarningOnce = true;
+    }
     this._onDidChangeTreeData.fire();
+  }
+
+  _consumeConnectionOptions() {
+    const promptOnMissingCredentials = !this._suppressMissingCredentialsWarningOnce;
+    this._suppressMissingCredentialsWarningOnce = false;
+    return { promptOnMissingCredentials };
   }
 
   setDefaultWorkspaceFallbackHandler(handler) {
@@ -56,9 +66,10 @@ class CloudsmithProvider {
       this._treeView.message = "Loading...";
     }
 
-    const connStatus = await connectionManager.connect(context);
+    const connStatus = await connectionManager.connect(this._consumeConnectionOptions());
 
     if (connStatus === "false" || connStatus === "error") {
+      await vscode.commands.executeCommand("setContext", "cloudsmith.hasMultipleWorkspaces", false);
       if (this._treeView) {
         this._treeView.message = undefined;
       }
@@ -80,6 +91,7 @@ class CloudsmithProvider {
 
     const WorkspaceNodes = [];
     if (typeof workspaces === 'string' || !workspaces || !Array.isArray(workspaces)) {
+      await vscode.commands.executeCommand("setContext", "cloudsmith.hasMultipleWorkspaces", false);
       return [new InfoNode(
         "Could not load workspaces",
         "Check your connection and credentials",
@@ -87,6 +99,11 @@ class CloudsmithProvider {
         "warning"
       )];
     }
+    await vscode.commands.executeCommand(
+      "setContext",
+      "cloudsmith.hasMultipleWorkspaces",
+      workspaces.length > 1
+    );
     if (workspaces.length > 0) {
       for (const workspace of workspaces) {
         const workspaceNode = require("../models/workspaceNode");
@@ -119,7 +136,7 @@ class CloudsmithProvider {
       this._treeView.message = "Loading...";
     }
 
-    const connStatus = await connectionManager.connect(context);
+    const connStatus = await connectionManager.connect(this._consumeConnectionOptions());
     if (connStatus === "false" || connStatus === "error") {
       if (this._treeView) {
         this._treeView.message = undefined;
