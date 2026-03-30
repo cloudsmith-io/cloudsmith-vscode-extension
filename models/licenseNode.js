@@ -5,15 +5,25 @@ const { LicenseClassifier } = require("../util/licenseClassifier");
 
 class LicenseNode {
   /**
-   * @param   {string|null} license     SPDX license identifier.
-   * @param   {string|null} licenseUrl  URL to license text.
+   * @param   {Object|string|null} licenseSource  Cloudsmith license metadata or license string.
+   * @param   {string|vscode.ExtensionContext|null} licenseUrlOrContext  License URL when using the legacy signature, or context when using metadata.
    * @param   {vscode.ExtensionContext} context
    */
-  constructor(license, licenseUrl, context) {
-    this.license = license;
-    this.licenseUrl = licenseUrl || null;
-    this.context = context;
-    this.classification = LicenseClassifier.classify(license);
+  constructor(licenseSource, licenseUrlOrContext, context) {
+    if (context === undefined && licenseSource && typeof licenseSource === "object" && !Array.isArray(licenseSource)) {
+      this.context = licenseUrlOrContext;
+      this.licenseInfo = LicenseClassifier.inspect(licenseSource);
+    } else {
+      this.context = context;
+      this.licenseInfo = LicenseClassifier.inspect({
+        license: licenseSource,
+        license_url: licenseUrlOrContext,
+      });
+    }
+
+    this.license = this.licenseInfo.displayValue;
+    this.licenseUrl = this.licenseInfo.licenseUrl || null;
+    this.classification = this.licenseInfo;
   }
 
   _getIcon() {
@@ -27,24 +37,19 @@ class LicenseNode {
   }
 
   _getDescription() {
-    const tierLabel = {
-      "restrictive": "Restrictive",
-      "cautious": "Cautious",
-      "permissive": "Permissive",
-      "unknown": "Unknown license",
-    };
-    return tierLabel[this.classification.tier] || tierLabel["unknown"];
+    return this.classification.metadata.description;
   }
 
   _buildTooltip() {
-    const tips = {
-      "restrictive": "This license has strong copyleft or viral terms that may require releasing derivative works under the same license. Legal review recommended before use in commercial software.",
-      "cautious": "This license has weak copyleft or uncommon terms. Review the specific obligations before use.",
-      "permissive": "This license is generally compatible with commercial use with minimal obligations.",
-      "unknown": "This license was not recognized. Review the license text manually.",
-    };
     const licenseLabel = this.license || "Not specified";
-    return `${licenseLabel}\n\n${tips[this.classification.tier] || tips["unknown"]}`;
+    const lines = [licenseLabel, "", this.classification.metadata.tooltip];
+    if (this.classification.spdxLicense && this.classification.spdxLicense !== licenseLabel) {
+      lines.push("", `Canonical SPDX: ${this.classification.spdxLicense}`);
+    }
+    if (this.classification.overrideApplied) {
+      lines.push("", "Local restrictive override applied via cloudsmith-vsc.restrictiveLicenses.");
+    }
+    return lines.join("\n");
   }
 
   getTreeItem() {

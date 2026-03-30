@@ -2,6 +2,7 @@
 
 const vscode = require("vscode");
 const path = require("path");
+const { LicenseClassifier } = require("../util/licenseClassifier");
 
 class PackageNode {
   constructor(pkg, context) {
@@ -57,8 +58,11 @@ class PackageNode {
     }
 
     // License fields from API response (may be absent in list endpoint)
-    this.license = pkg.license || null;
-    this.license_url = pkg.license_url || null;
+    this.licenseInfo = LicenseClassifier.inspect(pkg);
+    this.spdx_license = this.licenseInfo.spdxLicense;
+    this.raw_license = this.licenseInfo.rawLicense;
+    this.license = this.licenseInfo.displayValue;
+    this.license_url = this.licenseInfo.licenseUrl;
 
     // Raw tags for upstream origin detection
     this.tags_raw = pkg.tags || {};
@@ -205,7 +209,7 @@ class PackageNode {
     const showLicense = config.get("showLicenseIndicators") !== false;
     if (showLicense) {
       const LicenseNode = require("./licenseNode");
-      children.push(new LicenseNode(this.license, this.license_url, this.context));
+      children.push(new LicenseNode(this.licenseInfo, this.context));
     }
 
     // 4. Vulnerability summary (expandable)
