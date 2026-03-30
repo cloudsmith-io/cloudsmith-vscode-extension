@@ -3,7 +3,7 @@
   "publisher": "Cloudsmith",
   "displayName": "Cloudsmith VS Code",
   "description": "Access packages from a Cloudsmith instance.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md",
   "bugs": {
