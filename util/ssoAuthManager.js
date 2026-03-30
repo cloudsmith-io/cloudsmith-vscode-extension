@@ -56,7 +56,7 @@ class SSOAuthManager {
 
     if (!configPath) {
       vscode.window.showErrorMessage(
-        'Could not find Cloudsmith CLI configuration. Run "cloudsmith auth" in your terminal first.'
+        'Could not find Cloudsmith CLI configuration. Run "cloudsmith auth" in a terminal first.'
       );
       return false;
     }
@@ -84,7 +84,7 @@ class SSOAuthManager {
 
     await this.context.secrets.store("cloudsmith-vsc.authToken", apiKey);
     vscode.window.showInformationMessage(
-      "Credentials imported from Cloudsmith CLI config. Connected!"
+      "Credentials imported from Cloudsmith CLI config. Connected."
     );
     return true;
   }
@@ -223,8 +223,8 @@ class SSOAuthManager {
 
     // Offer to import credentials
     const choice = await vscode.window.showInformationMessage(
-      "SSO authentication complete? Click 'Import' to load your credentials from the CLI config.",
-      "Import", "Dismiss"
+      "Import credentials from the Cloudsmith CLI config?",
+      "Import", "Not now"
     );
 
     if (choice === "Import") {
@@ -265,8 +265,8 @@ class SSOAuthManager {
       serverResult = await this._startCallbackServer(callbackPath);
     } catch (err) {
       vscode.window.showErrorMessage(
-        `Cannot start SSO callback server on port ${SAML_CALLBACK_PORT}. ` +
-        `Please free the port and try again. (${err.message})`
+        `Could not start the SSO callback server on port ${SAML_CALLBACK_PORT}. ` +
+        `Free the port and try again. (${err.message})`
       );
       return false;
     }
@@ -291,7 +291,7 @@ class SSOAuthManager {
     // Open the browser for SSO authentication
     await vscode.env.openExternal(vscode.Uri.parse(authUrl));
     vscode.window.showInformationMessage(
-      "Experimental SSO: Sign in via your browser. Waiting for authentication..."
+      "Browser sign-in started. Waiting for authentication..."
     );
 
     // Wait for the callback
@@ -303,8 +303,7 @@ class SSOAuthManager {
     if (!token) {
       // Offer CLI import as fallback
       const choice = await vscode.window.showWarningMessage(
-        "Browser-based SSO did not complete. Would you like to use the " +
-        "terminal-based flow or import from CLI instead?",
+        "Browser-based SSO did not complete. Select a fallback method.",
         "Open Terminal", "Import from CLI", "Dismiss"
       );
       if (choice === "Open Terminal") {
@@ -317,7 +316,7 @@ class SSOAuthManager {
     }
 
     await this.context.secrets.store("cloudsmith-vsc.authToken", token);
-    vscode.window.showInformationMessage("SSO authentication successful! Credentials saved.");
+    vscode.window.showInformationMessage("SSO authentication complete. Credentials saved.");
     return true;
   }
 
@@ -420,9 +419,9 @@ class SSOAuthManager {
   }
 
   _buildCallbackHtml(success, replacePath) {
-    const heading = success ? "\u2705 Authentication successful" : "\u274C Authentication incomplete";
+    const heading = success ? "\u2705 Authentication complete" : "\u274C Authentication incomplete";
     const message = success
-      ? "You can close this tab and return to VS Code."
+      ? "Close this tab and return to VS Code."
       : "No credentials were found in the redirect. Try the terminal-based SSO flow or import from the CLI.";
 
     const script = replacePath

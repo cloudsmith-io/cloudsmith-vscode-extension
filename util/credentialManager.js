@@ -11,14 +11,14 @@ class CredentialManager {
   async storeApiKey() {
     const context = this.context;
     const apiKey = await vscode.window.showInputBox({
-      prompt: "Enter your Cloudsmith API Key or Service Access Token",
+      prompt: "Enter a Cloudsmith API key",
       password: true,
       ignoreFocusOut: true,
     });
 
     if (apiKey) {
       await context.secrets.store("cloudsmith-vsc.authToken", apiKey);
-      vscode.window.showInformationMessage("Credential saved securely!");
+      vscode.window.showInformationMessage("Credentials saved.");
       return true;
     }
     return false;
@@ -44,7 +44,7 @@ class CredentialManager {
     if (apiKey) {
       vscode.window
         .showWarningMessage(
-          "Are you sure you want to delete the stored API key?",
+          "Delete the stored API key?",
           { modal: true },
           "Delete"
         )

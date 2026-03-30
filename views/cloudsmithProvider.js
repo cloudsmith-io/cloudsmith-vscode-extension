@@ -65,11 +65,11 @@ class CloudsmithProvider {
       }
       return [new InfoNode(
         "Connect to Cloudsmith",
-        "Use the key icon above to set up API key, Service Account Token, CLI import, or SSO",
-        "Set up your Cloudsmith authentication to get started",
+        "Use the key icon above to set up a personal or service account API key, CLI import, or SSO.",
+        "Set up Cloudsmith authentication to get started.",
         "plug",
         undefined,
-        { command: "cloudsmith-vsc.configureCredentials", title: "Set Up Authentication" }
+        { command: "cloudsmith-vsc.configureCredentials", title: "Set up authentication" }
       )];
     }
 
@@ -83,8 +83,8 @@ class CloudsmithProvider {
     if (typeof workspaces === 'string' || !workspaces || !Array.isArray(workspaces)) {
       return [new InfoNode(
         "Could not load workspaces",
-        "Check your connection and credentials",
-        "The Cloudsmith API returned an error. Try refreshing or reconfiguring credentials.",
+        "Check the connection and credentials",
+        "The Cloudsmith API returned an error. Refresh or configure credentials.",
         "warning"
       )];
     }
@@ -127,11 +127,11 @@ class CloudsmithProvider {
       }
       return [new InfoNode(
         "Connect to Cloudsmith",
-        "Use the key icon above to set up API key, Service Account Token, CLI import, or SSO",
-        "Set up your Cloudsmith authentication to get started",
+        "Use the key icon above to set up a personal or service account API key, CLI import, or SSO.",
+        "Set up Cloudsmith authentication to get started.",
         "plug",
         undefined,
-        { command: "cloudsmith-vsc.configureCredentials", title: "Set Up Authentication" }
+        { command: "cloudsmith-vsc.configureCredentials", title: "Set up authentication" }
       )];
     }
 
