@@ -4,8 +4,10 @@
 const { CloudsmithAPI } = require("./cloudsmithAPI");
 const { CredentialManager } = require("./credentialManager");
 const { SearchQueryBuilder } = require("./searchQueryBuilder");
+<<<<<<< HEAD
 
 const SUPPORTED_UPSTREAM_FORMATS = [
+<<<<<<< HEAD
   "deb", "docker", "maven", "npm", "python",
   "ruby", "dart", "helm", "nuget", "cargo",
   "rpm", "cran", "swift", "go", "hex",
@@ -15,6 +17,273 @@ const SUPPORTED_UPSTREAM_FORMATS = [
 const UPSTREAM_FETCH_BATCH_SIZE = 5;
 const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const REPOSITORY_UPSTREAM_CACHE_KEY_PREFIX = "cloudsmith-upstreams:v2";
+=======
+  "alpine",
+  "cargo",
+  "cocoapods",
+  "composer",
+  "conda",
+  "cran",
+  "dart",
+  "deb",
+  "docker",
+  "generic",
+  "go",
+  "helm",
+  "hex",
+  "huggingface",
+  "luarocks",
+  "maven",
+  "npm",
+  "nuget",
+  "python",
+  "rpm",
+  "ruby",
+  "swift",
+  "vagrant",
+];
+=======
+const {
+  getSupportedUpstreamFormats,
+  SUPPORTED_UPSTREAM_FORMATS,
+} = require("./upstreamFormats");
+>>>>>>> 50c8bac (fix: consolidate upstream fetch and fix WebView/Terraform export consumers)
+const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000;
+const UPSTREAM_FETCH_BATCH_SIZE = 5;
+const BENIGN_UPSTREAM_FORMAT_STATUS_CODES = new Set([400, 404, 405, 422]);
+
+function isCacheObjectRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function getUpstreamCacheKey(workspace, repo, formats = SUPPORTED_UPSTREAM_FORMATS) {
+  const normalizedFormats = getSupportedUpstreamFormats(formats);
+  const isAllFormats =
+    normalizedFormats.length === SUPPORTED_UPSTREAM_FORMATS.length &&
+    normalizedFormats.every((format, index) => format === SUPPORTED_UPSTREAM_FORMATS[index]);
+
+  if (isAllFormats) {
+    return `cloudsmith-upstreams:all:${workspace}:${repo}`;
+  }
+
+  return `cloudsmith-upstreams:formats:${workspace}:${repo}:${normalizedFormats.join(",")}`;
+}
+
+function logUpstreamCacheError(action, workspace, repo, error) {
+  const message = error && error.message ? error.message : String(error);
+  console.warn(
+    `[UpstreamChecker] Failed to ${action} upstream cache for ${workspace}/${repo}: ${message}`
+  );
+}
+
+function evictInvalidUpstreamCacheEntry(globalState, cacheKey, workspace, repo) {
+  if (!globalState || typeof globalState.update !== "function") {
+    return;
+  }
+
+  try {
+    const updateResult = globalState.update(cacheKey, undefined);
+    if (updateResult && typeof updateResult.catch === "function") {
+      updateResult.catch((error) => {
+        logUpstreamCacheError("evict invalid entry from", workspace, repo, error);
+      });
+    }
+  } catch (error) {
+    logUpstreamCacheError("evict invalid entry from", workspace, repo, error);
+  }
+}
+
+function getCachedUpstreamResponse(globalState, cacheKey, workspace, repo) {
+  if (!globalState || typeof globalState.get !== "function") {
+    return null;
+  }
+
+  const cached = globalState.get(cacheKey);
+  if (cached === undefined) {
+    return null;
+  }
+
+  const isValidCacheEntry = isCacheObjectRecord(cached)
+    && Number.isFinite(cached.timestamp)
+    && Array.isArray(cached.upstreams)
+    && Number.isFinite(cached.active)
+    && Number.isFinite(cached.total)
+    && Array.isArray(cached.failedFormats)
+    && cached.failedFormats.length === 0
+    && Number.isFinite(cached.successfulFormats);
+
+  if (!isValidCacheEntry) {
+    evictInvalidUpstreamCacheEntry(globalState, cacheKey, workspace, repo);
+    return null;
+  }
+
+  if ((Date.now() - cached.timestamp) >= UPSTREAM_CACHE_TTL_MS) {
+    return null;
+  }
+
+  return {
+    upstreams: cached.upstreams,
+    active: cached.active,
+    total: cached.total,
+    failedFormats: cached.failedFormats,
+    successfulFormats: cached.successfulFormats,
+  };
+}
+
+async function persistUpstreamResponse(globalState, cacheKey, workspace, repo, response) {
+  if (!globalState || typeof globalState.update !== "function") {
+    return;
+  }
+
+  try {
+    await globalState.update(cacheKey, {
+      timestamp: Date.now(),
+      ...response,
+    });
+  } catch (error) {
+    logUpstreamCacheError("persist", workspace, repo, error);
+  }
+}
+
+function getUpstreamErrorStatusCode(message) {
+  const normalized = typeof message === "string" ? message.toLowerCase() : "";
+  const statusMatch = normalized.match(/response status:\s*(\d{3})/);
+  if (!statusMatch) {
+    return null;
+  }
+
+  return Number(statusMatch[1]);
+}
+
+function isBenignUpstreamFormatError(message) {
+  const normalized = typeof message === "string" ? message.toLowerCase() : "";
+  if (!normalized) {
+    return false;
+  }
+
+  const statusCode = getUpstreamErrorStatusCode(normalized);
+  if (statusCode !== null) {
+    return BENIGN_UPSTREAM_FORMAT_STATUS_CODES.has(statusCode);
+  }
+
+  const benignKeywords = [
+    "not found",
+    "unsupported",
+    "not applicable",
+    "unknown format",
+    "no upstream",
+    "does not exist",
+  ];
+
+  if (benignKeywords.some((keyword) => normalized.includes(keyword))) {
+    return true;
+  }
+
+  return false;
+}
+
+function isWarningWorthyUpstreamFormatError(message) {
+  const normalized = typeof message === "string" ? message.toLowerCase() : "";
+  if (!normalized) {
+    return true;
+  }
+
+  return !isBenignUpstreamFormatError(normalized);
+}
+
+function isAbortError(error) {
+  return error && (error.name === "AbortError" || error.code === "ABORT_ERR");
+}
+
+function getUpstreamRequestOptions(apiKey, signal) {
+  const headers = {
+    accept: "application/json",
+    "content-type": "application/json",
+  };
+
+  if (apiKey) {
+    headers["X-Api-Key"] = apiKey;
+  }
+
+  return {
+    method: "GET",
+    headers,
+    signal,
+  };
+}
+
+function sortUpstreams(left, right) {
+  const leftName = typeof left.name === "string" ? left.name : "";
+  const rightName = typeof right.name === "string" ? right.name : "";
+  if (leftName !== rightName) {
+    return leftName.localeCompare(rightName, undefined, { sensitivity: "base" });
+  }
+
+  const leftFormat = typeof left._format === "string"
+    ? left._format
+    : (typeof left.format === "string" ? left.format : "");
+  const rightFormat = typeof right._format === "string"
+    ? right._format
+    : (typeof right.format === "string" ? right.format : "");
+
+  return leftFormat.localeCompare(rightFormat, undefined, { sensitivity: "base" });
+}
+
+async function fetchFormatUpstreams(api, workspace, repo, format, apiKey, signal) {
+  try {
+    if (signal && signal.aborted) {
+      return { format, status: "aborted", upstreams: [] };
+    }
+
+    const result = await api.makeRequest(
+      `repos/${workspace}/${repo}/upstream/${format}/`,
+      getUpstreamRequestOptions(apiKey, signal)
+    );
+
+    if (signal && signal.aborted) {
+      return { format, status: "aborted", upstreams: [] };
+    }
+
+    if (typeof result === "string") {
+      if (isWarningWorthyUpstreamFormatError(result)) {
+        return { format, status: "failed", error: result, upstreams: [] };
+      }
+
+      return { format, status: "loaded", upstreams: [] };
+    }
+
+    if (!Array.isArray(result)) {
+      return {
+        format,
+        status: "failed",
+        error: `Unexpected upstream response for format "${format}".`,
+        upstreams: [],
+      };
+    }
+
+    return {
+      format,
+      status: "loaded",
+      upstreams: result.map((upstream) => ({
+        ...upstream,
+        _format: format,
+        format,
+      })),
+    };
+  } catch (error) {
+    if (isAbortError(error) || (signal && signal.aborted)) {
+      return { format, status: "aborted", upstreams: [] };
+    }
+
+    const message = error && error.message ? error.message : String(error);
+    if (!isWarningWorthyUpstreamFormatError(message)) {
+      return { format, status: "loaded", upstreams: [] };
+    }
+
+    return { format, status: "failed", error: message, upstreams: [] };
+  }
+}
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
 
 class UpstreamChecker {
   constructor(context) {
@@ -63,6 +332,124 @@ class UpstreamChecker {
       return { data: [], error: null };
     }
     return { data: result, error: null };
+  }
+
+  async getUpstreamDataForFormats(workspace, repo, formats, options = {}) {
+    const { signal } = options;
+    const requestedFormats = getSupportedUpstreamFormats(formats);
+
+    if (signal && signal.aborted) {
+      return null;
+    }
+
+    if (requestedFormats.length === 0) {
+      return {
+        upstreams: [],
+        active: 0,
+        total: 0,
+        failedFormats: [],
+        successfulFormats: 0,
+      };
+    }
+
+    const cacheKey = getUpstreamCacheKey(workspace, repo, requestedFormats);
+    const globalState = this.context && this.context.globalState
+      ? this.context.globalState
+      : null;
+    const cached = getCachedUpstreamResponse(globalState, cacheKey, workspace, repo);
+
+    if (cached) {
+      return cached;
+    }
+
+    let apiKey = null;
+    try {
+      const credentialManager = new CredentialManager(this.context);
+      apiKey = await credentialManager.getApiKey();
+    } catch {
+      apiKey = null;
+    }
+
+    if (signal && signal.aborted) {
+      return null;
+    }
+
+    const upstreams = [];
+    const failedFormats = [];
+    let successfulFormats = 0;
+
+    for (let index = 0; index < requestedFormats.length; index += UPSTREAM_FETCH_BATCH_SIZE) {
+      if (signal && signal.aborted) {
+        return null;
+      }
+
+      const batch = requestedFormats.slice(index, index + UPSTREAM_FETCH_BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map((format) => fetchFormatUpstreams(this.api, workspace, repo, format, apiKey, signal))
+      );
+
+      if (signal && signal.aborted) {
+        return null;
+      }
+
+      for (const result of batchResults) {
+        if (result.status === "aborted") {
+          return null;
+        }
+
+        if (result.status === "failed") {
+          failedFormats.push(result.format);
+          continue;
+        }
+
+        if (result.status !== "loaded") {
+          continue;
+        }
+
+        successfulFormats += 1;
+        upstreams.push(...result.upstreams);
+      }
+    }
+
+    upstreams.sort(sortUpstreams);
+    const active = upstreams.filter((upstream) => upstream.is_active !== false).length;
+    const response = {
+      upstreams,
+      active,
+      total: upstreams.length,
+      failedFormats,
+      successfulFormats,
+    };
+
+    if (
+      !signal?.aborted &&
+      failedFormats.length === 0 &&
+      globalState
+    ) {
+      await persistUpstreamResponse(globalState, cacheKey, workspace, repo, response);
+    }
+
+    return response;
+  }
+
+  async getAllUpstreamData(workspace, repo, options = {}) {
+    return this.getUpstreamDataForFormats(workspace, repo, SUPPORTED_UPSTREAM_FORMATS, options);
+  }
+
+  async getAllUpstreams(workspace, repo, options = {}) {
+    const result = await this.getAllUpstreamData(workspace, repo, options);
+    if (result === null) {
+      return { data: [], error: null, aborted: true };
+    }
+
+    if (result.failedFormats.length > 0 && result.upstreams.length === 0) {
+      return {
+        data: result.upstreams,
+        error: `Could not load upstream data for: ${result.failedFormats.join(", ")}`,
+      };
+    }
+
+    return { data: result.upstreams, error: null };
   }
 
   /**
@@ -518,9 +905,28 @@ class UpstreamChecker {
   }
 }
 
+<<<<<<< HEAD
 module.exports = {
   UpstreamChecker,
   SUPPORTED_UPSTREAM_FORMATS,
   UPSTREAM_FETCH_BATCH_SIZE,
   UPSTREAM_CACHE_TTL_MS,
+=======
+async function getAllUpstreamData(context, workspace, repo, options = {}) {
+  const checker = new UpstreamChecker(context);
+  return checker.getAllUpstreamData(workspace, repo, options);
+}
+
+async function getUpstreamDataForFormats(context, workspace, repo, formats, options = {}) {
+  const checker = new UpstreamChecker(context);
+  return checker.getUpstreamDataForFormats(workspace, repo, formats, options);
+}
+
+module.exports = {
+  getAllUpstreamData,
+  getUpstreamDataForFormats,
+  isBenignUpstreamFormatError,
+  SUPPORTED_UPSTREAM_FORMATS,
+  UpstreamChecker,
+>>>>>>> 52ddc2b (feat: export repository as Terraform)
 };

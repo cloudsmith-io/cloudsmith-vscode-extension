@@ -3,15 +3,11 @@ node_modules/
 *.vsix
 .env
 .DS_Store
+.src/
 .npmrc
 
-# Local planning / agent reference docs
-/internal-docs/
-AGENTS*.md
-CLAUDE*.md
-IMPLEMENTATION*.md
-API_REFERENCE*.md
-ARCHITECTURE*.md
+# Local planning
+internal_docs/
 
 # Local agent / MCP config
 .mcp.json

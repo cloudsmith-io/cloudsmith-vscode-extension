@@ -2,7 +2,11 @@
 
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
-const { UpstreamChecker } = require("../util/upstreamChecker");
+const upstreamChecker = require("../util/upstreamChecker");
+const {
+  normalizeUpstreamFormat,
+  SUPPORTED_UPSTREAM_FORMATS,
+} = require("../util/upstreamFormats");
 const UpstreamIndicatorNode = require("./upstreamIndicatorNode");
 const { activeFilters } = require("../util/filterState");
 const InfoNode = require("./infoNode");
@@ -16,7 +20,6 @@ class RepositoryNode {
     this.name = repo.name;
     this.workspace = workspace;
     this.storageRegion = repo.storage_region || repo.region || null;
-    this.upstreamChecker = new UpstreamChecker(context);
   }
 
   /** Get the active filter from the module-level singleton Map. */
@@ -89,7 +92,7 @@ class RepositoryNode {
     const repo = this.name;
     const activeFilter = this._getActiveFilter();
     const filterLabel = activeFilter
-      ? `Filter: ${activeFilter.label || activeFilter}`
+      ? `filtered: ${activeFilter.label || activeFilter}`
       : undefined;
 
     return {
@@ -160,13 +163,73 @@ class RepositoryNode {
   }
 
   /**
-   * Fetch upstream configs for this repo across every supported format.
-   * Results are cached by UpstreamChecker for 10 minutes.
+   * Infer relevant formats from the loaded package list and fetch upstream configs
+   * only for those formats as a hint. Repository-level configured upstream
+   * counts must reconcile against the full all-format path unless the inferred
+   * set is known to cover every supported upstream format.
    *
-   * @returns Array of upstream config objects (may be empty).
+   * @returns {Array} Array of upstream config objects (may be empty).
    */
-  async getUpstreams() {
-    return this.upstreamChecker.getRepositoryUpstreams(this.workspace, this.slug);
+  async getUpstreams(packageNodes = []) {
+    const inferredFormats = this._inferUpstreamFormats(packageNodes);
+    if (inferredFormats.length === 0) {
+      return this._getUpstreamList(
+        await upstreamChecker.getAllUpstreamData(this.context, this.workspace, this.slug)
+      );
+    }
+
+    const hintedResult = await upstreamChecker.getUpstreamDataForFormats(
+      this.context,
+      this.workspace,
+      this.slug,
+      inferredFormats
+    );
+
+    if (this._hasCompleteUpstreamCoverage(inferredFormats)) {
+      return this._getUpstreamList(hintedResult);
+    }
+
+    return this._getUpstreamList(
+      await upstreamChecker.getAllUpstreamData(this.context, this.workspace, this.slug)
+    );
+  }
+
+  _getUpstreamList(result) {
+    if (!result || !Array.isArray(result.upstreams)) {
+      return [];
+    }
+
+    return result.upstreams;
+  }
+
+  _hasCompleteUpstreamCoverage(formats) {
+    return Array.isArray(formats) && formats.length === SUPPORTED_UPSTREAM_FORMATS.length;
+  }
+
+  _inferUpstreamFormats(packageNodes) {
+    if (!Array.isArray(packageNodes) || packageNodes.length === 0) {
+      return [];
+    }
+
+    const formats = new Set();
+    for (const node of packageNodes) {
+      this._addInferredFormat(formats, node && node.format);
+
+      if (Array.isArray(node && node.formats)) {
+        for (const format of node.formats) {
+          this._addInferredFormat(formats, format);
+        }
+      }
+    }
+
+    return SUPPORTED_UPSTREAM_FORMATS.filter((format) => formats.has(format));
+  }
+
+  _addInferredFormat(target, value) {
+    const normalized = normalizeUpstreamFormat(value);
+    if (normalized) {
+      target.add(normalized);
+    }
   }
 
   /**
@@ -191,9 +254,9 @@ class RepositoryNode {
 
     const children = [];
 
-    // Fetch upstreams lazily only when the repository is expanded.
+    // Fetch upstreams lazily (only when repo is expanded)
     if (packages.length > 0) {
-      const upstreams = await this.getUpstreams();
+      const upstreams = await this.getUpstreams(packages);
       if (upstreams.length > 0) {
         children.push(new UpstreamIndicatorNode(
           upstreams,
@@ -212,7 +275,7 @@ class RepositoryNode {
 
       children.push({
         getTreeItem: () => ({
-          label: "Storage region",
+          label: "Storage Region",
           description: regionLabel,
           collapsibleState: vscode.TreeItemCollapsibleState.None,
           contextValue: "repoDetail",
@@ -231,9 +294,9 @@ class RepositoryNode {
         }
       } catch (e) {
         children.push(new InfoNode(
-          "Could not load entitlement tokens",
+          "Entitlements: failed to load",
           "",
-          e.message || "Could not load entitlement tokens.",
+          e.message || "An error occurred loading entitlement tokens.",
           "warning"
         ));
       }
@@ -245,7 +308,7 @@ class RepositoryNode {
       if (this._lastApiFailed) {
         placeholderNode = new InfoNode(
           "Failed to load packages",
-          "Check the connection and refresh.",
+          "Check your connection and try refreshing",
           "The Cloudsmith API returned an error when loading packages for this repository.",
           "warning"
         );
@@ -254,16 +317,16 @@ class RepositoryNode {
         placeholderNode = new InfoNode(
           "No packages match filter",
           filterLabel,
-          "Select to change or clear the filter.",
+          "Click to change or clear the filter",
           "filter",
           undefined,
-          { command: "cloudsmith-vsc.changeFilter", title: "Change filter", arguments: [this] }
+          { command: "cloudsmith-vsc.changeFilter", title: "Change Filter", arguments: [this] }
         );
       } else {
         placeholderNode = new InfoNode(
-          "No packages",
+          "Repository is empty",
           "",
-          "Create or push a package to get started.",
+          "This repository does not contain any packages.",
           "info"
         );
       }

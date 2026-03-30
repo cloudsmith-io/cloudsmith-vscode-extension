@@ -254,6 +254,11 @@
         "icon": "$(cloud)"
       },
       {
+        "command": "cloudsmith-vsc.exportTerraform",
+        "title": "Export as Terraform",
+        "category": "Cloudsmith"
+      },
+      {
         "command": "cloudsmith-vsc.showPromotionStatus",
         "title": "Show promotion status",
         "category": "Cloudsmith",
@@ -379,6 +384,16 @@
           "command": "cloudsmith-vsc.inspectUpstreams",
           "when": "view == cloudsmithView && viewItem =~ /^(repository|repositoryFiltered|upstreamIndicator)$/",
           "group": "navigation@2"
+        },
+        {
+          "command": "cloudsmith-vsc.exportTerraform",
+          "when": "view == cloudsmithView && viewItem == repository",
+          "group": "cloudsmith.export"
+        },
+        {
+          "command": "cloudsmith-vsc.exportTerraform",
+          "when": "view == cloudsmithView && viewItem == repositoryFiltered",
+          "group": "cloudsmith.export"
         },
         {
           "command": "cloudsmith-vsc.filterVulnerable",
