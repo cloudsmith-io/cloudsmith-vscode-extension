@@ -78,7 +78,7 @@ class ConnectionManager {
       if (connectionStatus === "false" || connectionStatus === "error") {
         const errorMsg = this._lastError
           ? formatApiError(this._lastError)
-          : "Unable to connect to Cloudsmith. Ensure your credentials are correct.";
+          : "Could not connect to Cloudsmith. Check the credentials and try again.";
         vscode.window
           .showErrorMessage(
             errorMsg,
@@ -94,7 +94,7 @@ class ConnectionManager {
         return connectionStatus;
       } else { // connection status = true
         if (showConnectMsg) {
-          vscode.window.showInformationMessage("Connected to Cloudsmith!");
+          vscode.window.showInformationMessage("Connected to Cloudsmith.");
         }
         // checkConnectivity() already stored "cloudsmith-vsc.isConnected"
       }

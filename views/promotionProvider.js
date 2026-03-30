@@ -173,7 +173,7 @@ class PromotionProvider {
     const invalidSlugs = pipeline.filter(s => !validSlugs.has(s));
     if (invalidSlugs.length > 0) {
       vscode.window.showWarningMessage(
-        `Promotion pipeline contains unknown repositories: ${invalidSlugs.join(", ")}. Check your cloudsmith-vsc.promotionPipeline setting.`
+        `Promotion pipeline contains unknown repositories: ${invalidSlugs.join(", ")}. Check the cloudsmith-vsc.promotionPipeline setting.`
       );
     }
   }

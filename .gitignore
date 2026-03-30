@@ -3,10 +3,10 @@ node_modules/
 *.vsix
 .env
 .DS_Store
-.src/
 .npmrc
 
 # Local planning / agent reference docs
+/internal-docs/
 AGENTS*.md
 CLAUDE*.md
 IMPLEMENTATION*.md

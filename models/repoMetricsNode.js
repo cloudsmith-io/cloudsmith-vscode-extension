@@ -32,7 +32,7 @@ class RepoMetricsNode {
         parts.push(`Downloads: ${this.metrics.downloads}`);
       }
 
-      description = parts.join(" | ") || "No usage data";
+      description = parts.join(" | ") || "No usage data available";
     } catch (_) {
       description = "Could not load metrics";
     }
@@ -48,7 +48,7 @@ class RepoMetricsNode {
   }
 
   _buildTooltip() {
-    const parts = ["Workspace Quota"];
+    const parts = ["Workspace quota"];
     const storage = this.quota?.usage?.display?.storage;
     const rawStorage = this.quota?.usage?.raw?.storage;
     const storagePct = rawStorage?.used != null && rawStorage?.plan_limit
