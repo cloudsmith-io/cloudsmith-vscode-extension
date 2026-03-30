@@ -1,12 +1,14 @@
 const assert = require("assert");
 const vscode = require("vscode");
-const RepositoryNode = require("../models/repositoryNode");
 const UpstreamIndicatorNode = require("../models/upstreamIndicatorNode");
-const upstreamChecker = require("../util/upstreamChecker");
 const { SUPPORTED_UPSTREAM_FORMATS } = require("../util/upstreamFormats");
 
 suite("RepositoryNode Test Suite", () => {
+  const repositoryNodePath = require.resolve("../models/repositoryNode");
+  const upstreamCheckerPath = require.resolve("../util/upstreamChecker");
   let originalGetConfiguration;
+  let RepositoryNode;
+  let upstreamChecker;
   let originalGetAllUpstreamData;
   let originalGetUpstreamDataForFormats;
   const terraformExporterPath = require.resolve("../util/terraformExporter");
@@ -22,9 +24,13 @@ suite("RepositoryNode Test Suite", () => {
 
   setup(() => {
     originalGetConfiguration = vscode.workspace.getConfiguration;
+    delete require.cache[terraformExporterPath];
+    delete require.cache[repositoryNodePath];
+    delete require.cache[upstreamCheckerPath];
+    upstreamChecker = require(upstreamCheckerPath);
+    RepositoryNode = require(repositoryNodePath);
     originalGetAllUpstreamData = upstreamChecker.getAllUpstreamData;
     originalGetUpstreamDataForFormats = upstreamChecker.getUpstreamDataForFormats;
-    delete require.cache[terraformExporterPath];
 
     vscode.workspace.getConfiguration = () => ({
       get(key) {
@@ -41,6 +47,8 @@ suite("RepositoryNode Test Suite", () => {
     upstreamChecker.getAllUpstreamData = originalGetAllUpstreamData;
     upstreamChecker.getUpstreamDataForFormats = originalGetUpstreamDataForFormats;
     delete require.cache[terraformExporterPath];
+    delete require.cache[repositoryNodePath];
+    delete require.cache[upstreamCheckerPath];
   });
 
   test("reconciles partial inferred-format results with the full repo upstream totals", async () => {

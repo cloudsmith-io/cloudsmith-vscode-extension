@@ -52,6 +52,10 @@ const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000;
 const UPSTREAM_FETCH_BATCH_SIZE = 5;
 const BENIGN_UPSTREAM_FORMAT_STATUS_CODES = new Set([400, 404, 405, 422]);
 
+function isCacheObjectRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function getUpstreamCacheKey(workspace, repo, formats = SUPPORTED_UPSTREAM_FORMATS) {
   const normalizedFormats = getSupportedUpstreamFormats(formats);
   const isAllFormats =
@@ -63,6 +67,82 @@ function getUpstreamCacheKey(workspace, repo, formats = SUPPORTED_UPSTREAM_FORMA
   }
 
   return `cloudsmith-upstreams:formats:${workspace}:${repo}:${normalizedFormats.join(",")}`;
+}
+
+function logUpstreamCacheError(action, workspace, repo, error) {
+  const message = error && error.message ? error.message : String(error);
+  console.warn(
+    `[UpstreamChecker] Failed to ${action} upstream cache for ${workspace}/${repo}: ${message}`
+  );
+}
+
+function evictInvalidUpstreamCacheEntry(globalState, cacheKey, workspace, repo) {
+  if (!globalState || typeof globalState.update !== "function") {
+    return;
+  }
+
+  try {
+    const updateResult = globalState.update(cacheKey, undefined);
+    if (updateResult && typeof updateResult.catch === "function") {
+      updateResult.catch((error) => {
+        logUpstreamCacheError("evict invalid entry from", workspace, repo, error);
+      });
+    }
+  } catch (error) {
+    logUpstreamCacheError("evict invalid entry from", workspace, repo, error);
+  }
+}
+
+function getCachedUpstreamResponse(globalState, cacheKey, workspace, repo) {
+  if (!globalState || typeof globalState.get !== "function") {
+    return null;
+  }
+
+  const cached = globalState.get(cacheKey);
+  if (cached === undefined) {
+    return null;
+  }
+
+  const isValidCacheEntry = isCacheObjectRecord(cached)
+    && Number.isFinite(cached.timestamp)
+    && Array.isArray(cached.upstreams)
+    && Number.isFinite(cached.active)
+    && Number.isFinite(cached.total)
+    && Array.isArray(cached.failedFormats)
+    && cached.failedFormats.length === 0
+    && Number.isFinite(cached.successfulFormats);
+
+  if (!isValidCacheEntry) {
+    evictInvalidUpstreamCacheEntry(globalState, cacheKey, workspace, repo);
+    return null;
+  }
+
+  if ((Date.now() - cached.timestamp) >= UPSTREAM_CACHE_TTL_MS) {
+    return null;
+  }
+
+  return {
+    upstreams: cached.upstreams,
+    active: cached.active,
+    total: cached.total,
+    failedFormats: cached.failedFormats,
+    successfulFormats: cached.successfulFormats,
+  };
+}
+
+async function persistUpstreamResponse(globalState, cacheKey, workspace, repo, response) {
+  if (!globalState || typeof globalState.update !== "function") {
+    return;
+  }
+
+  try {
+    await globalState.update(cacheKey, {
+      timestamp: Date.now(),
+      ...response,
+    });
+  } catch (error) {
+    logUpstreamCacheError("persist", workspace, repo, error);
+  }
 }
 
 function getUpstreamErrorStatusCode(message) {
@@ -111,6 +191,10 @@ function isWarningWorthyUpstreamFormatError(message) {
   return !isBenignUpstreamFormatError(normalized);
 }
 
+function isAbortError(error) {
+  return error && (error.name === "AbortError" || error.code === "ABORT_ERR");
+}
+
 function getUpstreamRequestOptions(apiKey, signal) {
   const headers = {
     accept: "application/json",
@@ -146,45 +230,58 @@ function sortUpstreams(left, right) {
 }
 
 async function fetchFormatUpstreams(api, workspace, repo, format, apiKey, signal) {
-  if (signal && signal.aborted) {
-    return { format, status: "aborted", upstreams: [] };
-  }
-
-  const result = await api.makeRequest(
-    `repos/${workspace}/${repo}/upstream/${format}/`,
-    getUpstreamRequestOptions(apiKey, signal)
-  );
-
-  if (signal && signal.aborted) {
-    return { format, status: "aborted", upstreams: [] };
-  }
-
-  if (typeof result === "string") {
-    if (isWarningWorthyUpstreamFormatError(result)) {
-      return { format, status: "failed", error: result, upstreams: [] };
+  try {
+    if (signal && signal.aborted) {
+      return { format, status: "aborted", upstreams: [] };
     }
 
-    return { format, status: "loaded", upstreams: [] };
-  }
+    const result = await api.makeRequest(
+      `repos/${workspace}/${repo}/upstream/${format}/`,
+      getUpstreamRequestOptions(apiKey, signal)
+    );
 
-  if (!Array.isArray(result)) {
+    if (signal && signal.aborted) {
+      return { format, status: "aborted", upstreams: [] };
+    }
+
+    if (typeof result === "string") {
+      if (isWarningWorthyUpstreamFormatError(result)) {
+        return { format, status: "failed", error: result, upstreams: [] };
+      }
+
+      return { format, status: "loaded", upstreams: [] };
+    }
+
+    if (!Array.isArray(result)) {
+      return {
+        format,
+        status: "failed",
+        error: `Unexpected upstream response for format "${format}".`,
+        upstreams: [],
+      };
+    }
+
     return {
       format,
-      status: "failed",
-      error: `Unexpected upstream response for format "${format}".`,
-      upstreams: [],
+      status: "loaded",
+      upstreams: result.map((upstream) => ({
+        ...upstream,
+        _format: format,
+        format,
+      })),
     };
-  }
+  } catch (error) {
+    if (isAbortError(error) || (signal && signal.aborted)) {
+      return { format, status: "aborted", upstreams: [] };
+    }
 
-  return {
-    format,
-    status: "loaded",
-    upstreams: result.map((upstream) => ({
-      ...upstream,
-      _format: format,
-      format,
-    })),
-  };
+    const message = error && error.message ? error.message : String(error);
+    if (!isWarningWorthyUpstreamFormatError(message)) {
+      return { format, status: "loaded", upstreams: [] };
+    }
+
+    return { format, status: "failed", error: message, upstreams: [] };
+  }
 }
 >>>>>>> 52ddc2b (feat: export repository as Terraform)
 
@@ -256,27 +353,13 @@ class UpstreamChecker {
     }
 
     const cacheKey = getUpstreamCacheKey(workspace, repo, requestedFormats);
-    const cached = this.context && this.context.globalState
-      ? this.context.globalState.get(cacheKey)
+    const globalState = this.context && this.context.globalState
+      ? this.context.globalState
       : null;
+    const cached = getCachedUpstreamResponse(globalState, cacheKey, workspace, repo);
 
-    if (
-      cached &&
-      Array.isArray(cached.upstreams) &&
-      typeof cached.active === "number" &&
-      typeof cached.total === "number" &&
-      Array.isArray(cached.failedFormats) &&
-      typeof cached.successfulFormats === "number" &&
-      cached.timestamp &&
-      (Date.now() - cached.timestamp) < UPSTREAM_CACHE_TTL_MS
-    ) {
-      return {
-        upstreams: cached.upstreams,
-        active: cached.active,
-        total: cached.total,
-        failedFormats: cached.failedFormats,
-        successfulFormats: cached.successfulFormats,
-      };
+    if (cached) {
+      return cached;
     }
 
     let apiKey = null;
@@ -341,13 +424,9 @@ class UpstreamChecker {
     if (
       !signal?.aborted &&
       failedFormats.length === 0 &&
-      this.context &&
-      this.context.globalState
+      globalState
     ) {
-      await this.context.globalState.update(cacheKey, {
-        timestamp: Date.now(),
-        ...response,
-      });
+      await persistUpstreamResponse(globalState, cacheKey, workspace, repo, response);
     }
 
     return response;
