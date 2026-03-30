@@ -3,8 +3,10 @@
 const vscode = require("vscode");
 const path = require("path");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
+const InfoNode = require("./infoNode");
 const repositoryNode = require("./repositoryNode");
 const { WorkspaceInfoNode } = require("./workspaceInfoNode");
+const workspaceRepositoryFetcher = require("../util/workspaceRepositoryFetcher");
 
 class WorkspaceNode {
   constructor(item, context) {
@@ -32,22 +34,22 @@ class WorkspaceNode {
   async getRepositories() {
     const context = this.context;
     const workspace = this.workspace;
-    const cloudsmithAPI = new CloudsmithAPI(context);
-    const repositories = await cloudsmithAPI.get(
-      "repos/" + workspace + "/?sort=name"
+    const result = await workspaceRepositoryFetcher.fetchWorkspaceRepositories(
+      context,
+      workspace
     );
 
-    const RepositoryNodes = [];
-    if (typeof repositories === "string") {
-      vscode.window.showErrorMessage(
-        `Could not load repositories for ${workspace}. ${repositories}`
-      );
-      return RepositoryNodes;
+    if (result.error) {
+      return [new InfoNode(
+        "Failed to load repositories",
+        "Check your connection and try refreshing",
+        `Failed to load repositories for ${workspace}: ${result.error}`,
+        "warning"
+      )];
     }
 
-    if (!Array.isArray(repositories)) {
-      return RepositoryNodes;
-    }
+    const repositories = result.repositories;
+    const RepositoryNodes = [];
 
     for (const repo of repositories) {
       const repositoryNodeInst = new repositoryNode(
