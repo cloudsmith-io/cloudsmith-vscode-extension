@@ -1,24 +1,12 @@
 const vscode = require("vscode");
-<<<<<<< HEAD
-<<<<<<< HEAD
-const {
-  UpstreamChecker,
-  SUPPORTED_UPSTREAM_FORMATS,
-} = require("../util/upstreamChecker");
-=======
-const { SUPPORTED_UPSTREAM_FORMATS, getAllUpstreamData } = require("../util/upstreamChecker");
-=======
 const { getAllUpstreamData } = require("../util/upstreamChecker");
 const { SUPPORTED_UPSTREAM_FORMATS } = require("../util/upstreamFormats");
->>>>>>> 50c8bac (fix: consolidate upstream fetch and fix WebView/Terraform export consumers)
 
 const SUPPORTED_FORMATS = SUPPORTED_UPSTREAM_FORMATS;
->>>>>>> 52ddc2b (feat: export repository as Terraform)
 
 class UpstreamDetailProvider {
   constructor(context) {
     this.context = context;
-    this.upstreamChecker = new UpstreamChecker(context);
     this._panel = null;
     this._abortController = null;
     this._requestId = 0;
@@ -44,19 +32,11 @@ class UpstreamDetailProvider {
       panel.title = `Upstreams: ${repoName}`;
       panel.webview.html = this._getLoadingHtml(workspace, repoSlug, repoName);
 
-<<<<<<< HEAD
-      const fetchState = await this.upstreamChecker.getRepositoryUpstreamState(
-        workspace,
-        repoSlug,
-        { signal: abortController.signal }
-      );
-=======
       const fetchState = await this._fetchGroupedUpstreams(workspace, repoSlug, abortController.signal);
 
       if (!fetchState) {
         return;
       }
->>>>>>> 52ddc2b (feat: export repository as Terraform)
 
       if (!this._canRender(panel, requestId) || abortController.signal.aborted) {
         return;
@@ -98,8 +78,6 @@ class UpstreamDetailProvider {
     return panel;
   }
 
-<<<<<<< HEAD
-=======
   async _fetchGroupedUpstreams(workspace, repoSlug, signal) {
     const upstreamData = await getAllUpstreamData(this.context, workspace, repoSlug, { signal });
     if (upstreamData === null || signal.aborted) {
@@ -138,10 +116,8 @@ class UpstreamDetailProvider {
       successfulFormats: typeof upstreamData.successfulFormats === "number"
         ? upstreamData.successfulFormats
         : 0,
-    };
+      };
   }
-
->>>>>>> 52ddc2b (feat: export repository as Terraform)
   _abortInFlightRequest() {
     if (this._abortController) {
       this._abortController.abort();
@@ -219,13 +195,9 @@ class UpstreamDetailProvider {
     const contentHtml = hasLoadedUpstreams
       ? formatSections.join("\n")
       : this._getEmptyOrErrorState(hasFailures, successfulFormats);
-<<<<<<< HEAD
-    const warningHtml = hasFailures && hasLoadedUpstreams
+    const warningHtml = failedFormats.length > 0 && hasLoadedUpstreams
       ? `<div class="warning-banner">Some upstream data could not be loaded.</div>`
       : "";
-=======
-    const warningHtml = "";
->>>>>>> 52ddc2b (feat: export repository as Terraform)
 
     return `<!DOCTYPE html>
 <html lang="en">
