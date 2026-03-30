@@ -451,43 +451,23 @@ class UpstreamChecker {
   }
 
   /**
-   * Simulate policy evaluation for a workspace.
-   * Uses the v2 API endpoint.
-   *
-   * @param   {string} workspace  Workspace slug.
-   * @returns {Object|null}       Policy simulation results, or null on error.
-   */
-  async simulatePolicies(workspace) {
-    const result = await this.api.getV2(
-      `workspaces/${workspace}/policies/simulate/`
-    );
-    if (typeof result === "string") {
-      console.warn(`[UpstreamChecker] Policy simulation error: ${result}`);
-      return { data: null, error: result };
-    }
-    return { data: result, error: null };
-  }
-
-  /**
    * Orchestrate a full upstream resolution preview.
-   * Checks local existence, upstream configs, and active policies.
+   * Checks local existence and upstream configs for a package preview.
    *
    * @param   {string} workspace  Workspace slug.
    * @param   {string} repo       Repository slug.
    * @param   {string} name       Package name.
    * @param   {string} format     Package format.
-   * @returns {Object}            Combined result with local, upstream, and policy info.
+   * @returns {Object}            Combined result with local and upstream info.
    */
   async previewResolution(workspace, repo, name, format) {
-    // Run all checks in parallel
-    const [localPkg, upstreams, policies] = await Promise.all([
+    const [localPkg, upstreams] = await Promise.all([
       this.existsLocally(workspace, repo, name, format),
       this.getUpstreamsForFormat(workspace, repo, format),
-      this.simulatePolicies(workspace),
     ]);
 
     const upstreamList = Array.isArray(upstreams.data) ? upstreams.data : [];
-    const activeUpstreams = upstreamList.filter(u => u.is_active !== false);
+    const activeUpstreams = upstreamList.filter((upstream) => upstream.is_active !== false);
 
     return {
       name,
@@ -503,7 +483,6 @@ class UpstreamChecker {
         },
         error: upstreams.error,
       },
-      policies,
       canResolveViaUpstream: activeUpstreams.length > 0,
     };
   }

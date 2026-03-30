@@ -59,29 +59,8 @@ class UpstreamPreviewProvider {
       upstreamHtml += "</tbody></table>";
     }
 
-    let policyHtml = "";
-    if (result.policies.error) {
-      policyHtml = `<p class="error-banner">Could not load policy simulation: ${this._escapeHtml(result.policies.error)}</p>`;
-    } else {
-      const pols = Array.isArray(result.policies.data) ? result.policies.data : (result.policies.data && result.policies.data.results) || [];
-      if (pols.length === 0) {
-        policyHtml = '<p class="muted">No active policies found.</p>';
-      } else {
-        policyHtml = '<table class="data-table"><thead><tr><th>Policy</th><th>Type</th><th>Action</th></tr></thead><tbody>';
-        for (const p of pols) {
-          policyHtml += `<tr>
-            <td>${this._escapeHtml(p.name || p.slug_perm || "Unknown")}</td>
-            <td>${this._escapeHtml(p.policy_type || p.type || "")}</td>
-            <td>${this._escapeHtml(p.on_violation_quarantine ? "Quarantine" : (p.action || "Tag or warn"))}</td>
-          </tr>`;
-        }
-        policyHtml += "</tbody></table>";
-      }
-    }
-
     const resolutionSummary = result.canResolveViaUpstream
-      ? `<div class="resolution-yes">This package can likely resolve through ${result.upstreams.data.active} active upstream${result.upstreams.data.active === 1 ? "" : "s"}. ` +
-        "If Block Until Scan is enabled, the package stays blocked until policy evaluation completes.</div>"
+      ? `<div class="resolution-yes">This package can likely resolve through ${result.upstreams.data.active} active upstream${result.upstreams.data.active === 1 ? "" : "s"}.</div>`
       : '<div class="resolution-no">No active upstreams for this format. Upload the package directly.</div>';
 
     return `<!DOCTYPE html>
@@ -124,9 +103,6 @@ class UpstreamPreviewProvider {
 
   <h3>Upstreams (${result.upstreams.data.active} active of ${result.upstreams.data.total})</h3>
   ${upstreamHtml}
-
-  <h3>Active policies</h3>
-  ${policyHtml}
 </body>
 </html>`;
   }
