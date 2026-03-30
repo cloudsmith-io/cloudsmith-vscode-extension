@@ -247,23 +247,47 @@ function getDefaultWorkspace() {
   return config.get("defaultWorkspace") || "";
 }
 
+async function setConnectedContext(isConnected) {
+  await vscode.commands.executeCommand("setContext", "cloudsmith.connected", Boolean(isConnected));
+}
+
+async function setHasMultipleWorkspacesContext(hasMultipleWorkspaces) {
+  await vscode.commands.executeCommand(
+    "setContext",
+    "cloudsmith.hasMultipleWorkspaces",
+    Boolean(hasMultipleWorkspaces)
+  );
+}
+
+async function updateDefaultWorkspaceContext() {
+  await vscode.commands.executeCommand(
+    "setContext",
+    "cloudsmith.hasDefaultWorkspace",
+    Boolean(getDefaultWorkspace())
+  );
+}
+
 async function getWorkspaces(context) {
     const cache = context.globalState.get('CloudsmithCache');
     if (cache && cache.name === 'Workspaces' && cache.workspaces) {
         // Check TTL — treat as stale if older than 30 minutes
         if (cache.lastSync && (Date.now() - cache.lastSync) < WORKSPACE_CACHE_TTL_MS) {
+            await setHasMultipleWorkspacesContext(cache.workspaces.length > 1);
             return cache.workspaces;
         }
     }
     const cloudsmithAPI = new CloudsmithAPI(context);
     const result = await cloudsmithAPI.get("namespaces/?sort=slug");
     if (typeof result === 'string') {
-        vscode.window.showErrorMessage(`Could not load workspaces. ${formatApiError(result)}`);
+        await setHasMultipleWorkspacesContext(false);
+        vscode.window.showErrorMessage("Failed to load workspaces: " + result);
         return null;
     }
     if (!result || result.length === 0) {
+        await setHasMultipleWorkspacesContext(false);
         return [];
     }
+    await setHasMultipleWorkspacesContext(result.length > 1);
     return result;
 }
 
@@ -292,7 +316,10 @@ function buildPresetQuery(preset, customQuery) {
  */
 async function activate(context) {
 
-  context.secrets.store("cloudsmith-vsc.isConnected", "false");
+  await context.secrets.store("cloudsmith-vsc.isConnected", "false");
+  await setConnectedContext(false);
+  await setHasMultipleWorkspacesContext(false);
+  await updateDefaultWorkspaceContext();
 
 
   // Define main view provider which populates with data
@@ -319,8 +346,9 @@ async function activate(context) {
 
   // Listen for configuration changes to refresh tree when defaultWorkspace changes
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration(e => {
+    vscode.workspace.onDidChangeConfiguration(async e => {
       if (e.affectsConfiguration("cloudsmith-vsc.defaultWorkspace")) {
+        await updateDefaultWorkspaceContext();
         const newDefault = getDefaultWorkspace();
         treeView.title = newDefault ? "Repositories" : "Workspaces";
         treeView.description = newDefault || "";
@@ -349,6 +377,26 @@ async function activate(context) {
     showCollapseAll: true,
   });
 
+  context.subscriptions.push(
+    context.secrets.onDidChange(async (e) => {
+      if (e.key !== "cloudsmith-vsc.authToken") {
+        return;
+      }
+
+      const apiKey = await context.secrets.get("cloudsmith-vsc.authToken");
+      if (apiKey) {
+        return;
+      }
+
+      await context.secrets.store("cloudsmith-vsc.isConnected", "false");
+      await setConnectedContext(false);
+      await setHasMultipleWorkspacesContext(false);
+      cloudsmithProvider.refresh({ suppressMissingCredentialsWarning: true });
+      searchProvider.refresh();
+      dependencyHealthProvider.refresh();
+    })
+  );
+
   // Create vulnerability WebView provider
   const vulnerabilityProvider = new VulnerabilityProvider(context);
   context.subscriptions.push({ dispose: () => vulnerabilityProvider.dispose() });
@@ -367,6 +415,25 @@ async function activate(context) {
 
   // Create promotion provider
   const promotionProvider = new PromotionProvider(context);
+
+  const initializeConnectionContext = async () => {
+    const credentialManager = new CredentialManager(context);
+    const apiKey = await credentialManager.getApiKey();
+    if (!apiKey) {
+      return;
+    }
+
+    try {
+      const { ConnectionManager } = require("./util/connectionManager");
+      const connectionManager = new ConnectionManager(context);
+      await connectionManager.checkConnectivity(apiKey);
+    } catch {
+      await context.secrets.store("cloudsmith-vsc.isConnected", "false");
+      await setConnectedContext(false);
+    }
+  };
+
+  void initializeConnectionContext();
 
   // Auto-scan dependencies on open if configured
   const autoScanConfig = vscode.workspace.getConfiguration("cloudsmith-vsc");
@@ -415,6 +482,7 @@ async function activate(context) {
         if (choice === "Set as default") {
           const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
           await config.update("defaultWorkspace", ws.slug, vscode.ConfigurationTarget.Global);
+          await updateDefaultWorkspaceContext();
           treeView.title = "Repositories";
           treeView.description = ws.slug;
           cloudsmithProvider.refresh();
@@ -517,10 +585,12 @@ async function activate(context) {
       const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
       if (selected._clear) {
         await config.update("defaultWorkspace", "", vscode.ConfigurationTarget.Global);
+        await updateDefaultWorkspaceContext();
         treeView.title = "Workspaces";
         treeView.description = "";
       } else {
         await config.update("defaultWorkspace", selected.description, vscode.ConfigurationTarget.Global);
+        await updateDefaultWorkspaceContext();
         treeView.title = "Repositories";
         treeView.description = selected.description;
       }

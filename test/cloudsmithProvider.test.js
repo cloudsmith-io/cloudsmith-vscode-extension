@@ -1,78 +1,97 @@
 const assert = require("assert");
-const { CloudsmithAPI } = require("../util/cloudsmithAPI");
-const { ConnectionManager } = require("../util/connectionManager");
-const workspaceRepositoryFetcher = require("../util/workspaceRepositoryFetcher");
+const vscode = require("vscode");
 const { CloudsmithProvider } = require("../views/cloudsmithProvider");
 
 suite("CloudsmithProvider Test Suite", () => {
-  let originalConnect;
-  let originalGet;
-  let originalFetchWorkspaceRepositories;
+  let originalExecuteCommand;
+  let originalGetConfiguration;
+  let originalShowWarningMessage;
+  let commandCalls;
+  let warningCalls;
+  let defaultWorkspace;
+  let treeView;
   let provider;
-  let cacheUpdates;
 
   const context = {
-    globalState: {
-      update(key, value) {
-        cacheUpdates.push({ key, value });
+    secrets: {
+      onDidChange() {},
+      async get(key) {
+        if (key === "cloudsmith-vsc.isConnected") {
+          return "false";
+        }
+        return null;
       },
+      async store() {},
+    },
+    globalState: {
+      get() {
+        return undefined;
+      },
+      async update() {},
     },
   };
 
   setup(() => {
-    cacheUpdates = [];
+    commandCalls = [];
+    warningCalls = [];
+    defaultWorkspace = "";
+    treeView = { message: "ready" };
     provider = new CloudsmithProvider(context);
+    provider.setTreeView(treeView);
 
-    originalConnect = ConnectionManager.prototype.connect;
-    originalGet = CloudsmithAPI.prototype.get;
-    originalFetchWorkspaceRepositories =
-      workspaceRepositoryFetcher.fetchWorkspaceRepositories;
+    originalExecuteCommand = vscode.commands.executeCommand;
+    originalGetConfiguration = vscode.workspace.getConfiguration;
+    originalShowWarningMessage = vscode.window.showWarningMessage;
 
-    ConnectionManager.prototype.connect = async () => "true";
-    CloudsmithAPI.prototype.get = async endpoint => {
-      if (endpoint.startsWith("quota/")) {
-        return {
-          usage: {
-            display: {
-              storage: { used: "0 GB", plan_limit: "10 GB", percentage_used: "0" },
-              bandwidth: { used: "0 GB", plan_limit: "10 GB", percentage_used: "0" },
-            },
-          },
-        };
-      }
-
-      return [];
+    vscode.commands.executeCommand = async (...args) => {
+      commandCalls.push(args);
+    };
+    vscode.workspace.getConfiguration = () => ({
+      get(key) {
+        if (key === "defaultWorkspace") {
+          return defaultWorkspace;
+        }
+        return "";
+      },
+    });
+    vscode.window.showWarningMessage = async (...args) => {
+      warningCalls.push(args);
+      return undefined;
     };
   });
 
   teardown(() => {
-    ConnectionManager.prototype.connect = originalConnect;
-    CloudsmithAPI.prototype.get = originalGet;
-    workspaceRepositoryFetcher.fetchWorkspaceRepositories =
-      originalFetchWorkspaceRepositories;
+    vscode.commands.executeCommand = originalExecuteCommand;
+    vscode.workspace.getConfiguration = originalGetConfiguration;
+    vscode.window.showWarningMessage = originalShowWarningMessage;
   });
 
-  test("loads repositories for the default workspace through the shared fetcher", async () => {
-    workspaceRepositoryFetcher.fetchWorkspaceRepositories = async () => ({
-      repositories: [
-        { name: "repo-a", slug: "repo-a" },
-        { name: "repo-b", slug: "repo-b" },
-      ],
-      error: null,
-      warning: null,
-      partial: false,
-    });
+  test("silent refresh shows the signed-out root state without warning after credentials are cleared", async () => {
+    provider.refresh({ suppressMissingCredentialsWarning: true });
 
-    const nodes = await provider.getRepositories("workspace-a");
+    const nodes = await provider.getChildren();
 
-    assert.strictEqual(nodes.length, 3);
-    assert.strictEqual(nodes[0].workspaceName, "workspace-a");
-    assert.strictEqual(nodes[1].name, "repo-a");
-    assert.strictEqual(nodes[2].name, "repo-b");
-    assert.strictEqual(cacheUpdates.length, 1);
-    assert.strictEqual(cacheUpdates[0].key, "CloudsmithCache");
-    assert.deepStrictEqual(cacheUpdates[0].value.workspaces, [
-      { name: "workspace-a", slug: "workspace-a" },
-    ]);
+    assert.strictEqual(warningCalls.length, 0);
+    assert.strictEqual(treeView.message, undefined);
+    assert.strictEqual(nodes.length, 1);
+    assert.strictEqual(nodes[0].getTreeItem().label, "Connect to Cloudsmith");
+    assert.ok(
+      commandCalls.some((call) => (
+        call[0] === "setContext" &&
+        call[1] === "cloudsmith.hasMultipleWorkspaces" &&
+        call[2] === false
+      ))
+    );
+  });
+
+  test("silent refresh also shows the signed-out state when a default workspace is configured", async () => {
+    defaultWorkspace = "workspace-a";
+    provider.refresh({ suppressMissingCredentialsWarning: true });
+
+    const nodes = await provider.getChildren();
+
+    assert.strictEqual(warningCalls.length, 0);
+    assert.strictEqual(nodes.length, 1);
+    assert.strictEqual(nodes[0].getTreeItem().label, "Connect to Cloudsmith");
   });
 });

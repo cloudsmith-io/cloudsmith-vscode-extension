@@ -60,7 +60,7 @@
         "command": "cloudsmith-vsc.openSettings",
         "title": "Open Cloudsmith settings",
         "category": "Cloudsmith",
-        "icon": "$(settings-gear)"
+        "icon": "$(gear)"
       },
       {
         "command": "cloudsmith-vsc.configureCredentials",
@@ -72,13 +72,12 @@
         "command": "cloudsmith-vsc.connectCloudsmith",
         "title": "Connect to Cloudsmith",
         "category": "Cloudsmith",
-        "icon": "$(debug-disconnect)"
+        "icon": "$(plug)"
       },
       {
         "command": "cloudsmith-vsc.clearCredentials",
         "title": "Clear stored credentials",
-        "category": "Cloudsmith",
-        "icon": "$(notebook-delete-cell)"
+        "icon": "$(sign-out)"
       },
       {
         "command": "cloudsmith-vsc.copySelected",
@@ -107,8 +106,7 @@
       },
       {
         "command": "cloudsmith-vsc.refreshView",
-        "category": "Cloudsmith",
-        "title": "Refresh packages",
+        "title": "Refresh",
         "icon": "$(refresh)"
       },
       {
@@ -229,7 +227,7 @@
         "command": "cloudsmith-vsc.ssoLogin",
         "title": "Sign in with SSO",
         "category": "Cloudsmith",
-        "icon": "$(sign-in)"
+        "icon": "$(terminal)"
       },
       {
         "command": "cloudsmith-vsc.importCLICredentials",
@@ -490,14 +488,29 @@
       ],
       "view/title": [
         {
-          "command": "cloudsmith-vsc.setDefaultWorkspace",
-          "group": "navigation",
-          "when": "view == cloudsmithView"
-        },
-        {
           "command": "cloudsmith-vsc.refreshView",
           "group": "navigation",
-          "when": "view == cloudsmithView"
+          "when": "view == cloudsmithView && cloudsmith.connected"
+        },
+        {
+          "command": "cloudsmith-vsc.setDefaultWorkspace",
+          "group": "navigation",
+          "when": "view == cloudsmithView && cloudsmith.connected && cloudsmith.hasMultipleWorkspaces && !cloudsmith.hasDefaultWorkspace"
+        },
+        {
+          "command": "cloudsmith-vsc.connectCloudsmith",
+          "group": "navigation",
+          "when": "view == cloudsmithView && !cloudsmith.connected"
+        },
+        {
+          "command": "cloudsmith-vsc.configureCredentials",
+          "group": "navigation",
+          "when": "view == cloudsmithView && !cloudsmith.connected"
+        },
+        {
+          "command": "cloudsmith-vsc.ssoLogin",
+          "group": "navigation",
+          "when": "view == cloudsmithView && !cloudsmith.connected"
         },
         {
           "command": "cloudsmith-vsc.openSettings",
@@ -505,24 +518,9 @@
           "when": "view == cloudsmithView"
         },
         {
-          "command": "cloudsmith-vsc.configureCredentials",
-          "group": "navigation",
-          "when": "view == cloudsmithView"
-        },
-        {
           "command": "cloudsmith-vsc.clearCredentials",
           "group": "navigation",
-          "when": "view == cloudsmithView"
-        },
-        {
-          "command": "cloudsmith-vsc.connectCloudsmith",
-          "group": "navigation",
-          "when": "view == cloudsmithView"
-        },
-        {
-          "command": "cloudsmith-vsc.ssoLogin",
-          "group": "navigation",
-          "when": "view == cloudsmithView"
+          "when": "view == cloudsmithView && cloudsmith.connected"
         },
         {
           "command": "cloudsmith-vsc.searchPackages",
