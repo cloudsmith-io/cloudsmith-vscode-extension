@@ -53,7 +53,7 @@ class LicenseNode {
   }
 
   getTreeItem() {
-    const licenseLabel = this.license || "Not specified";
+    const licenseLabel = this.license || "No license specified";
 
     const treeItem = {
       label: `License: ${licenseLabel}`,
@@ -68,7 +68,7 @@ class LicenseNode {
     if (this.licenseUrl) {
       treeItem.command = {
         command: "cloudsmith-vsc.openLicenseUrl",
-        title: "View License",
+        title: "View license",
         arguments: [this],
       };
     }

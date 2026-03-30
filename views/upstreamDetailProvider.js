@@ -1,19 +1,13 @@
 const vscode = require("vscode");
-const { CloudsmithAPI } = require("../util/cloudsmithAPI");
-const { CredentialManager } = require("../util/credentialManager");
-
-const SUPPORTED_FORMATS = [
-  "deb", "docker", "maven", "npm", "python",
-  "ruby", "dart", "helm", "nuget", "cargo",
-  "rpm", "cran", "swift", "go", "hex",
-  "composer", "conda", "conan", "p2", "terraform",
-  "raw",
-];
-const FETCH_BATCH_SIZE = 5;
+const {
+  UpstreamChecker,
+  SUPPORTED_UPSTREAM_FORMATS,
+} = require("../util/upstreamChecker");
 
 class UpstreamDetailProvider {
   constructor(context) {
     this.context = context;
+    this.upstreamChecker = new UpstreamChecker(context);
     this._panel = null;
     this._abortController = null;
     this._requestId = 0;
@@ -39,12 +33,10 @@ class UpstreamDetailProvider {
       panel.title = `Upstreams: ${repoName}`;
       panel.webview.html = this._getLoadingHtml(workspace, repoSlug, repoName);
 
-      const cloudsmithAPI = new CloudsmithAPI(this.context);
-      const fetchState = await this._fetchGroupedUpstreams(
-        cloudsmithAPI,
+      const fetchState = await this.upstreamChecker.getRepositoryUpstreamState(
         workspace,
         repoSlug,
-        abortController.signal
+        { signal: abortController.signal }
       );
 
       if (!this._canRender(panel, requestId) || abortController.signal.aborted) {
@@ -87,144 +79,6 @@ class UpstreamDetailProvider {
     return panel;
   }
 
-  async _fetchGroupedUpstreams(cloudsmithAPI, workspace, repoSlug, signal) {
-    const grouped = new Map();
-    const failedFormats = [];
-    let successfulFormats = 0;
-    let apiKey = null;
-
-    try {
-      const credentialManager = new CredentialManager(this.context);
-      apiKey = await credentialManager.getApiKey();
-    } catch (error) {
-      if (this._isAbortError(error) || signal.aborted) {
-        return { groupedUpstreams: grouped, failedFormats, successfulFormats };
-      }
-
-      return {
-        groupedUpstreams: grouped,
-        failedFormats: [...SUPPORTED_FORMATS],
-        successfulFormats,
-      };
-    }
-
-    for (let index = 0; index < SUPPORTED_FORMATS.length; index += FETCH_BATCH_SIZE) {
-      if (signal.aborted) {
-        return { groupedUpstreams: grouped, failedFormats, successfulFormats };
-      }
-
-      const batch = SUPPORTED_FORMATS.slice(index, index + FETCH_BATCH_SIZE);
-      const batchResults = await Promise.all(
-        batch.map((format) => this._fetchFormatUpstreams(
-          cloudsmithAPI,
-          workspace,
-          repoSlug,
-          format,
-          apiKey,
-          signal
-        ))
-      );
-
-      if (signal.aborted) {
-        return { groupedUpstreams: grouped, failedFormats, successfulFormats };
-      }
-
-      for (const result of batchResults) {
-        if (result.status === "failed") {
-          failedFormats.push(result.format);
-          continue;
-        }
-
-        if (result.status !== "loaded") {
-          continue;
-        }
-
-        successfulFormats += 1;
-
-        if (result.upstreams.length === 0) {
-          continue;
-        }
-
-        grouped.set(result.format, result.upstreams);
-      }
-    }
-
-    for (const upstreams of grouped.values()) {
-      upstreams.sort((left, right) => {
-        const leftName = typeof left.name === "string" ? left.name : "";
-        const rightName = typeof right.name === "string" ? right.name : "";
-        return leftName.localeCompare(rightName, undefined, { sensitivity: "base" });
-      });
-    }
-
-    return { groupedUpstreams: grouped, failedFormats, successfulFormats };
-  }
-
-  async _fetchFormatUpstreams(cloudsmithAPI, workspace, repoSlug, format, apiKey, signal) {
-    try {
-      if (signal.aborted) {
-        return { format, status: "aborted", upstreams: [] };
-      }
-
-      const result = await cloudsmithAPI.makeRequest(
-        `repos/${workspace}/${repoSlug}/upstream/${format}/`,
-        this._getRequestOptions(apiKey, signal)
-      );
-
-      if (signal.aborted) {
-        return { format, status: "aborted", upstreams: [] };
-      }
-
-      if (typeof result === "string") {
-        if (this._isWarningWorthyFormatError(result)) {
-          return { format, status: "failed", upstreams: [] };
-        }
-        return { format, status: "loaded", upstreams: [] };
-      }
-
-      if (!Array.isArray(result)) {
-        return { format, status: "failed", upstreams: [] };
-      }
-
-      if (result.length === 0) {
-        return { format, status: "loaded", upstreams: [] };
-      }
-
-      return {
-        format,
-        status: "loaded",
-        upstreams: result.map((upstream) => ({ ...upstream, format })),
-      };
-    } catch (error) {
-      if (this._isAbortError(error) || signal.aborted) {
-        return { format, status: "aborted", upstreams: [] };
-      }
-
-      if (!this._isWarningWorthyFormatError(error && error.message ? error.message : "")) {
-        return { format, status: "loaded", upstreams: [] };
-      }
-
-      return { format, status: "failed", upstreams: [] };
-    }
-  }
-
-  _getRequestOptions(apiKey, signal) {
-    const headers = {
-      accept: "application/json",
-      "content-type": "application/json",
-    };
-
-    if (apiKey) {
-      headers["X-Api-Key"] = apiKey;
-    }
-
-    return {
-      method: "GET",
-      headers,
-      signal,
-    };
-  }
-
   _abortInFlightRequest() {
     if (this._abortController) {
       this._abortController.abort();
@@ -234,73 +88,6 @@ class UpstreamDetailProvider {
 
   _canRender(panel, requestId) {
     return this._panel === panel && this._requestId === requestId;
-  }
-
-  _isAbortError(error) {
-    return error && (error.name === "AbortError" || error.code === "ABORT_ERR");
-  }
-
-  _isWarningWorthyFormatError(message) {
-    const normalized = typeof message === "string" ? message.toLowerCase() : "";
-    if (!normalized) {
-      return true;
-    }
-
-    const benignKeywords = [
-      "response status: 404",
-      "not found",
-      "unsupported",
-      "not applicable",
-      "unknown format",
-      "no upstream",
-      "does not exist",
-    ];
-    if (benignKeywords.some((keyword) => normalized.includes(keyword))) {
-      return false;
-    }
-
-    const statusMatch = normalized.match(/response status:\s*(\d{3})/);
-    if (statusMatch) {
-      const statusCode = Number(statusMatch[1]);
-      if (statusCode === 401 || statusCode === 403 || statusCode === 407 || statusCode === 408 || statusCode === 429) {
-        return true;
-      }
-      if (statusCode >= 500) {
-        return true;
-      }
-      if (statusCode >= 400) {
-        return true;
-      }
-    }
-
-    const warningKeywords = [
-      "blocked ",
-      "redirect",
-      "fetch failed",
-      "network",
-      "timed out",
-      "timeout",
-      "unauthorized",
-      "forbidden",
-      "permission",
-      "access denied",
-      "server error",
-      "bad gateway",
-      "service unavailable",
-      "gateway timeout",
-      "econn",
-      "enotfound",
-      "eai_again",
-      "socket",
-      "tls",
-      "certificate",
-    ];
-
-    if (warningKeywords.some((keyword) => normalized.includes(keyword))) {
-      return true;
-    }
-
-    return true;
   }
 
   _getLoadingHtml(workspace, repoSlug, repoName) {
@@ -340,7 +127,7 @@ class UpstreamDetailProvider {
 <body>
   <h2>${this._escape(repoName)}</h2>
   <p class="subtle">${this._escape(workspace)}/${this._escape(repoSlug)}</p>
-  <p class="loading-copy">Loading upstream sources...</p>
+  <p class="loading-copy">Loading upstreams...</p>
 </body>
 </html>`;
   }
@@ -351,7 +138,7 @@ class UpstreamDetailProvider {
     const hasFailures = failedFormats.length > 0;
     const hasLoadedUpstreams = groupedUpstreams.size > 0;
 
-    for (const format of SUPPORTED_FORMATS) {
+    for (const format of SUPPORTED_UPSTREAM_FORMATS) {
       const upstreams = groupedUpstreams.get(format);
       if (!upstreams || upstreams.length === 0) {
         continue;
@@ -370,7 +157,7 @@ class UpstreamDetailProvider {
       ? formatSections.join("\n")
       : this._getEmptyOrErrorState(hasFailures, successfulFormats);
     const warningHtml = hasFailures && hasLoadedUpstreams
-      ? `<div class="warning-banner">Some upstream formats could not be loaded.</div>`
+      ? `<div class="warning-banner">Some upstream data could not be loaded.</div>`
       : "";
 
     return `<!DOCTYPE html>
@@ -537,7 +324,7 @@ class UpstreamDetailProvider {
 
   _getEmptyOrErrorState(hasFailures, successfulFormats) {
     if (!hasFailures) {
-      return `<p class="empty-state">No upstream sources configured for this repository.</p>`;
+      return `<p class="empty-state">No upstreams configured for this repository.</p>`;
     }
 
     const detail = successfulFormats > 0
@@ -545,7 +332,7 @@ class UpstreamDetailProvider {
       : "The upstream configuration could not be loaded for this repository.";
 
     return `<div class="error-state">
-  <span class="error-state-title">Could not load upstream sources.</span>
+  <span class="error-state-title">Could not load upstreams.</span>
   ${this._escape(detail)}
 </div>`;
   }
@@ -559,11 +346,11 @@ class UpstreamDetailProvider {
       this._renderDetail("URL", upstream.upstream_url, "mono"),
       this._renderDetail("Mode", typeof upstream.mode === "string" ? upstream.mode : "", ""),
       this._renderDetail("Priority", this._getPriority(upstream), ""),
-      this._renderDetail("SSL Verification", this._getSslVerification(upstream), ""),
+      this._renderDetail("SSL verification", this._getSslVerification(upstream), ""),
       this._renderTrustDetail(upstream),
       this._renderDetail("Indexing", this._getIndexingDisplay(upstream), ""),
       this._renderDetail("Distribution", this._getDistribution(upstream), ""),
-      this._renderDetail("Created Date", this._formatCreatedAt(upstream.created_at), ""),
+      this._renderDetail("Created", this._formatCreatedAt(upstream.created_at), ""),
     ].filter(Boolean).join("\n");
 
     const trustCallout = this._renderTrustCallout(upstream);
@@ -591,10 +378,10 @@ class UpstreamDetailProvider {
 
   _renderTrustDetail(upstream) {
     if (upstream.trust_level === "Trusted") {
-      return `<div class="detail-label">Trust Level</div><div class="detail-value trust-value-trusted">${this._escape(upstream.trust_level)}</div>`;
+      return `<div class="detail-label">Trust level</div><div class="detail-value trust-value-trusted">${this._escape(upstream.trust_level)}</div>`;
     }
     if (upstream.trust_level === "Untrusted") {
-      return `<div class="detail-label">Trust Level</div><div class="detail-value trust-value-untrusted">${this._escape(upstream.trust_level)}</div>`;
+      return `<div class="detail-label">Trust level</div><div class="detail-value trust-value-untrusted">${this._escape(upstream.trust_level)}</div>`;
     }
     return "";
   }
@@ -603,14 +390,14 @@ class UpstreamDetailProvider {
     if (upstream.trust_level === "Trusted") {
       return `<div class="trust-callout">
   <span class="trust-callout-title">Trusted upstream:</span>
-  ${this._escape("This source can serve any package, including versions of packages that exist in your private repository. Packages from this upstream will not be blocked by dependency confusion protections.")}
+  ${this._escape("This source can serve any package, including versions of packages that exist in a private repository. Packages from this upstream are not blocked by dependency confusion protections.")}
 </div>`;
     }
 
     if (upstream.trust_level === "Untrusted") {
       return `<div class="trust-callout">
   <span class="trust-callout-title">Untrusted upstream (recommended):</span>
-  ${this._escape("If a package name exists in your private repository or another trusted source, this upstream will be blocked from serving versions of that package. This protects against namesquatting and dependency confusion attacks.")}
+  ${this._escape("If a package name exists in a private repository or another trusted source, this upstream is blocked from serving versions of that package. This protects against namesquatting and dependency confusion attacks.")}
 </div>`;
     }
 

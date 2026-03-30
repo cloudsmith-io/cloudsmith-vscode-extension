@@ -28,7 +28,7 @@ class DependencyHealthNode {
     if (cloudsmithMatch) {
       this.namespace = cloudsmithMatch.namespace;
       this.repository = cloudsmithMatch.repository;
-      this.slug_perm = { id: "Slug Perm", value: cloudsmithMatch.slug_perm };
+      this.slug_perm = { id: "Slug", value: cloudsmithMatch.slug_perm };
       this.slug_perm_raw = cloudsmithMatch.slug_perm;
       this.version = { id: "Version", value: cloudsmithMatch.version };
       this.status_str = { id: "Status", value: cloudsmithMatch.status_str };
@@ -94,16 +94,16 @@ class DependencyHealthNode {
   _getStateDescription() {
     switch (this.state) {
       case "available":
-        return "\u2713 Available";
+        return "Available";
       case "quarantined":
-        return "\u26D4 Quarantined";
+        return "Quarantined";
       case "violated":
-        return "\u26A0 Policy violation";
+        return "Policy violation";
       case "syncing":
-        return "\u21BB Syncing";
+        return "Syncing";
       case "not_found":
       default:
-        return "? Not found in Cloudsmith";
+        return "Not found in Cloudsmith";
     }
   }
 
@@ -111,14 +111,14 @@ class DependencyHealthNode {
     const lines = [`${this.name} ${this.declaredVersion}`];
     lines.push(`Format: ${this.format}`);
     if (this.isDev) {
-      lines.push("(dev dependency)");
+      lines.push("Development dependency");
     }
 
     lines.push("");
 
     if (!this.cloudsmithMatch) {
       lines.push("Not found in the configured Cloudsmith workspace.");
-      lines.push("This package may need to be uploaded or fetched via upstream proxy.");
+      lines.push("This package may need to be uploaded or fetched through an upstream.");
     } else {
       const match = this.cloudsmithMatch;
       lines.push(`Cloudsmith version: ${match.version}`);
@@ -151,7 +151,7 @@ class DependencyHealthNode {
 
       if (this.state === "quarantined" || this.state === "violated") {
         lines.push("");
-        lines.push("Right-click \u2192 Explain Quarantine or Find Safe Version");
+        lines.push("Right-click \u2192 Explain quarantine or find safe version");
       }
     }
 
@@ -238,7 +238,7 @@ class DependencyHealthNode {
 
     // Policy Violated
     const policyValue = match.policy_violated ? "Yes" : "No";
-    children.push(new PackageDetailsNode({ id: "Policy Violated", value: policyValue }, this.context));
+    children.push(new PackageDetailsNode({ id: "Policy violated", value: policyValue }, this.context));
 
     // Quarantine Reason (if quarantined)
     if (match.status_str === "Quarantined" && match.status_reason) {
@@ -246,7 +246,7 @@ class DependencyHealthNode {
         ? match.status_reason.substring(0, 80) + "..."
         : match.status_reason;
       const reasonNode = new PackageDetailsNode({
-        id: "Quarantine Reason",
+        id: "Quarantine reason",
         value: truncated,
       }, this.context);
       children.push(reasonNode);

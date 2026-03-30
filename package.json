@@ -1,8 +1,8 @@
 {
   "name": "cloudsmith-vsc",
   "publisher": "Cloudsmith",
-  "displayName": "Cloudsmith VSCode",
-  "description": "Access your artifacts from Cloudsmith instance.",
+  "displayName": "Cloudsmith VS Code",
+  "description": "Access packages from a Cloudsmith instance.",
   "version": "2.0.0",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/cloudsmith-io/cloudsmith-vscode-extension/blob/main/README.md",
@@ -43,28 +43,28 @@
         },
         {
           "id": "cloudsmithSearchView",
-          "name": "Package Search"
+          "name": "Package search"
         },
         {
           "id": "cloudsmithDependencyHealthView",
-          "name": "Dependency Health"
+          "name": "Dependency health"
         },
         {
           "id": "helpView",
-          "name": "Help and Feedback"
+          "name": "Help and feedback"
         }
       ]
     },
     "commands": [
       {
         "command": "cloudsmith-vsc.openSettings",
-        "title": "Open Cloudsmith Settings",
+        "title": "Open Cloudsmith settings",
         "category": "Cloudsmith",
-        "icon": "$(settings-gear)"
+        "icon": "$(gear)"
       },
       {
         "command": "cloudsmith-vsc.configureCredentials",
-        "title": "Set Up Cloudsmith Authentication",
+        "title": "Set up Cloudsmith authentication",
         "category": "Cloudsmith",
         "icon": "$(key)"
       },
@@ -72,58 +72,63 @@
         "command": "cloudsmith-vsc.connectCloudsmith",
         "title": "Connect to Cloudsmith",
         "category": "Cloudsmith",
-        "icon": "$(debug-disconnect)"
+        "icon": "$(plug)"
       },
       {
         "command": "cloudsmith-vsc.clearCredentials",
         "title": "Clear stored credentials",
-        "icon": "$(notebook-delete-cell)"
+        "icon": "$(sign-out)"
       },
       {
         "command": "cloudsmith-vsc.copySelected",
-        "title": "Copy to Clipboard"
+        "title": "Copy value",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.inspectPackage",
-        "title": "Inspect package"
+        "title": "Inspect package",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.inspectPackageGroup",
-        "title": "Inspect package group"
+        "title": "Inspect package group",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.openPackage",
-        "title": "View package in Cloudsmith"
+        "title": "View package in Cloudsmith",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.openPackageGroup",
-        "title": "View package group in Cloudsmith"
+        "title": "View package group in Cloudsmith",
+        "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.refreshView",
-        "title": "Refresh Packages",
+        "title": "Refresh",
         "icon": "$(refresh)"
       },
       {
         "command": "cloudsmith-vscode-extension.cloudsmithDocs",
         "category": "Cloudsmith",
-        "title": "Documentation: View official Cloudsmith docs."
+        "title": "View Cloudsmith documentation"
       },
       {
         "command": "cloudsmith-vsc.searchPackages",
-        "title": "Search Packages",
+        "title": "Search packages",
         "category": "Cloudsmith",
         "icon": "$(search)"
       },
       {
         "command": "cloudsmith-vsc.clearSearch",
-        "title": "Clear Search Results",
+        "title": "Clear search results",
         "category": "Cloudsmith",
         "icon": "$(clear-all)"
       },
       {
         "command": "cloudsmith-vsc.searchNextPage",
-        "title": "Load More Results",
+        "title": "Load more results",
         "category": "Cloudsmith"
       },
       {
@@ -133,7 +138,7 @@
       },
       {
         "command": "cloudsmith-vsc.guidedSearch",
-        "title": "Advanced Search",
+        "title": "Advanced search",
         "category": "Cloudsmith",
         "icon": "$(list-filter)"
       },
@@ -169,30 +174,30 @@
       },
       {
         "command": "cloudsmith-vsc.filterVulnerabilities",
-        "title": "Filter Vulnerabilities",
+        "title": "Filter vulnerabilities",
         "category": "Cloudsmith",
         "icon": "$(filter)"
       },
       {
         "command": "cloudsmith-vsc.explainQuarantine",
-        "title": "Explain Quarantine",
+        "title": "Explain quarantine",
         "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.scanDependencies",
-        "title": "Scan Dependencies",
+        "title": "Scan dependencies",
         "category": "Cloudsmith",
         "icon": "$(play)"
       },
       {
         "command": "cloudsmith-vsc.rescanDependencies",
-        "title": "Rescan Dependencies",
+        "title": "Rescan dependencies",
         "category": "Cloudsmith",
         "icon": "$(refresh)"
       },
       {
         "command": "cloudsmith-vsc.changeDependencyFolder",
-        "title": "Change Project Folder",
+        "title": "Change project folder",
         "category": "Cloudsmith",
         "icon": "$(folder-opened)"
       },
@@ -222,7 +227,7 @@
         "command": "cloudsmith-vsc.ssoLogin",
         "title": "Sign in with SSO",
         "category": "Cloudsmith",
-        "icon": "$(sign-in)"
+        "icon": "$(terminal)"
       },
       {
         "command": "cloudsmith-vsc.importCLICredentials",
@@ -232,48 +237,48 @@
       },
       {
         "command": "cloudsmith-vsc.setDefaultWorkspace",
-        "title": "Set Default Workspace",
+        "title": "Set default workspace",
         "category": "Cloudsmith",
         "icon": "$(home)"
       },
       {
         "command": "cloudsmith-vsc.previewUpstreamResolution",
-        "title": "Preview Upstream Resolution",
+        "title": "Preview upstream resolution",
         "category": "Cloudsmith",
         "icon": "$(cloud)"
       },
       {
         "command": "cloudsmith-vsc.inspectUpstreams",
-        "title": "View Upstreams",
+        "title": "View upstreams",
         "category": "Cloudsmith",
         "icon": "$(cloud)"
       },
       {
         "command": "cloudsmith-vsc.showPromotionStatus",
-        "title": "Show Promotion Status",
+        "title": "Show promotion status",
         "category": "Cloudsmith",
         "icon": "$(git-compare)"
       },
       {
         "command": "cloudsmith-vsc.promotePackage",
-        "title": "Promote Package",
+        "title": "Promote package",
         "category": "Cloudsmith",
         "icon": "$(arrow-right)"
       },
       {
         "command": "cloudsmith-vsc.copyEntitlementToken",
-        "title": "Copy Entitlement Token",
+        "title": "Copy entitlement token",
         "category": "Cloudsmith"
       },
       {
         "command": "cloudsmith-vsc.filterVulnerable",
-        "title": "Show Vulnerable Packages",
+        "title": "Show vulnerable packages",
         "category": "Cloudsmith",
         "icon": "$(shield)"
       },
       {
         "command": "cloudsmith-vsc.filterVulnerableWorkspace",
-        "title": "Show Vulnerable Packages (All Repos)",
+        "title": "Show vulnerable packages (all repositories)",
         "category": "Cloudsmith",
         "icon": "$(shield)"
       }
@@ -483,14 +488,29 @@
       ],
       "view/title": [
         {
-          "command": "cloudsmith-vsc.setDefaultWorkspace",
-          "group": "navigation",
-          "when": "view == cloudsmithView"
-        },
-        {
           "command": "cloudsmith-vsc.refreshView",
           "group": "navigation",
-          "when": "view == cloudsmithView"
+          "when": "view == cloudsmithView && cloudsmith.connected"
+        },
+        {
+          "command": "cloudsmith-vsc.setDefaultWorkspace",
+          "group": "navigation",
+          "when": "view == cloudsmithView && cloudsmith.connected && cloudsmith.hasMultipleWorkspaces && !cloudsmith.hasDefaultWorkspace"
+        },
+        {
+          "command": "cloudsmith-vsc.connectCloudsmith",
+          "group": "navigation",
+          "when": "view == cloudsmithView && !cloudsmith.connected"
+        },
+        {
+          "command": "cloudsmith-vsc.configureCredentials",
+          "group": "navigation",
+          "when": "view == cloudsmithView && !cloudsmith.connected"
+        },
+        {
+          "command": "cloudsmith-vsc.ssoLogin",
+          "group": "navigation",
+          "when": "view == cloudsmithView && !cloudsmith.connected"
         },
         {
           "command": "cloudsmith-vsc.openSettings",
@@ -498,24 +518,9 @@
           "when": "view == cloudsmithView"
         },
         {
-          "command": "cloudsmith-vsc.configureCredentials",
-          "group": "navigation",
-          "when": "view == cloudsmithView"
-        },
-        {
           "command": "cloudsmith-vsc.clearCredentials",
           "group": "navigation",
-          "when": "view == cloudsmithView"
-        },
-        {
-          "command": "cloudsmith-vsc.connectCloudsmith",
-          "group": "navigation",
-          "when": "view == cloudsmithView"
-        },
-        {
-          "command": "cloudsmith-vsc.ssoLogin",
-          "group": "navigation",
-          "when": "view == cloudsmithView"
+          "when": "view == cloudsmithView && cloudsmith.connected"
         },
         {
           "command": "cloudsmith-vsc.searchPackages",
@@ -565,24 +570,24 @@
         "cloudsmith-vsc.useLegacyWebApp": {
           "type": "boolean",
           "default": false,
-          "description": "If enabled, the extension will use the legacy webapp 'cloudsmith.io' for platform links."
+          "description": "Open package links in the legacy web app, cloudsmith.io."
         },
         "cloudsmith-vsc.inspectOutput": {
           "type": "boolean",
           "default": false,
-          "description": "If enabled, inspect will create a new text document with the results. By default it sends to Output tab."
+          "description": "Open inspect results in a text document. By default, results are sent to the Output panel."
         },
         "cloudsmith-vsc.showMaxPackages": {
           "type": "integer",
           "default": 30,
           "maximum": 30,
           "minimum": 1,
-          "description": "Set the maximum number of packages to be returned per repository. Current maximum is 30. "
+          "description": "Maximum number of packages to return per repository. Limit: 30."
         },
         "cloudsmith-vsc.groupByPackageGroups": {
           "type": "boolean",
           "default": false,
-          "description": "If enabled, packages are displayed via Package Group."
+          "description": "Group packages by package group."
         },
         "cloudsmith-vsc.showPermissibilityIndicators": {
           "type": "boolean",
@@ -621,7 +626,7 @@
         "cloudsmith-vsc.dependencyScanRepo": {
           "type": "string",
           "default": "",
-          "description": "Cloudsmith repository slug to use for dependency health scanning. Leave empty for workspace-wide search."
+          "description": "Cloudsmith repository slug to use for dependency health scanning. Leave empty to search the full workspace."
         },
         "cloudsmith-vsc.maxDependenciesToScan": {
           "type": "integer",
@@ -637,7 +642,7 @@
         "cloudsmith-vsc.showDockerDigestCommand": {
           "type": "boolean",
           "default": false,
-          "description": "Show an additional 'Pull by digest' option for Docker install commands. Digest-based pulls pin to an exact image for reproducibility."
+          "description": "Show an additional 'Pull by digest' option for Docker install commands. Digest-based pulls pin an exact image for reproducibility."
         },
         "cloudsmith-vsc.experimentalSSOBrowser": {
           "type": "boolean",
@@ -647,12 +652,12 @@
         "cloudsmith-vsc.resolveTransitiveDependencies": {
           "type": "boolean",
           "default": false,
-          "description": "Use package manager CLI to resolve transitive (indirect) dependencies. Requires the package manager to be installed and dependencies to be installed in the project."
+          "description": "Use the package manager CLI to resolve transitive dependencies. Requires the package manager and installed project dependencies."
         },
         "cloudsmith-vsc.showLegacyPolicies": {
           "type": "boolean",
           "default": false,
-          "description": "Show legacy classic policy violation fields (deny, license, vulnerability). Disable if your workspace only uses Enterprise Policy Manager."
+          "description": "Show legacy classic policy violation fields (deny, license, vulnerability). Disable if the workspace only uses Enterprise Policy Manager."
         },
         "cloudsmith-vsc.restrictiveLicenses": {
           "type": "array",
@@ -666,7 +671,7 @@
           "type": "array",
           "items": { "type": "string" },
           "default": [],
-          "description": "Optional ordered list of repository slugs for your promotion pipeline (e.g., ['dev', 'staging', 'production']). When set, promotion suggests the next repo in the pipeline. When empty, all workspace repos are shown."
+          "description": "Optional ordered list of repository slugs for the promotion pipeline (for example, ['dev', 'staging', 'production']). When set, promotion suggests the next repository in the pipeline. When empty, all workspace repositories are shown."
         },
         "cloudsmith-vsc.promotionTags": {
           "type": "object",
@@ -684,7 +689,7 @@
         "cloudsmith-vsc.showRepoMetrics": {
           "type": "boolean",
           "default": false,
-          "description": "Show storage and bandwidth usage indicators on repositories."
+          "description": "Show storage and bandwidth usage for repositories."
         }
       }
     }

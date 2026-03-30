@@ -2,12 +2,11 @@
 
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
+const { UpstreamChecker } = require("../util/upstreamChecker");
 const UpstreamIndicatorNode = require("./upstreamIndicatorNode");
 const { activeFilters } = require("../util/filterState");
 const InfoNode = require("./infoNode");
 const { EntitlementSummaryNode } = require("./entitlementNode");
-
-const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 class RepositoryNode {
   constructor(repo, workspace, context) {
@@ -17,6 +16,7 @@ class RepositoryNode {
     this.name = repo.name;
     this.workspace = workspace;
     this.storageRegion = repo.storage_region || repo.region || null;
+    this.upstreamChecker = new UpstreamChecker(context);
   }
 
   /** Get the active filter from the module-level singleton Map. */
@@ -89,7 +89,7 @@ class RepositoryNode {
     const repo = this.name;
     const activeFilter = this._getActiveFilter();
     const filterLabel = activeFilter
-      ? `filtered: ${activeFilter.label || activeFilter}`
+      ? `Filter: ${activeFilter.label || activeFilter}`
       : undefined;
 
     return {
@@ -160,51 +160,13 @@ class RepositoryNode {
   }
 
   /**
-   * Fetch upstream configs for this repo by inferring formats from loaded packages.
-   * Results are cached in globalState for 10 minutes.
+   * Fetch upstream configs for this repo across every supported format.
+   * Results are cached by UpstreamChecker for 10 minutes.
    *
-   * @param   packageNodes  Array of PackageNode instances to infer formats from.
    * @returns Array of upstream config objects (may be empty).
    */
-  async getUpstreams(packageNodes) {
-    const workspace = this.workspace;
-    const repo = this.slug;
-    const cacheKey = `cloudsmith-upstreams:${workspace}:${repo}`;
-
-    // Check cache
-    const cached = this.context.globalState.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < UPSTREAM_CACHE_TTL_MS) {
-      return cached.upstreams;
-    }
-
-    // Infer unique formats from loaded packages
-    const formats = new Set();
-    for (const node of packageNodes) {
-      const format = node.format || (node.pkgDetails && node.pkgDetails.format);
-      if (format) {
-        formats.add(format);
-      }
-    }
-
-    if (formats.size === 0) {
-      return [];
-    }
-
-    // Fetch upstream configs for each format in parallel
-    const cloudsmithAPI = new CloudsmithAPI(this.context);
-    const promises = Array.from(formats).map(format =>
-      cloudsmithAPI.getUpstreams(workspace, repo, format)
-    );
-    const results = await Promise.all(promises);
-    const allUpstreams = results.flat();
-
-    // Cache the results
-    this.context.globalState.update(cacheKey, {
-      timestamp: Date.now(),
-      upstreams: allUpstreams,
-    });
-
-    return allUpstreams;
+  async getUpstreams() {
+    return this.upstreamChecker.getRepositoryUpstreams(this.workspace, this.slug);
   }
 
   /**
@@ -229,9 +191,9 @@ class RepositoryNode {
 
     const children = [];
 
-    // Fetch upstreams lazily (only when repo is expanded) using loaded packages
+    // Fetch upstreams lazily only when the repository is expanded.
     if (packages.length > 0) {
-      const upstreams = await this.getUpstreams(packages);
+      const upstreams = await this.getUpstreams();
       if (upstreams.length > 0) {
         children.push(new UpstreamIndicatorNode(
           upstreams,
@@ -250,7 +212,7 @@ class RepositoryNode {
 
       children.push({
         getTreeItem: () => ({
-          label: "Storage Region",
+          label: "Storage region",
           description: regionLabel,
           collapsibleState: vscode.TreeItemCollapsibleState.None,
           contextValue: "repoDetail",
@@ -269,9 +231,9 @@ class RepositoryNode {
         }
       } catch (e) {
         children.push(new InfoNode(
-          "Entitlements: failed to load",
+          "Could not load entitlement tokens",
           "",
-          e.message || "An error occurred loading entitlement tokens.",
+          e.message || "Could not load entitlement tokens.",
           "warning"
         ));
       }
@@ -283,7 +245,7 @@ class RepositoryNode {
       if (this._lastApiFailed) {
         placeholderNode = new InfoNode(
           "Failed to load packages",
-          "Check your connection and try refreshing",
+          "Check the connection and refresh.",
           "The Cloudsmith API returned an error when loading packages for this repository.",
           "warning"
         );
@@ -292,16 +254,16 @@ class RepositoryNode {
         placeholderNode = new InfoNode(
           "No packages match filter",
           filterLabel,
-          "Click to change or clear the filter",
+          "Select to change or clear the filter.",
           "filter",
           undefined,
-          { command: "cloudsmith-vsc.changeFilter", title: "Change Filter", arguments: [this] }
+          { command: "cloudsmith-vsc.changeFilter", title: "Change filter", arguments: [this] }
         );
       } else {
         placeholderNode = new InfoNode(
-          "Repository is empty",
+          "No packages",
           "",
-          "This repository does not contain any packages.",
+          "Create or push a package to get started.",
           "info"
         );
       }

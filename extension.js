@@ -157,7 +157,7 @@ async function pickInstallCommandVariant(result) {
   ];
 
   const pick = await vscode.window.showQuickPick(picks, {
-    placeHolder: "Choose install command variant",
+    placeHolder: "Select an install command",
   });
   return pick ? pick._cmd : null;
 }
@@ -169,7 +169,7 @@ async function pickInstallCommandVariant(result) {
 async function pickRecentPackage() {
   const recent = recentPackages.getAll();
   if (recent.length === 0) {
-    vscode.window.showInformationMessage("No recent packages. Use this command from the package context menu.");
+    vscode.window.showInformationMessage("No recent packages. Run this command from a package context menu.");
     return null;
   }
   const selected = await vscode.window.showQuickPick(
@@ -192,7 +192,7 @@ const FILTER_PRESETS = [
       applyBuilder: () => "",
     },
     {
-      label: "Available packages only",
+      label: "Available packages",
       applyBuilder: (builder) => builder
         .raw("NOT status:quarantined")
         .raw("deny_policy_violated:false"),
@@ -223,7 +223,7 @@ const FILTER_PRESETS = [
       applyBuilder: (builder) => builder.raw(LicenseClassifier.buildRestrictiveQuery()),
     },
     {
-      label: "Custom query...",
+      label: "Custom query",
       applyBuilder: null,
     },
 ];
@@ -248,23 +248,47 @@ function getDefaultWorkspace() {
   return config.get("defaultWorkspace") || "";
 }
 
+async function setConnectedContext(isConnected) {
+  await vscode.commands.executeCommand("setContext", "cloudsmith.connected", Boolean(isConnected));
+}
+
+async function setHasMultipleWorkspacesContext(hasMultipleWorkspaces) {
+  await vscode.commands.executeCommand(
+    "setContext",
+    "cloudsmith.hasMultipleWorkspaces",
+    Boolean(hasMultipleWorkspaces)
+  );
+}
+
+async function updateDefaultWorkspaceContext() {
+  await vscode.commands.executeCommand(
+    "setContext",
+    "cloudsmith.hasDefaultWorkspace",
+    Boolean(getDefaultWorkspace())
+  );
+}
+
 async function getWorkspaces(context) {
     const cache = context.globalState.get('CloudsmithCache');
     if (cache && cache.name === 'Workspaces' && cache.workspaces) {
         // Check TTL — treat as stale if older than 30 minutes
         if (cache.lastSync && (Date.now() - cache.lastSync) < WORKSPACE_CACHE_TTL_MS) {
+            await setHasMultipleWorkspacesContext(cache.workspaces.length > 1);
             return cache.workspaces;
         }
     }
     const cloudsmithAPI = new CloudsmithAPI(context);
     const result = await cloudsmithAPI.get("namespaces/?sort=slug");
     if (typeof result === 'string') {
+        await setHasMultipleWorkspacesContext(false);
         vscode.window.showErrorMessage("Failed to load workspaces: " + result);
         return null;
     }
     if (!result || result.length === 0) {
+        await setHasMultipleWorkspacesContext(false);
         return [];
     }
+    await setHasMultipleWorkspacesContext(result.length > 1);
     return result;
 }
 
@@ -293,7 +317,10 @@ function buildPresetQuery(preset, customQuery) {
  */
 async function activate(context) {
 
-  context.secrets.store("cloudsmith-vsc.isConnected", "false");
+  await context.secrets.store("cloudsmith-vsc.isConnected", "false");
+  await setConnectedContext(false);
+  await setHasMultipleWorkspacesContext(false);
+  await updateDefaultWorkspaceContext();
 
 
   // Define main view provider which populates with data
@@ -320,8 +347,9 @@ async function activate(context) {
 
   // Listen for configuration changes to refresh tree when defaultWorkspace changes
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration(e => {
+    vscode.workspace.onDidChangeConfiguration(async e => {
       if (e.affectsConfiguration("cloudsmith-vsc.defaultWorkspace")) {
+        await updateDefaultWorkspaceContext();
         const newDefault = getDefaultWorkspace();
         treeView.title = newDefault ? "Repositories" : "Workspaces";
         treeView.description = newDefault || "";
@@ -350,6 +378,26 @@ async function activate(context) {
     showCollapseAll: true,
   });
 
+  context.subscriptions.push(
+    context.secrets.onDidChange(async (e) => {
+      if (e.key !== "cloudsmith-vsc.authToken") {
+        return;
+      }
+
+      const apiKey = await context.secrets.get("cloudsmith-vsc.authToken");
+      if (apiKey) {
+        return;
+      }
+
+      await context.secrets.store("cloudsmith-vsc.isConnected", "false");
+      await setConnectedContext(false);
+      await setHasMultipleWorkspacesContext(false);
+      cloudsmithProvider.refresh({ suppressMissingCredentialsWarning: true });
+      searchProvider.refresh();
+      dependencyHealthProvider.refresh();
+    })
+  );
+
   // Create vulnerability WebView provider
   const vulnerabilityProvider = new VulnerabilityProvider(context);
   context.subscriptions.push({ dispose: () => vulnerabilityProvider.dispose() });
@@ -369,6 +417,25 @@ async function activate(context) {
   // Create promotion provider
   const promotionProvider = new PromotionProvider(context);
 
+  const initializeConnectionContext = async () => {
+    const credentialManager = new CredentialManager(context);
+    const apiKey = await credentialManager.getApiKey();
+    if (!apiKey) {
+      return;
+    }
+
+    try {
+      const { ConnectionManager } = require("./util/connectionManager");
+      const connectionManager = new ConnectionManager(context);
+      await connectionManager.checkConnectivity(apiKey);
+    } catch {
+      await context.secrets.store("cloudsmith-vsc.isConnected", "false");
+      await setConnectedContext(false);
+    }
+  };
+
+  void initializeConnectionContext();
+
   // Auto-scan dependencies on open if configured
   const autoScanConfig = vscode.workspace.getConfiguration("cloudsmith-vsc");
   if (autoScanConfig.get("autoScanOnOpen")) {
@@ -382,9 +449,9 @@ async function activate(context) {
     } else {
       vscode.window.showInformationMessage(
         "Auto-scan is enabled but no Cloudsmith workspace is configured.",
-        "Configure Now"
+        "Configure"
       ).then((selection) => {
-        if (selection === "Configure Now") {
+        if (selection === "Configure") {
           vscode.commands.executeCommand("workbench.action.openSettings", "cloudsmith-vsc.dependencyScanWorkspace");
         }
       });
@@ -410,12 +477,13 @@ async function activate(context) {
       if (Array.isArray(workspaces) && workspaces.length === 1) {
         const ws = workspaces[0];
         const choice = await vscode.window.showInformationMessage(
-          `You have access to one workspace: ${ws.name}. Set as default?`,
-          "Set Default", "Dismiss"
+          `One workspace available: ${ws.name}. Set as default?`,
+          "Set as default", "Dismiss"
         );
-        if (choice === "Set Default") {
+        if (choice === "Set as default") {
           const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
           await config.update("defaultWorkspace", ws.slug, vscode.ConfigurationTarget.Global);
+          await updateDefaultWorkspaceContext();
           treeView.title = "Repositories";
           treeView.description = ws.slug;
           cloudsmithProvider.refresh();
@@ -434,10 +502,10 @@ async function activate(context) {
       const ssoManager = new SSOAuthManager(context);
       if (ssoManager.hasCLICredentials()) {
         const choice = await vscode.window.showInformationMessage(
-          "Cloudsmith CLI credentials detected. Use them?",
-          "Use CLI Credentials", "Dismiss"
+          "Cloudsmith CLI credentials detected. Import them?",
+          "Import", "Dismiss"
         );
-        if (choice === "Use CLI Credentials") {
+        if (choice === "Import") {
           const success = await ssoManager.importFromCLI();
           if (success) {
             await postAuthSuccess();
@@ -459,14 +527,14 @@ async function activate(context) {
     // Register command to set credentials — QuickPick with four auth methods
     vscode.commands.registerCommand("cloudsmith-vsc.configureCredentials", async () => {
       const authOptions = [
-        { label: "$(key) Enter API Key", description: "Paste a personal API key", _method: "apikey" },
-        { label: "$(server) Enter Service Account Token", description: "Paste a service account token", _method: "apikey" },
-        { label: "$(folder-opened) Import from Cloudsmith CLI", description: "Read credentials from CLI config (~/.cloudsmith/config.ini)", _method: "import" },
-        { label: "$(terminal) Sign in with SSO (opens terminal)", description: "Run 'cloudsmith auth' in an integrated terminal", _method: "sso-terminal" },
+        { label: "$(key) Enter API key", description: "Paste a personal API key", _method: "apikey" },
+        { label: "$(server) Enter service account API key", description: "Paste a service account API key", _method: "apikey" },
+        { label: "$(folder-opened) Import from Cloudsmith CLI", description: "Import credentials from CLI config (~/.cloudsmith/config.ini)", _method: "import" },
+        { label: "$(terminal) Sign in with SSO", description: "Run 'cloudsmith auth' in an integrated terminal", _method: "sso-terminal" },
       ];
 
       const selected = await vscode.window.showQuickPick(authOptions, {
-        placeHolder: "How would you like to authenticate?",
+        placeHolder: "Select an authentication method",
       });
       if (!selected) {
         return;
@@ -502,7 +570,7 @@ async function activate(context) {
       }
 
       const items = [
-        { label: "$(close) Clear (show all workspaces)", description: "", _clear: true },
+        { label: "$(close) Clear default workspace", description: "Show all workspaces", _clear: true },
       ];
       for (const ws of workspaces) {
         items.push({ label: ws.name, description: ws.slug });
@@ -518,10 +586,12 @@ async function activate(context) {
       const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
       if (selected._clear) {
         await config.update("defaultWorkspace", "", vscode.ConfigurationTarget.Global);
+        await updateDefaultWorkspaceContext();
         treeView.title = "Workspaces";
         treeView.description = "";
       } else {
         await config.update("defaultWorkspace", selected.description, vscode.ConfigurationTarget.Global);
+        await updateDefaultWorkspaceContext();
         treeView.title = "Repositories";
         treeView.description = selected.description;
       }
@@ -547,14 +617,14 @@ async function activate(context) {
       } else if (typeof item === "string") {
         value = item;
       } else {
-        vscode.window.showWarningMessage("Please use this command from the package context menu.");
+        vscode.window.showWarningMessage("Run this command from a package context menu.");
         return;
       }
       if (value != null) {
         await vscode.env.clipboard.writeText(String(value));
-        vscode.window.showInformationMessage("Copied to clipboard");
+        vscode.window.showInformationMessage("Value copied.");
       } else {
-        vscode.window.showWarningMessage("Please use this command from the package context menu.");
+        vscode.window.showWarningMessage("Run this command from a package context menu.");
       }
     }),
 
@@ -603,10 +673,10 @@ async function activate(context) {
           }
 
           vscode.window.showInformationMessage(
-            `Inspecting package ${name} in repository ${repo}`
+            `Inspecting package ${name} in repository ${repo}.`
           );
         } else {
-          vscode.window.showWarningMessage("Please use this command from the package context menu.");
+          vscode.window.showWarningMessage("Run this command from a package context menu.");
         }
       }
     ),
@@ -616,7 +686,7 @@ async function activate(context) {
       "cloudsmith-vsc.inspectPackageGroup",
       async (item) => {
         if (!item) {
-          vscode.window.showWarningMessage("Please use this command from the package context menu.");
+          vscode.window.showWarningMessage("Run this command from a package context menu.");
           return;
         }
         const cloudsmithAPI = new CloudsmithAPI(context);
@@ -652,10 +722,10 @@ async function activate(context) {
           }
 
           vscode.window.showInformationMessage(
-            `Inspecting package group ${name}`
+            `Inspecting package group ${name}.`
           );
         } else {
-          vscode.window.showWarningMessage("Please use this command from the package context menu.");
+          vscode.window.showWarningMessage("Run this command from a package context menu.");
         }
       }
     ),
@@ -690,14 +760,14 @@ async function activate(context) {
           vscode.env.openExternal(vscode.Uri.parse(url));
         }
       } else {
-        vscode.window.showWarningMessage("Please use this command from the package context menu.");
+        vscode.window.showWarningMessage("Run this command from a package context menu.");
       }
     }),
 
      // Register the open package group command
     vscode.commands.registerCommand("cloudsmith-vsc.openPackageGroup", async (item) => {
       if (!item) {
-        vscode.window.showWarningMessage("Please use this command from the package context menu.");
+        vscode.window.showWarningMessage("Run this command from a package context menu.");
         return;
       }
       const workspace = typeof item === "string" ? item : item.workspace;
@@ -710,7 +780,7 @@ async function activate(context) {
         const url = `https://app.cloudsmith.com/${workspace}/${repo}?page=1&query=name:${encodedName}&sort=name`;
         vscode.env.openExternal(vscode.Uri.parse(url));
       } else {
-        vscode.window.showWarningMessage("Please use this command from the package context menu.");
+        vscode.window.showWarningMessage("Run this command from a package context menu.");
       }
     }),
 
@@ -760,7 +830,7 @@ async function activate(context) {
       const recent = recentSearches.getAll();
       if (recent.length > 0) {
         const items = [
-          { label: "Recent Searches", kind: vscode.QuickPickItemKind.Separator },
+          { label: "Recent searches", kind: vscode.QuickPickItemKind.Separator },
         ];
         for (const r of recent) {
           items.push({
@@ -769,7 +839,7 @@ async function activate(context) {
             _recent: r,
           });
         }
-        items.push({ label: "New Search", kind: vscode.QuickPickItemKind.Separator });
+        items.push({ label: "New search", kind: vscode.QuickPickItemKind.Separator });
         items.push({ label: `$(search) New search in ${workspaceSlug}`, _new: true });
 
         const selected = await vscode.window.showQuickPick(items, {
@@ -819,7 +889,7 @@ async function activate(context) {
         workspace = getDefaultWorkspace();
       }
       if (!workspace) {
-        vscode.window.showWarningMessage("Could not determine workspace. Set a default workspace in settings.");
+        vscode.window.showWarningMessage("Could not determine the workspace. Set a default workspace in settings.");
         return;
       }
 
@@ -872,7 +942,7 @@ async function activate(context) {
       const recent = recentSearches.getAll();
       if (recent.length > 0) {
         const recentItems = [
-          { label: "Recent Searches", kind: vscode.QuickPickItemKind.Separator },
+          { label: "Recent searches", kind: vscode.QuickPickItemKind.Separator },
         ];
         for (const r of recent) {
           recentItems.push({
@@ -881,7 +951,7 @@ async function activate(context) {
             _recent: r,
           });
         }
-        recentItems.push({ label: "Continue Guided Search", kind: vscode.QuickPickItemKind.Separator });
+        recentItems.push({ label: "Continue guided search", kind: vscode.QuickPickItemKind.Separator });
         recentItems.push({ label: `$(search) Continue guided search in ${workspaceSlug}`, _new: true });
 
         const selectedRecent = await vscode.window.showQuickPick(recentItems, {
@@ -899,17 +969,17 @@ async function activate(context) {
       // Step 2: Select scope
       const scopeItems = [
         { label: "All repositories", description: "Search across the entire workspace" },
-        { label: "Select specific repositories...", description: "Choose one or more repos" },
+        { label: "Select specific repositories", description: "Choose one or more repositories" },
       ];
       const selectedScope = await vscode.window.showQuickPick(scopeItems, {
-        placeHolder: "Step 2: Select search scope",
+        placeHolder: "Step 2: Select a search scope",
       });
       if (!selectedScope) {
         return;
       }
 
       let selectedRepos = null;
-      if (selectedScope.label === "Select specific repositories...") {
+      if (selectedScope.label === "Select specific repositories") {
         const cloudsmithAPI = new CloudsmithAPI(context);
         const repos = await cloudsmithAPI.get(`repos/${workspaceSlug}/?sort=name`);
         if (typeof repos === 'string' || !repos || repos.length === 0) {
@@ -1109,7 +1179,7 @@ async function activate(context) {
       let crossRepo = false;
 
       if (!result.success) {
-        vscode.window.showErrorMessage(`Could not search for safe versions: ${formatApiError(result.error)}`);
+        vscode.window.showErrorMessage(`Could not find safe versions. ${formatApiError(result.error)}`);
         return;
       }
 
@@ -1119,13 +1189,13 @@ async function activate(context) {
         crossRepo = true;
 
         if (!result.success) {
-          vscode.window.showErrorMessage(`Could not search for safe versions: ${formatApiError(result.error)}`);
+          vscode.window.showErrorMessage(`Could not find safe versions. ${formatApiError(result.error)}`);
           return;
         }
       }
 
       if (result.versions.length === 0) {
-        vscode.window.showInformationMessage(`No safe versions found for "${name}" in ${crossRepo ? "workspace" : repo}.`);
+        vscode.window.showInformationMessage(`No safe versions found for "${name}" in ${crossRepo ? "the workspace" : repo}.`);
         return;
       }
 
@@ -1135,7 +1205,7 @@ async function activate(context) {
         // Build richer detail line
         let detail = "No policy violations";
         if (pkg.policy_violated) {
-          detail = "Has policy violations";
+          detail = "Policy violations found";
         }
         if (pkg.num_vulnerabilities > 0) {
           detail = `${pkg.num_vulnerabilities} vulnerabilit${pkg.num_vulnerabilities === 1 ? "y" : "ies"} (${pkg.max_severity || "Unknown"})`;
@@ -1149,7 +1219,7 @@ async function activate(context) {
       });
 
       const title = crossRepo
-        ? `Safe versions of "${name}" (${format}) across workspace`
+        ? `Safe versions of "${name}" (${format}) in the workspace`
         : `Safe versions of "${name}" (${format}) in ${repo}`;
 
       const selected = await vscode.window.showQuickPick(quickPickItems, {
@@ -1162,13 +1232,13 @@ async function activate(context) {
 
         // Show follow-up actions instead of just copying install command
         const action = await vscode.window.showQuickPick([
-          { label: "$(clippy) Copy Install Command", id: "install" },
-          { label: "$(shield) Show Vulnerabilities", id: "vulns" },
+          { label: "$(clippy) Copy install command", id: "install" },
+          { label: "$(shield) Show vulnerabilities", id: "vulns" },
           { label: "$(globe) View in Cloudsmith", id: "open" },
-          { label: "$(json) Inspect Package", id: "inspect" },
-          { label: "$(copy) Copy Version to Clipboard", id: "copy" },
+          { label: "$(json) Inspect package", id: "inspect" },
+          { label: "$(copy) Copy version", id: "copy" },
         ], {
-          placeHolder: `${name} ${pkg.version} \u2014 what would you like to do?`,
+          placeHolder: `Select an action for ${name} ${pkg.version}`,
         });
 
         if (!action) return;
@@ -1185,9 +1255,10 @@ async function activate(context) {
           const chosenCommand = await pickInstallCommandVariant(installResult);
           if (!chosenCommand) return;
           await vscode.env.clipboard.writeText(InstallCommandBuilder.toClipboardCommand(chosenCommand));
-          let msg = `Install command copied for ${name} ${pkg.version}`;
-          if (crossRepo) msg += ` (from ${pkgRepo})`;
-          if (installResult.note) msg += ` \u2014 Note: ${installResult.note}`;
+          let msg = crossRepo
+            ? `Install command copied for ${name} ${pkg.version} from ${pkgRepo}.`
+            : `Install command copied for ${name} ${pkg.version}.`;
+          if (installResult.note) msg += ` Note: ${installResult.note}`;
           vscode.window.showInformationMessage(msg);
         } else if (action.id === "vulns") {
           const vulnItem = {
@@ -1204,7 +1275,7 @@ async function activate(context) {
           if (pkg.self_webapp_url) {
             vscode.env.openExternal(vscode.Uri.parse(pkg.self_webapp_url));
           } else {
-            vscode.window.showInformationMessage("No web URL available for this package.");
+            vscode.window.showInformationMessage("Could not open this package in Cloudsmith.");
           }
         } else if (action.id === "inspect") {
           const inspectItem = {
@@ -1218,7 +1289,7 @@ async function activate(context) {
           vscode.commands.executeCommand("cloudsmith-vsc.inspectPackage", inspectItem);
         } else if (action.id === "copy") {
           await vscode.env.clipboard.writeText(pkg.version);
-          vscode.window.showInformationMessage(`Copied version: ${pkg.version}`);
+          vscode.window.showInformationMessage(`Version copied: ${pkg.version}.`);
         }
       }
     }),
@@ -1261,7 +1332,7 @@ async function activate(context) {
       const filterType = await vscode.window.showQuickPick([
         { label: "$(filter) Filter by severity", value: "severity" },
         { label: "$(dashboard) Filter by CVSS threshold", value: "cvss" },
-        { label: "$(clear-all) Clear all filters", value: "clear" },
+        { label: "$(clear-all) Clear filters", value: "clear" },
       ], {
         placeHolder: "Filter vulnerabilities",
       });
@@ -1291,7 +1362,7 @@ async function activate(context) {
           { label: "CVSS >= 9.0 (Critical)", value: 9.0 },
           { label: "CVSS >= 7.0 (High+)", value: 7.0 },
           { label: "CVSS >= 4.0 (Medium+)", value: 4.0 },
-          { label: "Custom threshold...", value: "custom" },
+          { label: "Custom threshold", value: "custom" },
         ], {
           placeHolder: "Select minimum CVSS score",
         });
@@ -1303,12 +1374,12 @@ async function activate(context) {
         let cvssValue = thresholdPick.value;
         if (cvssValue === "custom") {
           const input = await vscode.window.showInputBox({
-            prompt: "Enter minimum CVSS score (0.0 - 10.0)",
+            prompt: "Enter a minimum CVSS score (0.0 - 10.0)",
             placeHolder: "7.0",
             validateInput: (value) => {
               const parsed = Number.parseFloat(value);
               return Number.isNaN(parsed) || parsed < 0 || parsed > 10
-                ? "Enter a number between 0.0 and 10.0"
+                ? "Enter a number between 0.0 and 10.0."
                 : null;
             },
           });
@@ -1363,7 +1434,7 @@ async function activate(context) {
 
         const wsItems = workspaces.map(ws => ({ label: ws.name, description: ws.slug }));
         const selectedWs = await vscode.window.showQuickPick(wsItems, {
-          placeHolder: "Select a Cloudsmith workspace to scan against",
+          placeHolder: "Select a Cloudsmith workspace for the scan",
         });
         if (!selectedWs) {
           return;
@@ -1373,10 +1444,10 @@ async function activate(context) {
         // Optionally select a repo
         const scopeItems = [
           { label: "All repositories", description: "Search across the entire workspace", _all: true },
-          { label: "Select a specific repository...", description: "Scope to one repo" },
+          { label: "Select a specific repository", description: "Search one repository" },
         ];
         const selectedScope = await vscode.window.showQuickPick(scopeItems, {
-          placeHolder: "Select scope",
+          placeHolder: "Select a scan scope",
         });
         if (!selectedScope) {
           return;
@@ -1430,7 +1501,7 @@ async function activate(context) {
         );
       } else {
         vscode.window.showInformationMessage(
-          `Project folder set to: ${selected[0].fsPath}. Run 'Scan Dependencies' to check against Cloudsmith.`
+          `Project folder set to ${selected[0].fsPath}. Run "Scan dependencies" to check against Cloudsmith.`
         );
         dependencyHealthProvider.refresh();
       }
@@ -1460,7 +1531,9 @@ async function activate(context) {
       await vscode.env.clipboard.writeText(InstallCommandBuilder.toClipboardCommand(chosenCommand));
       let msg = `Install command copied for ${info.name}`;
       if (result.note) {
-        msg += ` \u2014 Note: ${result.note}`;
+        msg += `. Note: ${result.note}`;
+      } else {
+        msg += ".";
       }
       vscode.window.showInformationMessage(msg);
     }),
@@ -1521,12 +1594,12 @@ async function activate(context) {
       try {
         parsedUrl = new URL(licenseUrl);
       } catch (err) { // eslint-disable-line no-unused-vars
-        vscode.window.showWarningMessage("License URL is not valid.");
+        vscode.window.showWarningMessage("Invalid license URL.");
         return;
       }
 
       if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-        vscode.window.showWarningMessage("Cannot open license URL: unsupported protocol");
+        vscode.window.showWarningMessage("Could not open the license URL. Unsupported protocol.");
         return;
       }
 
@@ -1538,7 +1611,7 @@ async function activate(context) {
     vscode.commands.registerCommand("cloudsmith-vsc.ssoLogin", async () => {
       const workspaceSlug = await vscode.window.showInputBox({
         placeHolder: "my-org",
-        prompt: "Enter the Cloudsmith workspace slug for SSO authentication",
+        prompt: "Enter the Cloudsmith workspace slug for SSO",
         ignoreFocusOut: true,
       });
       if (!workspaceSlug) {
@@ -1637,7 +1710,7 @@ async function activate(context) {
       } else {
         pkgName = await vscode.window.showInputBox({
           placeHolder: "flask",
-          prompt: "Enter the package name to check",
+          prompt: "Enter the package name",
         });
         if (!pkgName) return;
 
@@ -1648,7 +1721,7 @@ async function activate(context) {
         ];
         const formatPick = await vscode.window.showQuickPick(
           FORMAT_OPTIONS.map(f => ({ label: f })),
-          { placeHolder: "Select package format" }
+          { placeHolder: "Select a package format" }
         );
         if (!formatPick) return;
         pkgFormat = formatPick.label;
@@ -1667,7 +1740,7 @@ async function activate(context) {
         }
         const wsPick = await vscode.window.showQuickPick(
           workspaces.map(ws => ({ label: ws.name, description: ws.slug })),
-          { placeHolder: "Select workspace" }
+          { placeHolder: "Select a workspace" }
         );
         if (!wsPick) return;
         wsSlug = wsPick.description;
@@ -1717,7 +1790,7 @@ async function activate(context) {
         );
 
         if (status.length === 0) {
-          vscode.window.showInformationMessage("No pipeline repos found.");
+          vscode.window.showInformationMessage("No pipeline repositories found.");
           return;
         }
 
@@ -1768,7 +1841,7 @@ async function activate(context) {
       // Check is_copyable upfront to avoid a wasted API round-trip
       if (item.is_copyable === false) {
         vscode.window.showWarningMessage(
-          "This package cannot be promoted. You may not have write access to the target repository."
+          "This package cannot be promoted. Write access to the target repository may be required."
         );
         return;
       }
@@ -1846,7 +1919,7 @@ async function activate(context) {
             });
           }
         }
-        finalItems.push({ label: "All Repositories", kind: vscode.QuickPickItemKind.Separator });
+        finalItems.push({ label: "All repositories", kind: vscode.QuickPickItemKind.Separator });
       }
       for (const ti of targetItems) {
         // Skip duplicates already in recent section
@@ -1856,7 +1929,7 @@ async function activate(context) {
       }
 
       const targetPick = await vscode.window.showQuickPick(finalItems, {
-        placeHolder: `Promote ${info.name} ${info.version} to...`,
+        placeHolder: `Select a target repository for ${info.name} ${info.version}`,
       });
       if (!targetPick || !targetPick._slug) return;
 
@@ -1875,13 +1948,13 @@ async function activate(context) {
         await context.globalState.update(historyKey, updatedHistory);
 
         vscode.window.showInformationMessage(
-          `Promoted ${info.name} from ${info.repo} to ${targetPick._slug}.`
+          `Package "${info.name}" promoted from ${info.repo} to ${targetPick._slug}.`
         );
         cloudsmithProvider.refresh();
       } else {
         const reason = (result && result.error) ? formatApiError(result.error) : "Unknown error";
         vscode.window.showErrorMessage(
-          `Failed to promote ${info.name} to ${targetPick._slug}: ${reason}`
+          `Could not promote ${info.name} to ${targetPick._slug}. ${reason}`
         );
       }
     }),
@@ -1893,7 +1966,7 @@ async function activate(context) {
         return;
       }
       const choice = await vscode.window.showWarningMessage(
-        "This will copy the entitlement token to your clipboard. Token values are sensitive.",
+        "Copy the entitlement token to the clipboard? Entitlement tokens are sensitive.",
         "Copy",
         "Cancel"
       );
@@ -1902,7 +1975,7 @@ async function activate(context) {
       }
       // VS Code does not provide a clipboard auto-clear API, so we require explicit confirmation.
       await vscode.env.clipboard.writeText(item.token);
-      vscode.window.showInformationMessage(`Token "${item.tokenName}" copied to clipboard.`);
+      vscode.window.showInformationMessage(`Entitlement token "${item.tokenName}" copied.`);
     }),
 
   );

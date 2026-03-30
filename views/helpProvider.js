@@ -26,10 +26,10 @@ class helpProvider {
         };
 
         const links = [
-            { label: 'Read Extension Documentation', url: 'https://docs.cloudsmith.com/developer-tools/vscode', icon: new vscode.ThemeIcon('link-external') },
-            { label: 'Get Started with Cloudsmith', url: 'https://docs.cloudsmith.com/', icon: cloudsmithLogo },
-            { label: 'Review Issues', url: 'https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues', icon: new vscode.ThemeIcon('logo-github') },
-            { label: 'Report Issue', url: 'https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues', icon: new vscode.ThemeIcon('logo-github') }
+            { label: 'Read extension documentation', url: 'https://docs.cloudsmith.com/developer-tools/vscode', icon: new vscode.ThemeIcon('link-external') },
+            { label: 'Get started with Cloudsmith', url: 'https://docs.cloudsmith.com/', icon: cloudsmithLogo },
+            { label: 'View issues', url: 'https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues', icon: new vscode.ThemeIcon('logo-github') },
+            { label: 'Report an issue', url: 'https://github.com/cloudsmith-io/cloudsmith-vscode-extension/issues', icon: new vscode.ThemeIcon('logo-github') }
         ];
         return links.map(link => new helpNode(link.label, link.url, link.icon));
     }
@@ -40,6 +40,5 @@ class helpProvider {
 }
 
 module.exports = { helpProvider };
-
 
 
