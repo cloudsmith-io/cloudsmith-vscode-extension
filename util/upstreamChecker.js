@@ -4,52 +4,13 @@
 const { CloudsmithAPI } = require("./cloudsmithAPI");
 const { CredentialManager } = require("./credentialManager");
 const { SearchQueryBuilder } = require("./searchQueryBuilder");
-<<<<<<< HEAD
-
-const SUPPORTED_UPSTREAM_FORMATS = [
-<<<<<<< HEAD
-  "deb", "docker", "maven", "npm", "python",
-  "ruby", "dart", "helm", "nuget", "cargo",
-  "rpm", "cran", "swift", "go", "hex",
-  "composer", "conda", "conan", "p2", "terraform",
-  "raw",
-];
-const UPSTREAM_FETCH_BATCH_SIZE = 5;
-const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const REPOSITORY_UPSTREAM_CACHE_KEY_PREFIX = "cloudsmith-upstreams:v2";
-=======
-  "alpine",
-  "cargo",
-  "cocoapods",
-  "composer",
-  "conda",
-  "cran",
-  "dart",
-  "deb",
-  "docker",
-  "generic",
-  "go",
-  "helm",
-  "hex",
-  "huggingface",
-  "luarocks",
-  "maven",
-  "npm",
-  "nuget",
-  "python",
-  "rpm",
-  "ruby",
-  "swift",
-  "vagrant",
-];
-=======
 const {
   getSupportedUpstreamFormats,
   SUPPORTED_UPSTREAM_FORMATS,
 } = require("./upstreamFormats");
->>>>>>> 50c8bac (fix: consolidate upstream fetch and fix WebView/Terraform export consumers)
 const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000;
 const UPSTREAM_FETCH_BATCH_SIZE = 5;
+const REPOSITORY_UPSTREAM_CACHE_KEY_PREFIX = "cloudsmith-upstreams:v2";
 const BENIGN_UPSTREAM_FORMAT_STATUS_CODES = new Set([400, 404, 405, 422]);
 
 function isCacheObjectRecord(value) {
@@ -283,7 +244,6 @@ async function fetchFormatUpstreams(api, workspace, repo, format, apiKey, signal
     return { format, status: "failed", error: message, upstreams: [] };
   }
 }
->>>>>>> 52ddc2b (feat: export repository as Terraform)
 
 class UpstreamChecker {
   constructor(context) {
@@ -905,13 +865,6 @@ class UpstreamChecker {
   }
 }
 
-<<<<<<< HEAD
-module.exports = {
-  UpstreamChecker,
-  SUPPORTED_UPSTREAM_FORMATS,
-  UPSTREAM_FETCH_BATCH_SIZE,
-  UPSTREAM_CACHE_TTL_MS,
-=======
 async function getAllUpstreamData(context, workspace, repo, options = {}) {
   const checker = new UpstreamChecker(context);
   return checker.getAllUpstreamData(workspace, repo, options);
@@ -928,5 +881,6 @@ module.exports = {
   isBenignUpstreamFormatError,
   SUPPORTED_UPSTREAM_FORMATS,
   UpstreamChecker,
->>>>>>> 52ddc2b (feat: export repository as Terraform)
+  UPSTREAM_FETCH_BATCH_SIZE,
+  UPSTREAM_CACHE_TTL_MS,
 };

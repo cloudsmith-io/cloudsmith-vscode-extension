@@ -18,15 +18,9 @@ const { UpstreamDetailProvider } = require("./views/upstreamDetailProvider");
 const { PromotionProvider } = require("./views/promotionProvider");
 const { SearchQueryBuilder } = require("./util/searchQueryBuilder");
 const { formatApiError } = require("./util/errorFormatter");
-<<<<<<< HEAD
 const { LicenseClassifier } = require("./util/licenseClassifier");
-=======
 const { fetchRepositoryUpstreams, generateTerraformConfig } = require("./util/terraformExporter");
-<<<<<<< HEAD
->>>>>>> 52ddc2b (feat: export repository as Terraform)
-=======
 const { SUPPORTED_UPSTREAM_FORMATS } = require("./util/upstreamFormats");
->>>>>>> 50c8bac (fix: consolidate upstream fetch and fix WebView/Terraform export consumers)
 const recentPackages = require("./util/recentPackages");
 
 let exportTerraformAbortController = null;

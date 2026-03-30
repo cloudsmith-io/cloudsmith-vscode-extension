@@ -1,3 +1,24 @@
+## 2.1.0 - March 2026
+### Terraform Export
+
+#### Export Repository as Terraform
+- "Export as Terraform" context menu command on repository nodes generates a complete Cloudsmith Terraform provider configuration.
+- Exports `cloudsmith_repository` with all base non-default settings
+- Exports all configured upstreams as `cloudsmith_repository_upstream` resources with format type, URL, mode, priority, and active state.
+- Supports all upstream formats.
+- Exports `cloudsmith_repository_retention_rule` when retention is configured.
+- Uses Terraform resource references (`data.cloudsmith_namespace`, `cloudsmith_repository.slug_perm`) for portable, import-ready configurations.
+- Auth secrets are never exported as plaintext. Upstream credentials use Terraform variable placeholders with `sensitive = true`.
+- Generated HCL opens in a new editor tab for review before saving.
+
+#### Upstream Reliability
+- Consolidated all upstream data fetching into a single shared helper across inline indicators, WebView, and Terraform export.
+- Hardened upstream cache validation: malformed entries are evicted, expired entries force refetch, and cache write failures are non-fatal.
+- Inline upstream count now reflects all configured formats, not just formats inferred from loaded packages.
+
+#### License Resolution Reliability
+- Fixed an issue causing licenses to not properly display in certain situations
+
 ## 2.0.0 - March 2026
 ### Package Intelligence Platform
 

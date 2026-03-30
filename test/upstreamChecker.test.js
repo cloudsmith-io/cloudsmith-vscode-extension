@@ -1,12 +1,14 @@
 const assert = require("assert");
-<<<<<<< HEAD
-<<<<<<< HEAD
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
 const { CredentialManager } = require("../util/credentialManager");
 const {
-  UpstreamChecker,
+  isBenignUpstreamFormatError,
   SUPPORTED_UPSTREAM_FORMATS,
+  UpstreamChecker,
 } = require("../util/upstreamChecker");
+const {
+  SUPPORTED_UPSTREAM_FORMATS: SHARED_SUPPORTED_UPSTREAM_FORMATS,
+} = require("../util/upstreamFormats");
 
 suite("UpstreamChecker Test Suite", () => {
   let originalMakeRequest;
@@ -237,18 +239,8 @@ suite("UpstreamChecker Test Suite", () => {
     } finally {
       context.globalState.update = originalUpdate;
     }
-=======
-const { SUPPORTED_UPSTREAM_FORMATS, UpstreamChecker } = require("../util/upstreamChecker");
-=======
-const {
-  isBenignUpstreamFormatError,
-  SUPPORTED_UPSTREAM_FORMATS,
-  UpstreamChecker,
-} = require("../util/upstreamChecker");
-const {
-  SUPPORTED_UPSTREAM_FORMATS: SHARED_SUPPORTED_UPSTREAM_FORMATS,
-} = require("../util/upstreamFormats");
->>>>>>> 50c8bac (fix: consolidate upstream fetch and fix WebView/Terraform export consumers)
+  });
+});
 
 suite("UpstreamChecker Test Suite", () => {
   function createContext() {
@@ -546,7 +538,6 @@ suite("UpstreamChecker Test Suite", () => {
 
     assert.strictEqual(result.data.length, 0);
     assert.ok(result.error.includes("python"));
->>>>>>> 52ddc2b (feat: export repository as Terraform)
   });
 
   test("does not cache non-benign empty upstream results", async () => {
