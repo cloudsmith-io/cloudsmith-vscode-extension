@@ -195,7 +195,9 @@ class UpstreamDetailProvider {
     const contentHtml = hasLoadedUpstreams
       ? formatSections.join("\n")
       : this._getEmptyOrErrorState(hasFailures, successfulFormats);
-    const warningHtml = "";
+    const warningHtml = failedFormats.length > 0 && hasLoadedUpstreams
+      ? `<div class="warning-banner">Some upstream data could not be loaded.</div>`
+      : "";
 
     return `<!DOCTYPE html>
 <html lang="en">

@@ -10,7 +10,7 @@ const {
   SUPPORTED_UPSTREAM_FORMATS: SHARED_SUPPORTED_UPSTREAM_FORMATS,
 } = require("../util/upstreamFormats");
 
-suite("UpstreamChecker Test Suite", () => {
+suite("UpstreamChecker repository upstream cache", () => {
   let originalMakeRequest;
   let originalGetApiKey;
   let formatResponses;
@@ -242,7 +242,7 @@ suite("UpstreamChecker Test Suite", () => {
   });
 });
 
-suite("UpstreamChecker Test Suite", () => {
+suite("UpstreamChecker shared helper and format handling", () => {
   function createContext() {
     const store = new Map();
     const updates = [];
