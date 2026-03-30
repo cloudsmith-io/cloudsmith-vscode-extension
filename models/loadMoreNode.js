@@ -11,14 +11,14 @@ class LoadMoreNode {
 
     getTreeItem() {
         return {
-            label: `Load More Results (page ${this.currentPage} of ${this.totalPages}, ${this.totalCount} total)`,
-            tooltip: "Click to load the next page of search results",
+            label: `Load more results (page ${this.currentPage} of ${this.totalPages}, ${this.totalCount} total)`,
+            tooltip: "Load the next page of search results.",
             collapsibleState: vscode.TreeItemCollapsibleState.None,
             contextValue: "loadMore",
             iconPath: new vscode.ThemeIcon('ellipsis'),
             command: {
                 command: 'cloudsmith-vsc.searchNextPage',
-                title: 'Load More Results',
+                title: 'Load more results',
             },
         };
     }

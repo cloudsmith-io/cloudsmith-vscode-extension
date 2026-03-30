@@ -137,23 +137,23 @@ class InstallCommandBuilder {
     const commands = {
       python: {
         command: `# Verify package details before running\npip install ${safeName}==${safeVersion} --index-url https://dl.cloudsmith.io/basic/${workspace}/${repo}/python/simple/`,
-        note: 'For private repos, replace "basic" with your entitlement token.',
+        note: 'For private repositories, replace "basic" with an entitlement token.',
       },
       npm: {
         command: `# Verify package details before running\nnpm install ${safeName}@${safeVersion} --registry=https://npm.cloudsmith.io/${workspace}/${repo}/`,
-        note: "Run `npm login --registry=https://npm.cloudsmith.io/" + workspace + "/" + repo + "/` first for private repos.",
+        note: "Run `npm login --registry=https://npm.cloudsmith.io/" + workspace + "/" + repo + "/` first for private repositories.",
       },
       maven: {
         command: InstallCommandBuilder._buildMaven(name, version, workspace, repo),
-        note: 'For private repos, replace "basic" with your entitlement token in the repository URL.',
+        note: 'For private repositories, replace "basic" with an entitlement token in the repository URL.',
       },
       nuget: {
         command: `# Verify package details before running\ndotnet add package ${safeName} --version ${safeVersion} --source https://nuget.cloudsmith.io/${workspace}/${repo}/v3/index.json`,
-        note: "For private repos, configure NuGet source credentials.",
+        note: "For private repositories, configure NuGet source credentials.",
       },
       helm: {
         command: `# Verify package details before running\nhelm install ${safeName} --repo https://dl.cloudsmith.io/basic/${workspace}/${repo}/helm/charts/ --version ${safeVersion}`,
-        note: 'For private repos, replace "basic" with your entitlement token.',
+        note: 'For private repositories, replace "basic" with an entitlement token.',
       },
       cargo: {
         command: `# Verify package details before running\ncargo add ${safeName}@${safeVersion}`,
@@ -165,7 +165,7 @@ class InstallCommandBuilder {
       },
       ruby: {
         command: `# Verify package details before running\ngem install ${safeName} -v ${safeVersion} --source https://dl.cloudsmith.io/basic/${workspace}/${repo}/ruby/`,
-        note: 'For private repos, replace "basic" with your entitlement token.',
+        note: 'For private repositories, replace "basic" with an entitlement token.',
       },
       conda: {
         command: `# Verify package details before running\nconda install -c https://conda.cloudsmith.io/${workspace}/${repo}/ ${safeName}=${safeVersion}`,
@@ -211,7 +211,7 @@ class InstallCommandBuilder {
     const tag = InstallCommandBuilder._resolveDockerTag(version, opts || {});
     const result = {
       command: `# Verify package details before running\ndocker pull ${registry}/${imageName}:${tag}`,
-      note: "Run `docker login docker.cloudsmith.io` first for private repos.",
+      note: "Run `docker login docker.cloudsmith.io` first for private repositories.",
     };
 
     const digest = InstallCommandBuilder._normalizeDockerDigest((opts || {}).checksumSha256 || (opts || {}).versionDigest);
@@ -233,7 +233,7 @@ class InstallCommandBuilder {
     const safeVersion = InstallCommandBuilder.shellEscape(version);
     return {
       command: `# Verify package details before running\ndnf install ${safeName}-${safeVersion}`,
-      note: `Requires Cloudsmith repo configured in /etc/yum.repos.d/.\nRepo URL: https://dl.cloudsmith.io/basic/${workspace}/${repo}/rpm/`,
+      note: `Requires a Cloudsmith repository configured in /etc/yum.repos.d/.\nRepository URL: https://dl.cloudsmith.io/basic/${workspace}/${repo}/rpm/`,
       alternatives: [{
         label: "Install via yum",
         command: `# Verify package details before running\nyum install ${safeName}-${safeVersion}`,
@@ -251,7 +251,7 @@ class InstallCommandBuilder {
 
     return {
       command: `# Verify package details before running\ncurl -L -O "${cdnUrl}"`,
-      note: 'For private repos, replace "basic" with your entitlement token or use authentication headers.',
+      note: 'For private repositories, replace "basic" with an entitlement token or use authentication headers.',
       alternatives: [{
         label: "Download via wget",
         command: `# Verify package details before running\nwget "${cdnUrl}"`,

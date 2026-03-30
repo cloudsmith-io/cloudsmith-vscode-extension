@@ -1,8 +1,7 @@
-
 ## 2.0.0 - March 2026
 ### Package Intelligence Platform
 
-This release transforms the extension from a basic package explorer into a full package intelligence platform with security remediation, dependency health scanning, license compliance, and cross-repository promotion workflows.
+This release transforms the extension from a basic package explorer into a full package intelligence platform with security remediation, dependency health scanning, license compliance, upstream inspection, and cross-repository promotion workflows.
 
 #### Package Search
 - Full-text package search across workspaces and repositories with Cloudsmith query syntax support.
@@ -10,6 +9,8 @@ This release transforms the extension from a basic package explorer into a full 
 - Recent search history with one-click re-run.
 - Per-repository filtering from the main tree view context menu.
 - Paginated search results with "Load More" support.
+- "Show Vulnerable Packages" context menu command on repository nodes filters to packages with known vulnerabilities using `vulnerabilities:>0` query syntax.
+- "Show Vulnerable Packages (All Repos)" command on workspace nodes runs the same filter across the entire workspace.
 
 #### Permissibility Indicators
 - Visual status icons on all packages: error icons for quarantined/deny-violated, warning icons for non-deny policy violations, sync icons for packages still processing.
@@ -22,6 +23,19 @@ This release transforms the extension from a basic package explorer into a full 
 - Package origin detection — packages cached from upstreams are tagged with "(via upstream)" in the tree view.
 - Origin detail node showing "Direct" or "Upstream: {name}" for each package.
 - Lazy-loaded upstream config fetching with 10-minute cache to minimize API calls.
+- "View Upstreams" command available from both repository rows and upstream indicator rows, opening a full WebView panel without introducing additional commands.
+
+#### Upstream Inspect WebView
+- Dedicated WebView panel showing all configured upstream sources for a repository, grouped by format.
+- Each upstream card displays name, active/inactive status, URL, mode, SSL verification, trust level, validation status, distribution, and creation date.
+- Upstream Trust Level displayed with contextual callouts explaining security implications: Trusted upstreams bypass dependency confusion protections; Untrusted (recommended) upstreams are blocked from serving packages whose names exist in private repositories or trusted sources.
+- Trust level section omitted entirely when not present in the upstream config.
+- Fetches all 21 format endpoints in parallel batches of 5 to respect rate limits, with silent error handling for unsupported formats.
+- Stale-request cancellation and requestId guards prevent disposed or outdated panels from rendering results.
+- All rendering uses VS Code CSS variables for full dark/light theme compatibility.
+- Partial failure warning banner shown when some formats load successfully and others fail, avoiding false empty states.
+- Error state rendered instead of empty state when failures make results uncertain.
+- Indexing State, Packages Indexed, and Priority fields displayed per upstream where available.
 
 #### Vulnerability Details & Remediation
 - Inline vulnerability summary under each package showing CVE count and max severity.
@@ -31,6 +45,7 @@ This release transforms the extension from a basic package explorer into a full 
 - "Find Safe Version" command that searches for clean, non-quarantined versions of a package within the same repo or across the workspace.
 - "Open CVE" command to view CVE details on NVD or GitHub Advisories.
 - "Copy CVE Report" for pasting vulnerability summaries into issue trackers.
+- "Filter Vulnerabilities" command on vulnerability summary nodes with severity multi-select (Critical, High, Medium, Low) and CVSS threshold presets (>= 9.0, >= 7.0, >= 4.0, or custom 0.0–10.0). Active filters shown inline on the summary node label.
 
 #### Dependency Health View
 - New sidebar view that reads project manifest files and cross-references declared dependencies against Cloudsmith.
@@ -43,9 +58,13 @@ This release transforms the extension from a basic package explorer into a full 
 - Inline editor diagnostics — squiggly underlines on vulnerable dependencies in manifest files.
 
 #### Install Commands
-- "Copy Install Command" generates format-native install commands with Cloudsmith registry URLs for 12+ package formats: pip, npm, maven, nuget, docker, helm, cargo, go, ruby, conda, composer, and dart.
+- "Copy Install Command" generates format-native install commands with Cloudsmith registry URLs for 12+ package formats: pip, npm, maven, nuget, docker, helm, cargo, go, ruby, conda, composer, dart, RPM, and raw/generic.
 - "Show Install Command" opens multi-line commands (e.g., Maven pom.xml snippets) in a new document for review before copying.
+- Docker install commands default to tag-based pulls (`docker pull registry/{name}:{tag}`); digest-based pulls available via the `showDockerDigestCommand` setting when a checksum is present.
+- RPM install commands generate both `dnf install` and `yum install` variants.
+- Raw/generic install commands generate both `curl` and `wget` variants using the CDN URL or a constructed fallback path.
 - Private repository authentication notes included with each command.
+- Install commands removed from package detail rows (version, format, etc.) where full package context is unavailable; commands remain available on package and search result rows.
 - Integrated into the "Find Safe Version" remediation workflow — selecting a safe version copies the install command directly.
 
 #### License Visibility & Risk Classification
@@ -75,9 +94,11 @@ This release transforms the extension from a basic package explorer into a full 
 - Summary node showing active vs. total token count.
 - "Copy Entitlement Token" command for quick access to token strings.
 
-#### Repository Metrics
-- Optional storage and bandwidth usage indicators on repositories (`showRepoMetrics` setting).
-- Workspace quota display with pre-formatted values from the Cloudsmith API.
+#### Workspace Info & Storage
+- Workspace-level info node prepended to the repository list showing storage and bandwidth quota usage with color-coded thresholds (warning at 75%, error at 90%).
+- Quota display gracefully handles insufficient permissions, showing a lock indicator rather than failing.
+- Storage region displayed as a detail node under each repository.
+- Workspace-level quota metrics removed from individual repository rows where they were misleading.
 
 #### Default Workspace
 - New `defaultWorkspace` setting that skips the workspace tree level for single-workspace users.
@@ -92,6 +113,15 @@ This release transforms the extension from a basic package explorer into a full 
 - SSO terminal flow opens an integrated terminal to run `cloudsmith auth -o {workspace}` for interactive SAML/2FA authentication.
 - Auto-detect CLI credentials on extension activation with prompt to import.
 - Experimental browser-based SSO flow (gated behind `experimentalSSOBrowser` setting).
+
+#### Code Quality & Security
+- User-Agent header added to all API requests: `Cloudsmith-VSCode/{version} (VS Code {vscodeVersion})`.
+- Redirect safety hardening: redirects are validated against `api.cloudsmith.io` before following, preventing API key leakage to untrusted hosts.
+- SSO auth manager terminal listener leak fixed; disposable now cleaned up in both callback and timeout paths.
+- Cloudsmith query syntax escaping via `SearchQueryBuilder` applied consistently across upstream checker and remediation helper, eliminating raw string interpolation of package names and formats.
+- Tag action casing fixed in promotion payloads (`add`/`remove` lowercase to match Cloudsmith API contract).
+- Copy/move promotion destination format corrected to `{owner}/{repo}` as required by the API.
+- Transitive dependency resolver visited-set key changed to `{name}@{version}` to correctly handle multiple versions of the same package in npm dependency trees.
 
 #### Testing
 - Integration test suite running against the live Cloudsmith API.

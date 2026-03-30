@@ -84,7 +84,7 @@ function getCompactDescription(quotaData, storage, bandwidth) {
     return "Quota unavailable";
   }
 
-  return `Storage: ${storage.percentLabel} | BW: ${bandwidth.percentLabel}`;
+  return `Storage: ${storage.percentLabel} | Bandwidth: ${bandwidth.percentLabel}`;
 }
 
 class WorkspaceInfoNode {
@@ -115,8 +115,8 @@ class WorkspaceInfoNode {
     if (!this.quotaData) {
       return [
         new WorkspaceDetailNode(
-          "Not available (insufficient permissions)",
-          "",
+          "Quota unavailable",
+          "Additional permissions may be required.",
           new vscode.ThemeIcon("lock")
         ),
       ];

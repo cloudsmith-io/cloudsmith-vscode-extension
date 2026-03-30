@@ -54,7 +54,7 @@ class ConnectionManager {
 
     checkCreds: if (!apiKey) {
       vscode.window
-        .showWarningMessage("No credentials configured!", "Configure", "Cancel")
+        .showWarningMessage("No credentials configured.", "Configure", "Cancel")
         .then((selection) => {
           select: if (selection === "Configure") {
             vscode.commands.executeCommand("cloudsmith-vsc.configureCredentials");
@@ -72,7 +72,7 @@ class ConnectionManager {
       if (connectionStatus === "false" || connectionStatus === "error") {
         const errorMsg = this._lastError
           ? formatApiError(this._lastError)
-          : "Unable to connect to Cloudsmith. Ensure your credentials are correct.";
+          : "Could not connect to Cloudsmith. Check the credentials and try again.";
         vscode.window
           .showErrorMessage(
             errorMsg,
@@ -88,7 +88,7 @@ class ConnectionManager {
         return connectionStatus;
       } else { // connection status = true
         if (showConnectMsg) {
-          vscode.window.showInformationMessage("Connected to Cloudsmith!");
+          vscode.window.showInformationMessage("Connected to Cloudsmith.");
         }
         // checkConnectivity() already stored "cloudsmith-vsc.isConnected"
       }
