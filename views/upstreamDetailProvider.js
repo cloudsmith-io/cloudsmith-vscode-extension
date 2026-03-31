@@ -175,7 +175,7 @@ class UpstreamDetailProvider {
     const { groupedUpstreams, failedFormats, successfulFormats } = fetchState;
     const formatSections = [];
     const hasLoadedUpstreams = groupedUpstreams.size > 0;
-    const hasFailures = failedFormats.length > 0 && !hasLoadedUpstreams;
+    const hasFailures = failedFormats.length > 0;
 
     for (const format of SUPPORTED_UPSTREAM_FORMATS) {
       const upstreams = groupedUpstreams.get(format);
@@ -195,9 +195,6 @@ class UpstreamDetailProvider {
     const contentHtml = hasLoadedUpstreams
       ? formatSections.join("\n")
       : this._getEmptyOrErrorState(hasFailures, successfulFormats);
-    const warningHtml = failedFormats.length > 0 && hasLoadedUpstreams
-      ? `<div class="warning-banner">Some upstream data could not be loaded.</div>`
-      : "";
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -224,15 +221,6 @@ class UpstreamDetailProvider {
       color: var(--vscode-descriptionForeground);
       font-size: 0.95em;
       line-height: 1.35;
-    }
-    .warning-banner {
-      margin: 0 0 12px 0;
-      padding: 8px 10px;
-      border: 1px solid var(--vscode-inputValidation-warningBorder);
-      border-radius: 6px;
-      background: var(--vscode-inputValidation-warningBackground);
-      color: var(--vscode-foreground);
-      line-height: 1.4;
     }
     .error-state {
       margin-top: 8px;
@@ -355,7 +343,6 @@ class UpstreamDetailProvider {
 <body>
   <h1>${this._escape(repoName)}</h1>
   <p class="repo-meta">${this._escape(workspace)}/${this._escape(repoSlug)}</p>
-  ${warningHtml}
   ${contentHtml}
 </body>
 </html>`;

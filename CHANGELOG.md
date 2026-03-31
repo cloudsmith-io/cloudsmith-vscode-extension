@@ -1,3 +1,7 @@
+## 2.1.2 - March 2026
+### Fixed
+- Fixed erroneous error banner displaying in the Upstream Webview when all upstream data loaded successfully.
+
 ## 2.1.0 - March 2026
 ### Terraform Export
 
