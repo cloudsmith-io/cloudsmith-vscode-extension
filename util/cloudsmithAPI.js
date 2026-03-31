@@ -5,8 +5,9 @@ const apiURL = 'https://api.cloudsmith.io/v1/';
 const apiV2URL = 'https://api.cloudsmith.io/v2/';
 const ALLOWED_API_HOST = "api.cloudsmith.io";
 const { CredentialManager } = require('./credentialManager');
-const packageJson = require('../package.json');
+const extensionVersion = require('../package.json').version;
 const vscodeVersion = require('vscode').version;
+const userAgent = `Cloudsmith-VSCode/${extensionVersion} (VS Code ${vscodeVersion})`;
 
 class CloudsmithAPI {
     constructor(context){
@@ -221,7 +222,7 @@ class CloudsmithAPI {
 
             // Add User-Agent header for usage attribution
             if (requestOptions.headers) {
-                requestOptions.headers['User-Agent'] = `Cloudsmith-VSCode/${packageJson.version} (VS Code ${vscodeVersion})`;
+                requestOptions.headers['User-Agent'] = userAgent;
             }
 
             // Prevent automatic redirect following to avoid leaking API key
