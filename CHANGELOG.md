@@ -1,3 +1,7 @@
+## 2.1.1 - March 2026
+### Fixed
+- Upstream Resolution Preview no longer throws an error when policy simulation endpoint returns 404
+
 ## 2.1.0 - March 2026
 ### Terraform Export
 
