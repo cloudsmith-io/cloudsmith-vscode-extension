@@ -24,15 +24,6 @@
 
 This release transforms the extension from a basic package explorer into a full package intelligence platform with security remediation, dependency health scanning, license compliance, upstream inspection, and cross-repository promotion workflows.
 
-#### Terraform Export
-- "Export as Terraform" context menu command on repository nodes generates a complete HCL configuration file using the Cloudsmith Terraform provider.
-- Exports the repository resource with all non-default settings including permissions, format-specific options, broadcast state, and storage region.
-- Exports all configured upstreams as `cloudsmith_repository_upstream` resources across all package formats, with correct `upstream_type` derived from the format endpoint.
-- Exports retention rules as `cloudsmith_repository_retention_rule` when configured.
-- All resource references use Terraform interpolation (`data.cloudsmith_namespace`, `cloudsmith_repository`) for portable, import-ready configurations.
-- Upstream auth secrets are never exported as plaintext. Sensitive values use Terraform variable placeholders with `sensitive = true`.
-- Generated HCL opens in a new editor tab for review before saving.
-
 #### Package Search
 - Full-text package search across workspaces and repositories with Cloudsmith query syntax support.
 - Guided multi-step search with filter presets for quarantined packages, policy violations, vulnerability violations, and license violations.
@@ -60,7 +51,7 @@ This release transforms the extension from a basic package explorer into a full 
 - Each upstream card displays name, active/inactive status, URL, mode, SSL verification, trust level, validation status, distribution, and creation date.
 - Upstream Trust Level displayed with contextual callouts explaining security implications: Trusted upstreams bypass dependency confusion protections; Untrusted (recommended) upstreams are blocked from serving packages whose names exist in private repositories or trusted sources.
 - Trust level section omitted entirely when not present in the upstream config.
-- Fetches all 21 format endpoints in parallel batches of 5 to respect rate limits, with silent error handling for unsupported formats.
+- Fetches all package format endpoints in parallel batches of 5 to respect rate limits, with silent error handling for unsupported formats.
 - Stale-request cancellation and requestId guards prevent disposed or outdated panels from rendering results.
 - All rendering uses VS Code CSS variables for full dark/light theme compatibility.
 - Partial failure warning banner shown when some formats load successfully and others fail, avoiding false empty states.
@@ -138,7 +129,7 @@ This release transforms the extension from a basic package explorer into a full 
 - All workspace-scoped commands (search, guided search, dependency scan) automatically use the default when set.
 
 #### Authentication
-- New credential setup QuickPick with four authentication methods: API Key, Service Account Token, Import from Cloudsmith CLI, and Sign in with SSO.
+- New credential setup QuickPick with four authentication methods: API Key, Service Account API Key, Import from Cloudsmith CLI, and Sign in with SSO.
 - CLI credential import reads API keys from `~/.cloudsmith/config.ini` with cross-platform path detection.
 - SSO terminal flow opens an integrated terminal to run `cloudsmith auth -o {workspace}` for interactive SAML/2FA authentication.
 - Auto-detect CLI credentials on extension activation with prompt to import.
@@ -166,7 +157,7 @@ This release transforms the extension from a basic package explorer into a full 
 ## 1.0.0 - July 2025
 ### Initial release
 
-- Initial release of the Cloudsmith extension. The extension in this releases provides a package explorer for your Cloudsmith instance.
-- Future releases will continue to build upon this with futher capabilities and features. 
+- Initial release of the Cloudsmith extension. The extension in this release provides a package explorer for your Cloudsmith instance.
+- Future releases will continue to build upon this with further capabilities and features. 
 
 
