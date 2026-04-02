@@ -5,6 +5,7 @@ node_modules/
 .DS_Store
 .src/
 .npmrc
+vsc-extension-quickstart.md
 
 # Local planning
 internal_docs/
