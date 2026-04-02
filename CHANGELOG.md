@@ -1,5 +1,6 @@
-## 2.1.1 - March 2026
+## 2.1.2 - March 2026
 ### Fixed
+- Fixed erroneous error banner displaying in the Upstream Webview when all upstream data loaded successfully.
 - Upstream Resolution Preview no longer throws an error when policy simulation endpoint returns 404
 
 ## 2.1.0 - March 2026
