@@ -553,3 +553,43 @@ suite("UpstreamChecker shared helper and format handling", () => {
     assert.strictEqual(updates.length, 0);
   });
 });
+
+suite("UpstreamChecker preview resolution", () => {
+  test("previewResolution does not trigger policy fetches and still returns upstream data", async () => {
+    const checker = new UpstreamChecker({});
+    let policyFetchCount = 0;
+
+    checker.existsLocally = async () => ({
+      data: null,
+      error: null,
+    });
+    checker.getUpstreamsForFormat = async () => ({
+      data: [
+        {
+          name: "PyPI",
+          upstream_url: "https://pypi.org/simple/",
+          is_active: true,
+        },
+        {
+          name: "Disabled mirror",
+          upstream_url: "https://disabled.example/python",
+          is_active: false,
+        },
+      ],
+      error: null,
+    });
+    checker.api.getV2 = async () => {
+      policyFetchCount += 1;
+      return [];
+    };
+
+    const result = await checker.previewResolution("acme", "example-repo", "flask", "python");
+
+    assert.strictEqual(policyFetchCount, 0);
+    assert.strictEqual("policies" in result, false);
+    assert.strictEqual(result.canResolveViaUpstream, true);
+    assert.strictEqual(result.upstreams.data.total, 2);
+    assert.strictEqual(result.upstreams.data.active, 1);
+    assert.strictEqual(result.upstreams.data.configs[0].name, "PyPI");
+  });
+});
