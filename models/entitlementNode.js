@@ -15,8 +15,8 @@ class EntitlementSummaryNode {
 
   getTreeItem() {
     return {
-      label: `Entitlements: ${this.activeCount} active of ${this.entitlements.length}`,
-      tooltip: `${this.entitlements.length} entitlement token(s) configured`,
+      label: `Entitlement tokens: ${this.activeCount} active of ${this.entitlements.length}`,
+      tooltip: `${this.entitlements.length} entitlement token${this.entitlements.length === 1 ? "" : "s"} configured`,
       collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
       contextValue: "entitlementSummary",
       iconPath: new vscode.ThemeIcon("key"),
@@ -35,7 +35,7 @@ class EntitlementNode {
   constructor(entitlement, context) {
     this.context = context;
     this.entitlement = entitlement;
-    this.tokenName = entitlement.name || "Unnamed Token";
+    this.tokenName = entitlement.name || "Unnamed token";
     this.isActive = entitlement.is_active !== false;
     this.token = entitlement.token || null;
     this.scope = entitlement.package_query || null;
@@ -54,7 +54,7 @@ class EntitlementNode {
     const statusLabel = this.isActive ? "Active" : "Disabled";
     const descParts = [statusLabel];
     if (this.scope) {
-      descParts.push(`scope: ${this.scope}`);
+      descParts.push(`Scope: ${this.scope}`);
     }
 
     const iconColor = this.isActive
@@ -74,16 +74,16 @@ class EntitlementNode {
   _buildTooltip() {
     const parts = [`Name: ${this.tokenName}`, `Status: ${this.isActive ? "Active" : "Disabled"}`];
     if (this.scope) {
-      parts.push(`Package Scope: ${this.scope}`);
+      parts.push(`Package scope: ${this.scope}`);
     }
     if (this.limitBandwidth) {
-      parts.push(`Bandwidth Limit: ${this.limitBandwidth} ${this.limitBandwidthUnit || ""}`);
+      parts.push(`Bandwidth limit: ${this.limitBandwidth} ${this.limitBandwidthUnit || ""}`);
     }
     if (this.limitDownloads) {
-      parts.push(`Download Limit: ${this.limitDownloads}`);
+      parts.push(`Download limit: ${this.limitDownloads}`);
     }
     if (this.limitClients) {
-      parts.push(`Client Limit: ${this.limitClients}`);
+      parts.push(`Client limit: ${this.limitClients}`);
     }
     if (this.limitDateRangeFrom || this.limitDateRangeTo) {
       parts.push(`Valid: ${this.limitDateRangeFrom || "—"} to ${this.limitDateRangeTo || "—"}`);

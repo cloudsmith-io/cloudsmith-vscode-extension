@@ -20,7 +20,7 @@ class UpstreamPreviewProvider {
 
     this._panel = vscode.window.createWebviewPanel(
       "cloudsmithUpstreamPreview",
-      `Upstream Preview: ${result.name}`,
+      `Upstream preview: ${result.name}`,
       vscode.ViewColumn.One,
       { enableScripts: false, localResourceRoots: [] }
     );
@@ -34,22 +34,22 @@ class UpstreamPreviewProvider {
 
   _getHtmlContent(result) {
     const localStatus = result.local.error
-      ? `<span class="status-error">Error loading local package: ${this._escapeHtml(result.local.error)}</span>`
+      ? `<span class="status-error">Could not load local package data: ${this._escapeHtml(result.local.error)}</span>`
       : result.local.data
-        ? `<span class="status-found">Exists in ${this._escapeHtml(result.repo)} (${this._escapeHtml(result.local.data.status_str || "Unknown")})</span>`
+        ? `<span class="status-found">Found in ${this._escapeHtml(result.repo)} (${this._escapeHtml(result.local.data.status_str || "Unknown")})</span>`
         : `<span class="status-missing">Not found in ${this._escapeHtml(result.repo)}</span>`;
 
     let upstreamHtml = "";
     if (result.upstreams.error) {
-      upstreamHtml = `<p class="error-banner">Failed to load upstream data: ${this._escapeHtml(result.upstreams.error)}</p>`;
+      upstreamHtml = `<p class="error-banner">Could not load upstream data: ${this._escapeHtml(result.upstreams.error)}</p>`;
     } else if (result.upstreams.data.configs.length === 0) {
-      upstreamHtml = '<p class="muted">No upstream sources configured for this format.</p>';
+      upstreamHtml = '<p class="muted">No upstreams configured for this format.</p>';
     } else {
       upstreamHtml = '<table class="data-table"><thead><tr><th>Name</th><th>URL</th><th>Status</th></tr></thead><tbody>';
       for (const u of result.upstreams.data.configs) {
         const active = u.is_active !== false;
         const statusClass = active ? "status-active" : "status-inactive";
-        const statusLabel = active ? "Active" : "Disabled";
+        const statusLabel = active ? "Active" : "Inactive";
         upstreamHtml += `<tr>
           <td>${this._escapeHtml(u.name || "Unnamed")}</td>
           <td class="mono">${this._escapeHtml(u.upstream_url || "")}</td>
@@ -59,30 +59,9 @@ class UpstreamPreviewProvider {
       upstreamHtml += "</tbody></table>";
     }
 
-    let policyHtml = "";
-    if (result.policies.error) {
-      policyHtml = `<p class="error-banner">Failed to load policy simulation: ${this._escapeHtml(result.policies.error)}</p>`;
-    } else {
-      const pols = Array.isArray(result.policies.data) ? result.policies.data : (result.policies.data && result.policies.data.results) || [];
-      if (pols.length === 0) {
-        policyHtml = '<p class="muted">No active policies found.</p>';
-      } else {
-        policyHtml = '<table class="data-table"><thead><tr><th>Policy</th><th>Type</th><th>Action</th></tr></thead><tbody>';
-        for (const p of pols) {
-          policyHtml += `<tr>
-            <td>${this._escapeHtml(p.name || p.slug_perm || "Unknown")}</td>
-            <td>${this._escapeHtml(p.policy_type || p.type || "")}</td>
-            <td>${this._escapeHtml(p.on_violation_quarantine ? "Quarantine" : (p.action || "Tag/Warn"))}</td>
-          </tr>`;
-        }
-        policyHtml += "</tbody></table>";
-      }
-    }
-
     const resolutionSummary = result.canResolveViaUpstream
-      ? `<div class="resolution-yes">This package can likely resolve via ${result.upstreams.data.active} active upstream(s). ` +
-        'If Block Until Scan is enabled, the package will be held until policy evaluation completes.</div>'
-      : '<div class="resolution-no">No active upstreams for this format. The package must be uploaded directly.</div>';
+      ? `<div class="resolution-yes">This package can likely resolve through ${result.upstreams.data.active} active upstream${result.upstreams.data.active === 1 ? "" : "s"}.</div>`
+      : '<div class="resolution-no">No active upstreams for this format. Upload the package directly.</div>';
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -112,21 +91,18 @@ class UpstreamPreviewProvider {
 </style>
 </head>
 <body>
-  <h2>Upstream Resolution Preview</h2>
+  <h2>Upstream resolution preview</h2>
   <dl class="header-info">
     <dt>Package</dt><dd>${this._escapeHtml(result.name)}</dd>
     <dt>Format</dt><dd>${this._escapeHtml(result.format)}</dd>
-    <dt>Target Repo</dt><dd>${this._escapeHtml(result.workspace)}/${this._escapeHtml(result.repo)}</dd>
-    <dt>Local Status</dt><dd>${localStatus}</dd>
+    <dt>Target repository</dt><dd>${this._escapeHtml(result.workspace)}/${this._escapeHtml(result.repo)}</dd>
+    <dt>Local status</dt><dd>${localStatus}</dd>
   </dl>
 
   ${resolutionSummary}
 
-  <h3>Upstream Sources (${result.upstreams.data.active} active of ${result.upstreams.data.total})</h3>
+  <h3>Upstreams (${result.upstreams.data.active} active of ${result.upstreams.data.total})</h3>
   ${upstreamHtml}
-
-  <h3>Active Policies</h3>
-  ${policyHtml}
 </body>
 </html>`;
   }

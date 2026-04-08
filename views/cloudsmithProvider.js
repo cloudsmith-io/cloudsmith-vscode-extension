@@ -6,6 +6,7 @@ const { CloudsmithAPI } = require("../util/cloudsmithAPI");
 const { ConnectionManager } = require("../util/connectionManager");
 const InfoNode = require("../models/infoNode");
 const { WorkspaceInfoNode } = require("../models/workspaceInfoNode");
+const workspaceRepositoryFetcher = require("../util/workspaceRepositoryFetcher");
 
 class CloudsmithProvider {
   constructor(context) {
@@ -14,6 +15,7 @@ class CloudsmithProvider {
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     this._defaultWorkspaceFallbackHandler = null;
     this._treeView = null;
+    this._suppressMissingCredentialsWarningOnce = false;
   }
 
   getTreeItem(element) {
@@ -34,8 +36,17 @@ class CloudsmithProvider {
     return element.getChildren();
   }
 
-  refresh() {
+  refresh(options = {}) {
+    if (options.suppressMissingCredentialsWarning) {
+      this._suppressMissingCredentialsWarningOnce = true;
+    }
     this._onDidChangeTreeData.fire();
+  }
+
+  _consumeConnectionOptions() {
+    const promptOnMissingCredentials = !this._suppressMissingCredentialsWarningOnce;
+    this._suppressMissingCredentialsWarningOnce = false;
+    return { promptOnMissingCredentials };
   }
 
   setDefaultWorkspaceFallbackHandler(handler) {
@@ -56,19 +67,20 @@ class CloudsmithProvider {
       this._treeView.message = "Loading...";
     }
 
-    const connStatus = await connectionManager.connect(context);
+    const connStatus = await connectionManager.connect(this._consumeConnectionOptions());
 
     if (connStatus === "false" || connStatus === "error") {
+      await vscode.commands.executeCommand("setContext", "cloudsmith.hasMultipleWorkspaces", false);
       if (this._treeView) {
         this._treeView.message = undefined;
       }
       return [new InfoNode(
         "Connect to Cloudsmith",
-        "Use the key icon above to set up API key, Service Account Token, CLI import, or SSO",
-        "Set up your Cloudsmith authentication to get started",
+        "Use the key icon above to set up a personal or service account API key, CLI import, or SSO.",
+        "Set up Cloudsmith authentication to get started.",
         "plug",
         undefined,
-        { command: "cloudsmith-vsc.configureCredentials", title: "Set Up Authentication" }
+        { command: "cloudsmith-vsc.configureCredentials", title: "Set up authentication" }
       )];
     }
 
@@ -80,13 +92,19 @@ class CloudsmithProvider {
 
     const WorkspaceNodes = [];
     if (typeof workspaces === 'string' || !workspaces || !Array.isArray(workspaces)) {
+      await vscode.commands.executeCommand("setContext", "cloudsmith.hasMultipleWorkspaces", false);
       return [new InfoNode(
         "Could not load workspaces",
-        "Check your connection and credentials",
-        "The Cloudsmith API returned an error. Try refreshing or reconfiguring credentials.",
+        "Check the connection and credentials",
+        "The Cloudsmith API returned an error. Refresh or configure credentials.",
         "warning"
       )];
     }
+    await vscode.commands.executeCommand(
+      "setContext",
+      "cloudsmith.hasMultipleWorkspaces",
+      workspaces.length > 1
+    );
     if (workspaces.length > 0) {
       for (const workspace of workspaces) {
         const workspaceNode = require("../models/workspaceNode");
@@ -119,28 +137,31 @@ class CloudsmithProvider {
       this._treeView.message = "Loading...";
     }
 
-    const connStatus = await connectionManager.connect(context);
+    const connStatus = await connectionManager.connect(this._consumeConnectionOptions());
     if (connStatus === "false" || connStatus === "error") {
       if (this._treeView) {
         this._treeView.message = undefined;
       }
       return [new InfoNode(
         "Connect to Cloudsmith",
-        "Use the key icon above to set up API key, Service Account Token, CLI import, or SSO",
-        "Set up your Cloudsmith authentication to get started",
+        "Use the key icon above to set up a personal or service account API key, CLI import, or SSO.",
+        "Set up Cloudsmith authentication to get started.",
         "plug",
         undefined,
-        { command: "cloudsmith-vsc.configureCredentials", title: "Set Up Authentication" }
+        { command: "cloudsmith-vsc.configureCredentials", title: "Set up authentication" }
       )];
     }
 
-    const repos = await cloudsmithAPI.get(`repos/${workspaceSlug}/?sort=name`);
+    const result = await workspaceRepositoryFetcher.fetchWorkspaceRepositories(
+      context,
+      workspaceSlug
+    );
 
     if (this._treeView) {
       this._treeView.message = undefined;
     }
 
-    if (typeof repos === 'string' || !repos || !Array.isArray(repos)) {
+    if (result.error) {
       if (this._defaultWorkspaceFallbackHandler) {
         this._defaultWorkspaceFallbackHandler(workspaceSlug);
       } else {
@@ -151,6 +172,8 @@ class CloudsmithProvider {
       // Fall back to full workspace tree
       return this.getWorkspaces();
     }
+
+    const repos = result.repositories;
 
     const RepositoryNode = require("../models/repositoryNode");
     let quotaData = null;

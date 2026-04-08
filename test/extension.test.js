@@ -1,15 +1,12 @@
-const assert = require('assert');
+const assert = require("assert");
+const { FORMAT_OPTIONS } = require("../extension");
+const { SUPPORTED_UPSTREAM_FORMATS } = require("../util/upstreamFormats");
 
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-const vscode = require('vscode');
-// const myExtension = require('../extension');
-
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
-
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
-	});
+suite("Extension Test Suite", () => {
+  test("uses the shared upstream format list for format picks", () => {
+    assert.strictEqual(FORMAT_OPTIONS, SUPPORTED_UPSTREAM_FORMATS);
+    assert.ok(FORMAT_OPTIONS.includes("conan"));
+    assert.ok(FORMAT_OPTIONS.includes("terraform"));
+    assert.ok(FORMAT_OPTIONS.includes("raw"));
+  });
 });

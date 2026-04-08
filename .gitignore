@@ -5,13 +5,10 @@ node_modules/
 .DS_Store
 .src/
 .npmrc
+vsc-extension-quickstart.md
 
-# Local planning / agent reference docs
-AGENTS*.md
-CLAUDE*.md
-IMPLEMENTATION*.md
-API_REFERENCE*.md
-ARCHITECTURE*.md
+# Local planning
+internal_docs/
 
 # Local agent / MCP config
 .mcp.json

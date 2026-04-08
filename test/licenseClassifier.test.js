@@ -1,7 +1,22 @@
 const assert = require("assert");
+const vscode = require("vscode");
 const { LicenseClassifier } = require("../util/licenseClassifier");
 
 suite("LicenseClassifier Test Suite", () => {
+  let originalGetConfiguration;
+
+  setup(() => {
+    originalGetConfiguration = vscode.workspace.getConfiguration;
+    vscode.workspace.getConfiguration = () => ({
+      get() {
+        return undefined;
+      },
+    });
+  });
+
+  teardown(() => {
+    vscode.workspace.getConfiguration = originalGetConfiguration;
+  });
 
   // =====================
   // Restrictive licenses
@@ -120,6 +135,14 @@ suite("LicenseClassifier Test Suite", () => {
       assert.strictEqual(result.tier, "unknown");
       assert.strictEqual(result.icon, "question");
     });
+
+    test("unknown licenses preserve the raw Cloudsmith display value", () => {
+      const inspection = LicenseClassifier.inspect("LicenseRef-Cloudsmith-Custom");
+      assert.strictEqual(inspection.tier, "unknown");
+      assert.strictEqual(inspection.label, "LicenseRef-Cloudsmith-Custom");
+      assert.deepStrictEqual(inspection.searchIdentifiers, ["LicenseRef-Cloudsmith-Custom"]);
+      assert.strictEqual(inspection.licenseUrl, null);
+    });
   });
 
   // =====================
@@ -142,6 +165,214 @@ suite("LicenseClassifier Test Suite", () => {
     test("label for unknown shows 'No license specified'", () => {
       const result = LicenseClassifier.classify(null);
       assert.strictEqual(result.label, "No license specified");
+    });
+  });
+
+  suite("shared interpretation helpers", () => {
+    test("inspect exposes canonical identifiers and a reusable search query", () => {
+      const inspection = LicenseClassifier.inspect("(MIT OR GPL-3.0)");
+      assert.deepStrictEqual(inspection.identifiers, ["MIT", "GPL-3.0"]);
+      assert.strictEqual(inspection.tier, "restrictive");
+      assert.strictEqual(inspection.searchQuery, "(license:MIT OR license:GPL\\-3.0)");
+      assert.strictEqual(LicenseClassifier.buildLicenseQuery("(MIT OR GPL-3.0)"), inspection.searchQuery);
+    });
+
+    test("buildRestrictiveQuery uses the shared restrictive catalog", () => {
+      const query = LicenseClassifier.buildRestrictiveQuery();
+      assert.ok(query.includes("license:AGPL\\-3.0"));
+      assert.ok(query.includes("license:GPL\\-3.0"));
+      assert.ok(query.includes("license:SSPL\\-1.0"));
+      assert.ok(query.includes("license:EUPL\\-1.2"));
+    });
+
+    test("search quick-pick items reuse a precomputed searchQuery when present", () => {
+      const originalGetSearchableLicensesByTier = LicenseClassifier.getSearchableLicensesByTier;
+      const originalBuildLicenseQuery = LicenseClassifier.buildLicenseQuery;
+
+      try {
+        LicenseClassifier.getSearchableLicensesByTier = () => ({
+          restrictive: [{
+            license: "GPL-3.0",
+            description: "Restrictive",
+            overrideApplied: false,
+            searchQuery: "license:precomputed-search-query",
+          }],
+          cautious: [],
+          permissive: [],
+        });
+
+        let buildCalls = 0;
+        LicenseClassifier.buildLicenseQuery = () => {
+          buildCalls += 1;
+          return "license:rebuilt";
+        };
+
+        const quickPickItems = LicenseClassifier.getSearchQuickPickItems();
+        const gplItem = quickPickItems.find((item) => item.label === "GPL-3.0");
+        assert.ok(gplItem);
+        assert.strictEqual(gplItem.query, "license:precomputed-search-query");
+        assert.strictEqual(buildCalls, 0);
+      } finally {
+        LicenseClassifier.getSearchableLicensesByTier = originalGetSearchableLicensesByTier;
+        LicenseClassifier.buildLicenseQuery = originalBuildLicenseQuery;
+      }
+    });
+
+    test("search quick-pick items fall back to item.query when searchQuery is absent", () => {
+      const originalGetSearchableLicensesByTier = LicenseClassifier.getSearchableLicensesByTier;
+      const originalBuildLicenseQuery = LicenseClassifier.buildLicenseQuery;
+
+      try {
+        LicenseClassifier.getSearchableLicensesByTier = () => ({
+          restrictive: [{
+            license: "GPL-3.0",
+            description: "Restrictive",
+            overrideApplied: false,
+            query: "license:legacy-query",
+          }],
+          cautious: [],
+          permissive: [],
+        });
+
+        let buildCalls = 0;
+        LicenseClassifier.buildLicenseQuery = () => {
+          buildCalls += 1;
+          return "license:rebuilt";
+        };
+
+        const quickPickItems = LicenseClassifier.getSearchQuickPickItems();
+        const gplItem = quickPickItems.find((item) => item.label === "GPL-3.0");
+        assert.ok(gplItem);
+        assert.strictEqual(gplItem.query, "license:legacy-query");
+        assert.strictEqual(buildCalls, 0);
+      } finally {
+        LicenseClassifier.getSearchableLicensesByTier = originalGetSearchableLicensesByTier;
+        LicenseClassifier.buildLicenseQuery = originalBuildLicenseQuery;
+      }
+    });
+
+    test("search quick-pick items rebuild a query only when no precomputed query is available", () => {
+      const originalGetSearchableLicensesByTier = LicenseClassifier.getSearchableLicensesByTier;
+      const originalBuildLicenseQuery = LicenseClassifier.buildLicenseQuery;
+
+      try {
+        LicenseClassifier.getSearchableLicensesByTier = () => ({
+          restrictive: [{
+            license: "GPL-3.0",
+            description: "Restrictive",
+            overrideApplied: false,
+          }],
+          cautious: [],
+          permissive: [],
+        });
+
+        const calls = [];
+        LicenseClassifier.buildLicenseQuery = (license) => {
+          calls.push(license);
+          return "license:rebuilt";
+        };
+
+        const quickPickItems = LicenseClassifier.getSearchQuickPickItems();
+        const gplItem = quickPickItems.find((item) => item.label === "GPL-3.0");
+        assert.ok(gplItem);
+        assert.strictEqual(gplItem.query, "license:rebuilt");
+        assert.deepStrictEqual(calls, ["GPL-3.0"]);
+      } finally {
+        LicenseClassifier.getSearchableLicensesByTier = originalGetSearchableLicensesByTier;
+        LicenseClassifier.buildLicenseQuery = originalBuildLicenseQuery;
+      }
+    });
+
+    test("default test configuration applies no restrictive license overrides", () => {
+      const inspection = LicenseClassifier.inspect("MIT");
+      assert.strictEqual(inspection.baseTier, "permissive");
+      assert.strictEqual(inspection.tier, "permissive");
+      assert.strictEqual(inspection.overrideApplied, false);
+    });
+
+    test("spdx-only package metadata uses spdx as canonical input and resolves a license URL", () => {
+      const inspection = LicenseClassifier.inspect({
+        spdx_license: "Apache-2.0",
+        license: null,
+        raw_license: null,
+        license_url: null,
+      });
+
+      assert.strictEqual(inspection.label, "Apache-2.0");
+      assert.strictEqual(inspection.displayValue, "Apache-2.0");
+      assert.strictEqual(inspection.displaySourceField, "spdx_license");
+      assert.strictEqual(inspection.canonicalValue, "Apache-2.0");
+      assert.strictEqual(inspection.canonicalSourceField, "spdx_license");
+      assert.strictEqual(inspection.tier, "permissive");
+      assert.strictEqual(inspection.searchQuery, "license:Apache\\-2.0");
+      assert.strictEqual(inspection.licenseUrl, "https://spdx.org/licenses/Apache-2.0.html");
+      assert.strictEqual(LicenseClassifier.buildLicenseQuery({
+        spdx_license: "Apache-2.0",
+        license: null,
+        raw_license: null,
+      }), "license:Apache\\-2.0");
+      assert.strictEqual(LicenseClassifier.resolveLicenseUrl({
+        spdx_license: "Apache-2.0",
+        license: null,
+        raw_license: null,
+      }), "https://spdx.org/licenses/Apache-2.0.html");
+    });
+
+    test("populated package metadata preserves display text while preferring spdx for canonical behavior", () => {
+      const inspection = LicenseClassifier.inspect({
+        spdx_license: "Apache-2.0",
+        license: "Apache 2.0",
+        raw_license: "Apache-2.0",
+        license_url: null,
+      });
+
+      assert.strictEqual(inspection.label, "Apache 2.0");
+      assert.strictEqual(inspection.displayValue, "Apache 2.0");
+      assert.strictEqual(inspection.displaySourceField, "license");
+      assert.strictEqual(inspection.canonicalValue, "Apache-2.0");
+      assert.strictEqual(inspection.canonicalSourceField, "spdx_license");
+      assert.strictEqual(inspection.spdxIdentifier, "Apache-2.0");
+      assert.strictEqual(inspection.tier, "permissive");
+      assert.strictEqual(inspection.searchQuery, "license:Apache\\-2.0");
+      assert.strictEqual(inspection.licenseUrl, "https://spdx.org/licenses/Apache-2.0.html");
+    });
+
+    test("user restrictive overrides apply after base classification", () => {
+      vscode.workspace.getConfiguration = () => ({
+        get(key) {
+          if (key === "restrictiveLicenses") {
+            return ["MIT", "LicenseRef-Cloudsmith-Custom"];
+          }
+          return undefined;
+        },
+      });
+
+      const mitInspection = LicenseClassifier.inspect("MIT");
+      assert.strictEqual(mitInspection.baseTier, "permissive");
+      assert.strictEqual(mitInspection.tier, "restrictive");
+      assert.strictEqual(mitInspection.overrideApplied, true);
+      assert.strictEqual(mitInspection.isRestrictive, true);
+
+      const metadataInspection = LicenseClassifier.inspect({
+        spdx_license: "MIT",
+        license: "MIT License",
+        raw_license: null,
+      });
+      assert.strictEqual(metadataInspection.canonicalSourceField, "spdx_license");
+      assert.strictEqual(metadataInspection.label, "MIT License");
+      assert.strictEqual(metadataInspection.tier, "restrictive");
+      assert.strictEqual(metadataInspection.overrideApplied, true);
+
+      const customInspection = LicenseClassifier.inspect("LicenseRef-Cloudsmith-Custom");
+      assert.strictEqual(customInspection.baseTier, "unknown");
+      assert.strictEqual(customInspection.tier, "restrictive");
+      assert.strictEqual(customInspection.overrideApplied, true);
+      assert.strictEqual(customInspection.label, "LicenseRef-Cloudsmith-Custom");
+
+      const restrictiveItems = LicenseClassifier.getSearchableLicensesByTier().restrictive;
+      assert.ok(restrictiveItems.some((item) => item.license === "MIT" && item.overrideApplied));
+      assert.ok(restrictiveItems.some((item) => item.license === "LicenseRef-Cloudsmith-Custom" && item.overrideApplied));
+      assert.ok(LicenseClassifier.buildRestrictiveQuery().includes("license:LicenseRef\\-Cloudsmith\\-Custom"));
     });
   });
 });

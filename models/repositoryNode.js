@@ -2,12 +2,15 @@
 
 const vscode = require("vscode");
 const { CloudsmithAPI } = require("../util/cloudsmithAPI");
+const upstreamChecker = require("../util/upstreamChecker");
+const {
+  normalizeUpstreamFormat,
+  SUPPORTED_UPSTREAM_FORMATS,
+} = require("../util/upstreamFormats");
 const UpstreamIndicatorNode = require("./upstreamIndicatorNode");
 const { activeFilters } = require("../util/filterState");
 const InfoNode = require("./infoNode");
 const { EntitlementSummaryNode } = require("./entitlementNode");
-
-const UPSTREAM_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 class RepositoryNode {
   constructor(repo, workspace, context) {
@@ -160,51 +163,73 @@ class RepositoryNode {
   }
 
   /**
-   * Fetch upstream configs for this repo by inferring formats from loaded packages.
-   * Results are cached in globalState for 10 minutes.
+   * Infer relevant formats from the loaded package list and fetch upstream configs
+   * only for those formats as a hint. Repository-level configured upstream
+   * counts must reconcile against the full all-format path unless the inferred
+   * set is known to cover every supported upstream format.
    *
-   * @param   packageNodes  Array of PackageNode instances to infer formats from.
-   * @returns Array of upstream config objects (may be empty).
+   * @returns {Array} Array of upstream config objects (may be empty).
    */
-  async getUpstreams(packageNodes) {
-    const workspace = this.workspace;
-    const repo = this.slug;
-    const cacheKey = `cloudsmith-upstreams:${workspace}:${repo}`;
-
-    // Check cache
-    const cached = this.context.globalState.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < UPSTREAM_CACHE_TTL_MS) {
-      return cached.upstreams;
+  async getUpstreams(packageNodes = []) {
+    const inferredFormats = this._inferUpstreamFormats(packageNodes);
+    if (inferredFormats.length === 0) {
+      return this._getUpstreamList(
+        await upstreamChecker.getAllUpstreamData(this.context, this.workspace, this.slug)
+      );
     }
 
-    // Infer unique formats from loaded packages
-    const formats = new Set();
-    for (const node of packageNodes) {
-      const format = node.format || (node.pkgDetails && node.pkgDetails.format);
-      if (format) {
-        formats.add(format);
-      }
+    const hintedResult = await upstreamChecker.getUpstreamDataForFormats(
+      this.context,
+      this.workspace,
+      this.slug,
+      inferredFormats
+    );
+
+    if (this._hasCompleteUpstreamCoverage(inferredFormats)) {
+      return this._getUpstreamList(hintedResult);
     }
 
-    if (formats.size === 0) {
+    return this._getUpstreamList(
+      await upstreamChecker.getAllUpstreamData(this.context, this.workspace, this.slug)
+    );
+  }
+
+  _getUpstreamList(result) {
+    if (!result || !Array.isArray(result.upstreams)) {
       return [];
     }
 
-    // Fetch upstream configs for each format in parallel
-    const cloudsmithAPI = new CloudsmithAPI(this.context);
-    const promises = Array.from(formats).map(format =>
-      cloudsmithAPI.getUpstreams(workspace, repo, format)
-    );
-    const results = await Promise.all(promises);
-    const allUpstreams = results.flat();
+    return result.upstreams;
+  }
 
-    // Cache the results
-    this.context.globalState.update(cacheKey, {
-      timestamp: Date.now(),
-      upstreams: allUpstreams,
-    });
+  _hasCompleteUpstreamCoverage(formats) {
+    return Array.isArray(formats) && formats.length === SUPPORTED_UPSTREAM_FORMATS.length;
+  }
 
-    return allUpstreams;
+  _inferUpstreamFormats(packageNodes) {
+    if (!Array.isArray(packageNodes) || packageNodes.length === 0) {
+      return [];
+    }
+
+    const formats = new Set();
+    for (const node of packageNodes) {
+      this._addInferredFormat(formats, node && node.format);
+
+      if (Array.isArray(node && node.formats)) {
+        for (const format of node.formats) {
+          this._addInferredFormat(formats, format);
+        }
+      }
+    }
+
+    return SUPPORTED_UPSTREAM_FORMATS.filter((format) => formats.has(format));
+  }
+
+  _addInferredFormat(target, value) {
+    const normalized = normalizeUpstreamFormat(value);
+    if (normalized) {
+      target.add(normalized);
+    }
   }
 
   /**
@@ -229,7 +254,7 @@ class RepositoryNode {
 
     const children = [];
 
-    // Fetch upstreams lazily (only when repo is expanded) using loaded packages
+    // Fetch upstreams lazily (only when repo is expanded)
     if (packages.length > 0) {
       const upstreams = await this.getUpstreams(packages);
       if (upstreams.length > 0) {

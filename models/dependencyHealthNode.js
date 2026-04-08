@@ -2,6 +2,7 @@
 // cross-referenced against Cloudsmith
 
 const vscode = require("vscode");
+const { LicenseClassifier } = require("../util/licenseClassifier");
 
 class DependencyHealthNode {
   /**
@@ -27,7 +28,7 @@ class DependencyHealthNode {
     if (cloudsmithMatch) {
       this.namespace = cloudsmithMatch.namespace;
       this.repository = cloudsmithMatch.repository;
-      this.slug_perm = { id: "Slug Perm", value: cloudsmithMatch.slug_perm };
+      this.slug_perm = { id: "Slug", value: cloudsmithMatch.slug_perm };
       this.slug_perm_raw = cloudsmithMatch.slug_perm;
       this.version = { id: "Version", value: cloudsmithMatch.version };
       this.status_str = { id: "Status", value: cloudsmithMatch.status_str };
@@ -39,6 +40,11 @@ class DependencyHealthNode {
       this.num_vulnerabilities = cloudsmithMatch.num_vulnerabilities || 0;
       this.max_severity = cloudsmithMatch.max_severity || null;
       this.status_reason = cloudsmithMatch.status_reason || null;
+      this.licenseInfo = LicenseClassifier.inspect(cloudsmithMatch);
+      this.spdx_license = this.licenseInfo.spdxLicense;
+      this.raw_license = this.licenseInfo.rawLicense;
+      this.license = this.licenseInfo.displayValue;
+      this.license_url = this.licenseInfo.licenseUrl;
     }
   }
 
@@ -87,16 +93,16 @@ class DependencyHealthNode {
   _getStateDescription() {
     switch (this.state) {
       case "available":
-        return "\u2713 Available";
+        return "Available";
       case "quarantined":
-        return "\u26D4 Quarantined";
+        return "Quarantined";
       case "violated":
-        return "\u26A0 Policy violation";
+        return "Policy violation";
       case "syncing":
-        return "\u21BB Syncing";
+        return "Syncing";
       case "not_found":
       default:
-        return "? Not found in Cloudsmith";
+        return "Not found in Cloudsmith";
     }
   }
 
@@ -104,14 +110,14 @@ class DependencyHealthNode {
     const lines = [`${this.name} ${this.declaredVersion}`];
     lines.push(`Format: ${this.format}`);
     if (this.isDev) {
-      lines.push("(dev dependency)");
+      lines.push("Development dependency");
     }
 
     lines.push("");
 
     if (!this.cloudsmithMatch) {
       lines.push("Not found in the configured Cloudsmith workspace.");
-      lines.push("This package may need to be uploaded or fetched via upstream proxy.");
+      lines.push("This package may need to be uploaded or fetched through an upstream.");
     } else {
       const match = this.cloudsmithMatch;
       lines.push(`Cloudsmith version: ${match.version}`);
@@ -131,21 +137,20 @@ class DependencyHealthNode {
       if (match.num_vulnerabilities > 0) {
         lines.push(`Vulnerabilities: ${match.num_vulnerabilities} (${match.max_severity || "Unknown"})`);
       }
-      if (match.license) {
-        const { LicenseClassifier } = require("../util/licenseClassifier");
-        const classification = LicenseClassifier.classify(match.license);
-        const tierLabels = {
-          "restrictive": "Restrictive",
-          "cautious": "Review required",
-          "permissive": "Permissive",
-          "unknown": "Unknown",
-        };
-        lines.push(`License: ${match.license} (${tierLabels[classification.tier] || "Unknown"})`);
+      const classification = this.licenseInfo || LicenseClassifier.inspect(match);
+      if (classification.displayValue) {
+        lines.push(`License: ${classification.label} (${classification.metadata.label})`);
+        if (classification.spdxLicense && classification.spdxLicense !== classification.label) {
+          lines.push(`Canonical SPDX: ${classification.spdxLicense}`);
+        }
+        if (classification.overrideApplied) {
+          lines.push("License classification includes a local restrictive override.");
+        }
       }
 
       if (this.state === "quarantined" || this.state === "violated") {
         lines.push("");
-        lines.push("Right-click \u2192 Explain Quarantine or Find Safe Version");
+        lines.push("Right-click \u2192 Explain quarantine or find safe version");
       }
     }
 
@@ -213,9 +218,9 @@ class DependencyHealthNode {
 
     // License with classification
     const config = vscode.workspace.getConfiguration("cloudsmith-vsc");
-    if (config.get("showLicenseIndicators") !== false && match.license) {
+    if (config.get("showLicenseIndicators") !== false && this.licenseInfo && this.licenseInfo.displayValue) {
       const LicenseNode = require("./licenseNode");
-      children.push(new LicenseNode(match.license, match.license_url || null, this.context));
+      children.push(new LicenseNode(this.licenseInfo, this.context));
     }
 
     // Vulnerability summary
@@ -232,7 +237,7 @@ class DependencyHealthNode {
 
     // Policy Violated
     const policyValue = match.policy_violated ? "Yes" : "No";
-    children.push(new PackageDetailsNode({ id: "Policy Violated", value: policyValue }, this.context));
+    children.push(new PackageDetailsNode({ id: "Policy violated", value: policyValue }, this.context));
 
     // Quarantine Reason (if quarantined)
     if (match.status_str === "Quarantined" && match.status_reason) {
@@ -240,7 +245,7 @@ class DependencyHealthNode {
         ? match.status_reason.substring(0, 80) + "..."
         : match.status_reason;
       const reasonNode = new PackageDetailsNode({
-        id: "Quarantine Reason",
+        id: "Quarantine reason",
         value: truncated,
       }, this.context);
       children.push(reasonNode);

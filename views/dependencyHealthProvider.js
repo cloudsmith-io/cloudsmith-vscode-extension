@@ -66,7 +66,7 @@ class DependencyHealthProvider {
     const choice = await vscode.window.showQuickPick(
       [
         { label: "$(folder-opened) Select a folder to scan", description: "Browse for a project folder", _action: "pick" },
-        { label: "$(folder) Open a project folder", description: "Opens a folder in VS Code", _action: "open" },
+        { label: "$(folder) Open a project folder", description: "Open a folder in VS Code", _action: "open" },
       ],
       { placeHolder: "No workspace folder is open. Select a project folder to scan." }
     );
@@ -165,7 +165,7 @@ class DependencyHealthProvider {
     } catch (e) {
       const reason = e && e.message
         ? e.message
-        : "Check your Cloudsmith connection.";
+        : "Check the Cloudsmith connection.";
       this.dependencies = [];
       if (this._diagnosticsPublisher) {
         this._diagnosticsPublisher.clear();
@@ -322,7 +322,7 @@ class DependencyHealthProvider {
           }
         } catch (e) {
           vscode.window.showWarningMessage(
-            `Could not resolve transitive dependencies for ${format}: ${e.message}. Falling back to direct dependencies only.`
+            `Could not resolve transitive dependencies for ${format}. Using direct dependencies only. ${e.message}`
           );
         }
       }
@@ -454,7 +454,7 @@ class DependencyHealthProvider {
     if (this.lastWorkspace) {
       await this.scan(this.lastWorkspace, this.lastRepo);
     } else {
-      vscode.window.showInformationMessage("No previous scan to re-run. Use 'Scan Dependencies' first.");
+      vscode.window.showInformationMessage('No previous scan. Run "Scan dependencies" first.');
     }
   }
 
@@ -514,18 +514,18 @@ class DependencyHealthProvider {
       if (isConnected !== "true") {
         return [new InfoNode(
           "Connect to Cloudsmith",
-          "Use the key icon above to set up API key, Service Account Token, CLI import, or SSO",
-          "Set up your Cloudsmith authentication to get started",
+          "Use the key icon above to set up a personal or service account API key, CLI import, or SSO.",
+          "Set up Cloudsmith authentication to get started.",
           "plug",
           undefined,
-          { command: "cloudsmith-vsc.configureCredentials", title: "Set Up Authentication" }
+          { command: "cloudsmith-vsc.configureCredentials", title: "Set up authentication" }
         )];
       }
       // Connected but no scan run yet
       return [new InfoNode(
-        "Scan your project dependencies",
-        "Click the play button above to start",
-        "Reads your local project's manifest files (package.json, requirements.txt, pyproject.toml, pom.xml, go.mod, Cargo.toml) and checks each dependency against your Cloudsmith workspace.",
+        "Scan project dependencies",
+        "Select the play button above to start.",
+        "Reads local manifest files (package.json, requirements.txt, pyproject.toml, pom.xml, go.mod, Cargo.toml) and checks each dependency against the selected Cloudsmith workspace.",
         "folder",
         "dependencyHealthWelcome"
       )];
