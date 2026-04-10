@@ -123,7 +123,6 @@ The extension exposes several settings under `cloudsmith-vsc.*`:
 | `cloudsmith-vsc.showLicenseIndicators` | Show license risk classification on packages. Default: `true`. |
 | `cloudsmith-vsc.showDockerDigestCommand` | Show an additional "Pull by digest" option for Docker install commands. Default: `false`. |
 | `cloudsmith-vsc.experimentalSSOBrowser` | Enable experimental browser-based SSO authentication. Default: `false`. |
-| `cloudsmith-vsc.useLegacyWebApp` | Use the legacy `cloudsmith.io` webapp for platform links. Default: `false`. |
 | `cloudsmith-vsc.autoScanOnOpen` | Automatically scan project dependencies against Cloudsmith when a workspace is opened. Default: `false`. |
 | `cloudsmith-vsc.dependencyScanWorkspace` | Cloudsmith workspace slug to use for dependency health scanning. |
 | `cloudsmith-vsc.dependencyScanRepo` | Cloudsmith repository slug to use for dependency health scanning. |
